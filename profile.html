@@ -21,7 +21,7 @@
   <div style="max-width:560px;margin:0 auto;">
     <h1 style="font-size:28px;font-weight:900;margin-bottom:24px;">👤 Mon profil</h1>
 
-    <!-- Card avatar -->
+    <!-- Avatar + infos -->
     <div class="card" style="display:flex;align-items:center;gap:18px;margin-bottom:20px;padding:20px 24px;">
       <div class="avatar" id="avatar-display" style="width:64px;height:64px;font-size:26px;">?</div>
       <div>
@@ -31,32 +31,49 @@
       </div>
     </div>
 
-    <div class="card" style="padding:28px;">
+    <!-- Paramètres -->
+    <div class="card" style="padding:28px;margin-bottom:20px;">
+      <h3 style="font-size:17px;font-weight:900;margin-bottom:20px;">⚙️ Paramètres</h3>
+
       <div id="error" class="alert alert-error"></div>
       <div id="success" class="alert alert-success"></div>
 
       <div style="display:flex;flex-direction:column;gap:16px;">
+
         <div>
           <label class="input-label">Pseudo</label>
           <input class="input" id="username" placeholder="@monpseudo">
         </div>
+
         <div>
           <label class="input-label">Téléphone</label>
           <input class="input" id="phone" placeholder="+33 6 00 00 00 00">
         </div>
+
         <div>
           <label class="input-label">Genre</label>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;" id="gender-buttons">
-            <button class="btn btn-ghost" onclick="setGender('male')" id="g-male" style="padding:11px;border-radius:10px;font-size:13px;">Homme</button>
-            <button class="btn btn-ghost" onclick="setGender('female')" id="g-female" style="padding:11px;border-radius:10px;font-size:13px;">Femme</button>
-            <button class="btn btn-ghost" onclick="setGender('other')" id="g-other" style="padding:11px;border-radius:10px;font-size:13px;">Autre</button>
-            <button class="btn btn-ghost" onclick="setGender('prefer_not_to_say')" id="g-prefer" style="padding:11px;border-radius:10px;font-size:13px;">Préfère ne pas préciser</button>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
+            <button id="g-male" onclick="setGender('male')" style="padding:11px;border-radius:10px;border:1px solid #292929;background:transparent;color:#888;cursor:pointer;font-size:13px;font-family:Arial;">Homme</button>
+            <button id="g-female" onclick="setGender('female')" style="padding:11px;border-radius:10px;border:1px solid #292929;background:transparent;color:#888;cursor:pointer;font-size:13px;font-family:Arial;">Femme</button>
+            <button id="g-other" onclick="setGender('other')" style="padding:11px;border-radius:10px;border:1px solid #292929;background:transparent;color:#888;cursor:pointer;font-size:13px;font-family:Arial;">Autre</button>
+            <button id="g-prefer" onclick="setGender('prefer_not_to_say')" style="padding:11px;border-radius:10px;border:1px solid #292929;background:transparent;color:#888;cursor:pointer;font-size:13px;font-family:Arial;">Non précisé</button>
           </div>
         </div>
+
+        <!-- Préférence projets à voir -->
+        <div>
+          <label class="input-label">Projets à voir</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:6px;">
+            <button id="pref-all" onclick="setPref('all')" style="padding:11px;border-radius:10px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;cursor:pointer;font-size:13px;font-family:Arial;">👥 Tous</button>
+            <button id="pref-male" onclick="setPref('male')" style="padding:11px;border-radius:10px;border:1px solid #292929;background:transparent;color:#888;cursor:pointer;font-size:13px;font-family:Arial;">👨 Hommes</button>
+            <button id="pref-female" onclick="setPref('female')" style="padding:11px;border-radius:10px;border:1px solid #292929;background:transparent;color:#888;cursor:pointer;font-size:13px;font-family:Arial;">👩 Femmes</button>
+          </div>
+        </div>
+
         <button class="btn btn-primary btn-full" id="saveBtn" onclick="handleSave()">💾 Sauvegarder</button>
       </div>
 
-      <div style="margin-top:28px;padding-top:20px;border-top:1px solid #1A1A1A;">
+      <div style="margin-top:24px;padding-top:20px;border-top:1px solid #1A1A1A;">
         <button class="btn btn-ghost btn-full" onclick="handleSignOut()" style="color:#ef5350;border-color:rgba(244,67,54,0.3);">↩ Se déconnecter</button>
       </div>
     </div>
@@ -67,79 +84,104 @@
 <script src="app.js"></script>
 <script src="navbar.js"></script>
 <script>
-let currentUser = null
-let selectedGender = ''
+var currentUser = null;
+var selectedGender = '';
+var selectedPref = 'all';
 
 async function init() {
-  currentUser = await requireAuth()
-  if (!currentUser) return
-  renderNav('profile.html')
-  loadSidebarProfile()
-  loadProfile()
+  currentUser = await requireAuth();
+  if (!currentUser) return;
+  renderNav('profile.html');
+  loadSidebarProfile();
+  loadProfile();
 }
 
 async function loadProfile() {
-  const profile = await getProfile(currentUser.id)
-  if (!profile) return
+  var profile = await getProfile(currentUser.id);
+  if (!profile) return;
 
-  document.getElementById('username').value = profile.username || ''
-  document.getElementById('phone').value = profile.phone || ''
-  selectedGender = profile.gender || ''
-  updateGenderButtons()
+  document.getElementById('username').value = profile.username || '';
+  document.getElementById('phone').value = profile.phone || '';
+  selectedGender = profile.gender || '';
+  selectedPref = profile.project_preference || 'all';
+  updateGenderButtons();
+  updatePrefButtons();
 
-  // Avatar
-  const avatarEl = document.getElementById('avatar-display')
+  var avatarEl = document.getElementById('avatar-display');
   if (profile.avatar_url) {
-    avatarEl.innerHTML = `<img src="${profile.avatar_url}" alt="">`
+    avatarEl.innerHTML = '<img src="' + profile.avatar_url + '" style="width:100%;height:100%;object-fit:cover;" alt="">';
   } else {
-    avatarEl.textContent = profile.username?.[0]?.toUpperCase() || '?'
+    avatarEl.textContent = profile.username ? profile.username[0].toUpperCase() : '?';
   }
 
-  document.getElementById('display-username').textContent = '@' + profile.username
-  document.getElementById('display-email').textContent = currentUser.email
-  document.getElementById('display-credits').textContent = '💰 ' + profile.credits + ' crédits'
+  document.getElementById('display-username').textContent = '@' + (profile.username || '');
+  document.getElementById('display-email').textContent = currentUser.email;
+  document.getElementById('display-credits').textContent = '💰 ' + (profile.credits || 0) + ' crédits';
 }
 
 function setGender(g) {
-  selectedGender = g
-  updateGenderButtons()
+  selectedGender = g;
+  updateGenderButtons();
 }
 
 function updateGenderButtons() {
-  const map = { male: 'g-male', female: 'g-female', other: 'g-other', prefer_not_to_say: 'g-prefer' }
-  Object.entries(map).forEach(([g, id]) => {
-    const btn = document.getElementById(id)
-    if (!btn) return
-    if (g === selectedGender) {
-      btn.style.cssText = 'padding:11px;border-radius:10px;font-size:13px;background:rgba(233,30,140,0.1);border:2px solid #E91E8C;color:#E91E8C;font-weight:800;'
+  var map = { male: 'g-male', female: 'g-female', other: 'g-other', prefer_not_to_say: 'g-prefer' };
+  Object.keys(map).forEach(function(k) {
+    var btn = document.getElementById(map[k]);
+    if (!btn) return;
+    if (k === selectedGender) {
+      btn.style.cssText = 'padding:11px;border-radius:10px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;cursor:pointer;font-size:13px;font-family:Arial;';
     } else {
-      btn.style.cssText = 'padding:11px;border-radius:10px;font-size:13px;background:transparent;border:1px solid #292929;color:#888;font-weight:400;'
+      btn.style.cssText = 'padding:11px;border-radius:10px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:13px;font-family:Arial;';
     }
-  })
+  });
+}
+
+function setPref(pref) {
+  selectedPref = pref;
+  updatePrefButtons();
+}
+
+function updatePrefButtons() {
+  var map = { all: 'pref-all', male: 'pref-male', female: 'pref-female' };
+  Object.keys(map).forEach(function(k) {
+    var btn = document.getElementById(map[k]);
+    if (!btn) return;
+    if (k === selectedPref) {
+      btn.style.cssText = 'padding:11px;border-radius:10px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;cursor:pointer;font-size:13px;font-family:Arial;';
+    } else {
+      btn.style.cssText = 'padding:11px;border-radius:10px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:13px;font-family:Arial;';
+    }
+  });
 }
 
 async function handleSave() {
-  const username = document.getElementById('username').value.trim()
-  const phone = document.getElementById('phone').value.trim()
-  if (!username) { showError('error', 'Le pseudo est obligatoire.'); return }
+  var username = document.getElementById('username').value.trim();
+  var phone = document.getElementById('phone').value.trim();
+  if (!username) { showError('error', 'Le pseudo est obligatoire.'); return; }
 
-  setLoading('saveBtn', true, '💾 Sauvegarder')
-  document.getElementById('error').style.display = 'none'
+  setLoading('saveBtn', true, '💾 Sauvegarder');
+  document.getElementById('error').style.display = 'none';
 
-  const { error } = await db.from('profiles').update({ username, phone, gender: selectedGender }).eq('id', currentUser.id)
+  var result = await db.from('profiles').update({
+    username: username,
+    phone: phone,
+    gender: selectedGender,
+    project_preference: selectedPref
+  }).eq('id', currentUser.id);
 
-  setLoading('saveBtn', false, '💾 Sauvegarder')
-  if (error) showError('error', error.message)
-  else showSuccess('success', '✅ Profil mis à jour !')
+  setLoading('saveBtn', false, '💾 Sauvegarder');
+  if (result.error) showError('error', result.error.message);
+  else showSuccess('success', '✅ Profil mis à jour !');
 }
 
 async function handleSignOut() {
-  if (!confirm('Se déconnecter ?')) return
-  await db.auth.signOut()
-  window.location.href = 'login.html'
+  if (!confirm('Se déconnecter ?')) return;
+  await db.auth.signOut();
+  window.location.href = 'login.html';
 }
 
-init()
+init();
 </script>
 </body>
 </html>
