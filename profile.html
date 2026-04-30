@@ -103,7 +103,7 @@ async function loadProfile() {
   document.getElementById('username').value = profile.username || '';
   document.getElementById('phone').value = profile.phone || '';
   selectedGender = profile.gender || '';
-  selectedPref = profile.project_preference || 'all';
+  selectedPref = profile.dating_preference || 'all';
   updateGenderButtons();
   updatePrefButtons();
 
@@ -167,7 +167,7 @@ async function handleSave() {
     username: username,
     phone: phone,
     gender: selectedGender,
-    project_preference: selectedPref
+    dating_preference: selectedPref
   }).eq('id', currentUser.id);
 
   setLoading('saveBtn', false, '💾 Sauvegarder');
