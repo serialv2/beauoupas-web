@@ -53,8 +53,8 @@
         <div>
           <label class="input-label">Date de naissance *</label>
           <input class="input" type="date" id="birth_date"
-            max="2011-01-01" min="1900-01-01">
-          <p style="font-size:12px;color:#555;margin-top:4px;">Tu dois avoir au moins 13 ans.</p>
+            max="2007-01-01" min="1900-01-01">
+          <p style="font-size:12px;color:#555;margin-top:4px;">Tu dois avoir au moins 18 ans.</p>
         </div>
 
         <button class="btn btn-primary btn-full" id="saveBtn" onclick="handleSave()">
@@ -110,7 +110,7 @@ async function handleSave() {
   var birth = new Date(birthDate);
   var today = new Date();
   var age = today.getFullYear() - birth.getFullYear();
-  if (age < 13) { showError('error', 'Tu dois avoir au moins 13 ans.'); return; }
+  if (age < 18) { showError('error', 'Tu dois avoir au moins 18 ans.'); return; }
 
   setLoading('saveBtn', true, '✅ Continuer');
 
