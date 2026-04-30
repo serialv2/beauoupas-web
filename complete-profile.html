@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeauOuPas — Complète ton profil</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(circle at top, rgba(233,30,140,0.2), transparent 50%), #070707;">
+  <div style="width:100%;max-width:440px;" class="fade-in">
+
+    <div style="text-align:center;margin-bottom:32px;">
+      <div class="logo" style="font-size:38px;font-weight:900;color:#E91E8C;">BeauOuPas</div>
+      <p style="color:#888;margin-top:8px;font-size:15px;">Bienvenue ! Complète ton profil pour continuer 👋</p>
+    </div>
+
+    <div class="card" style="padding:28px;">
+      <h2 style="font-size:20px;font-weight:900;margin-bottom:6px;">Mon profil</h2>
+      <p style="color:#666;font-size:14px;margin-bottom:24px;">Ces informations sont nécessaires pour utiliser BeauOuPas.</p>
+
+      <div id="error" class="alert alert-error"></div>
+
+      <div style="display:flex;flex-direction:column;gap:16px;">
+
+        <div>
+          <label class="input-label">Pseudo *</label>
+          <input class="input" id="username" placeholder="@tonpseudo" required>
+        </div>
+
+        <div>
+          <label class="input-label">Genre *</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
+            <button id="g-male" onclick="setGender('male')"
+              style="padding:12px;border-radius:10px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:14px;font-family:Arial;">
+              👨 Homme
+            </button>
+            <button id="g-female" onclick="setGender('female')"
+              style="padding:12px;border-radius:10px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:14px;font-family:Arial;">
+              👩 Femme
+            </button>
+            <button id="g-other" onclick="setGender('other')"
+              style="padding:12px;border-radius:10px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:14px;font-family:Arial;">
+              🧑 Autre
+            </button>
+            <button id="g-prefer" onclick="setGender('prefer_not_to_say')"
+              style="padding:12px;border-radius:10px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:14px;font-family:Arial;">
+              🤐 Non précisé
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="input-label">Date de naissance *</label>
+          <input class="input" type="date" id="birth_date"
+            max="2011-01-01" min="1900-01-01">
+          <p style="font-size:12px;color:#555;margin-top:4px;">Tu dois avoir au moins 13 ans.</p>
+        </div>
+
+        <button class="btn btn-primary btn-full" id="saveBtn" onclick="handleSave()">
+          ✅ Continuer
+        </button>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script>
+var selectedGender = '';
+
+async function init() {
+  var user = await getUser();
+  if (!user) { window.location.href = 'login.html'; return; }
+
+  // Si profil déjà complet → rediriger
+  var profile = await getProfile(user.id);
+  if (profile && profile.username && profile.gender && profile.birth_date) {
+    window.location.href = 'feed.html';
+  }
+}
+
+function setGender(g) {
+  selectedGender = g;
+  var map = { male: 'g-male', female: 'g-female', other: 'g-other', prefer_not_to_say: 'g-prefer' };
+  Object.keys(map).forEach(function(k) {
+    var btn = document.getElementById(map[k]);
+    if (!btn) return;
+    if (k === g) {
+      btn.style.cssText = 'padding:12px;border-radius:10px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;cursor:pointer;font-size:14px;font-family:Arial;';
+    } else {
+      btn.style.cssText = 'padding:12px;border-radius:10px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:14px;font-family:Arial;';
+    }
+  });
+}
+
+async function handleSave() {
+  var username = document.getElementById('username').value.trim();
+  var birthDate = document.getElementById('birth_date').value;
+
+  document.getElementById('error').style.display = 'none';
+
+  if (!username) { showError('error', 'Le pseudo est obligatoire.'); return; }
+  if (!selectedGender) { showError('error', 'Choisis ton genre.'); return; }
+  if (!birthDate) { showError('error', 'La date de naissance est obligatoire.'); return; }
+
+  // Vérifier âge minimum 13 ans
+  var birth = new Date(birthDate);
+  var today = new Date();
+  var age = today.getFullYear() - birth.getFullYear();
+  if (age < 13) { showError('error', 'Tu dois avoir au moins 13 ans.'); return; }
+
+  setLoading('saveBtn', true, '✅ Continuer');
+
+  var user = await getUser();
+  var result = await db.from('profiles').upsert({
+    id: user.id,
+    username: username,
+    gender: selectedGender,
+    birth_date: birthDate,
+    profile_completed: true,
+    credits: 0
+  });
+
+  if (result.error) {
+    showError('error', result.error.message);
+    setLoading('saveBtn', false, '✅ Continuer');
+    return;
+  }
+
+  window.location.href = 'feed.html';
+}
+
+init();
+</script>
+</body>
+</html>
