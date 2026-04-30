@@ -72,7 +72,9 @@ async function handleLogin() {
 async function handleGoogle() {
   await db.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: 'https://serialv2.github.io/beauoupas-web/feed.html' }
+    options: { 
+      redirectTo: 'https://serialv2.github.io/beauoupas-web/feed.html'
+    }
   })
 }
 
