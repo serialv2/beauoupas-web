@@ -94,9 +94,9 @@ async function loadProjects() {
     var totalVotes = isDuel ? dv.length : pv.length;
 
     // ✅ Valeurs correctes : 1=j'aime, 2=bof, 3=j'aime pas
-    var likes    = pv.filter(function(v) { return v.rating === 1; }).length;
+    var likes    = pv.filter(function(v) { return v.rating === 3; }).length;
     var bofs     = pv.filter(function(v) { return v.rating === 2; }).length;
-    var dislikes = pv.filter(function(v) { return v.rating === 3; }).length;
+    var dislikes = pv.filter(function(v) { return v.rating === 1; }).length;
 
     // ✅ Duel : compatibilité left/right ET A/B
     var votesLeft  = dv.filter(function(v) { return v.chosen_side === 'left' || v.chosen_side === 'A'; }).length;
