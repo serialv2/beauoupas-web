@@ -47,14 +47,13 @@ async function loadFeed() {
 
   const { data: projects, error } = await db
     .from('projects')
-    .select('*, profiles(username, avatar_url), project_photos(id, url, vote_count)')
+    .select('*, profiles(username, avatar_url), project_photos(id, url, side)')
     .eq('status', 'active')
     .eq('is_open', true)
     .order('created_at', { ascending: false })
     .limit(30)
 
   if (error) {
-    console.error(error)
     document.getElementById('feed-container').innerHTML = `<div class="card" style="text-align:center;padding:40px;"><p style="color:#ef5350;">Erreur : ${error.message}</p></div>`
     return
   }
@@ -68,16 +67,38 @@ async function loadFeed() {
     return
   }
 
-  document.getElementById('feed-container').innerHTML = projects.map(p => renderProject(p)).join('')
+  // Compter les votes pour chaque projet
+  const projectIds = projects.map(p => p.id)
+  const { data: photoVotes } = await db.from('photo_votes').select('project_id, photo_id').in('project_id', projectIds)
+  const { data: duelVotes } = await db.from('duel_votes').select('project_id').in('project_id', projectIds)
+
+  // Votes de l'utilisateur
+  const userPhotoVotes = new Set((photoVotes || []).filter(v => v.user_id === currentUser.id).map(v => v.project_id))
+  const userDuelVotes = new Set((duelVotes || []).filter(v => v.user_id === currentUser.id).map(v => v.project_id))
+
+  // Compter votes par projet
+  const voteCount = {}
+  const photoVoteCount = {}
+  ;(photoVotes || []).forEach(v => {
+    voteCount[v.project_id] = (voteCount[v.project_id] || 0) + 1
+    photoVoteCount[v.photo_id] = (photoVoteCount[v.photo_id] || 0) + 1
+  })
+  ;(duelVotes || []).forEach(v => {
+    voteCount[v.project_id] = (voteCount[v.project_id] || 0) + 1
+  })
+
+  document.getElementById('feed-container').innerHTML = projects.map(p => {
+    const voted = votedIds.has(p.id)
+    return renderProject(p, voted, voteCount[p.id] || 0, photoVoteCount)
+  }).join('')
 }
 
-function renderProject(p) {
-  const photos = p.project_photos || []
+function renderProject(p, voted, totalVotes, photoVoteCount) {
+  const photos = (p.project_photos || []).sort((a, b) => (a.side === 'A' ? -1 : 1))
   const isDuel = p.type === 'duel' || photos.length === 2
   const username = p.profiles?.username || '?'
   const avatarUrl = p.profiles?.avatar_url
   const isOwn = p.owner_id === currentUser.id
-  const voted = votedIds.has(p.id)
   const canVote = !voted && !isOwn
 
   const avatarHtml = avatarUrl
@@ -87,13 +108,15 @@ function renderProject(p) {
   let photosHtml = ''
   if (isDuel && photos.length >= 2) {
     photosHtml = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;">
-      ${photos.slice(0,2).map((photo, i) => `
-        <div style="position:relative;cursor:${canVote ? 'pointer' : 'default'};"
-             onclick="${canVote ? `duelVote('${photo.id}','${photos[1-i]?.id}','${p.id}')` : ''}">
+      ${photos.slice(0,2).map((photo, i) => {
+        const otherPhoto = photos[1-i]
+        return `<div style="position:relative;cursor:${canVote ? 'pointer' : 'default'};"
+             onclick="${canVote ? `duelVote('${photo.id}','${otherPhoto?.id}','${p.id}')` : ''}">
           <img src="${photo.url}" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;" alt="">
-          <div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.6);border-radius:8px;padding:4px 10px;font-size:13px;font-weight:900;color:#E91E8C;">${i === 0 ? 'A' : 'B'}</div>
-          ${voted ? `<div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.7);border-radius:8px;padding:4px 8px;font-size:12px;">${photo.vote_count} votes</div>` : ''}
-        </div>`).join('')}
+          <div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.6);border-radius:8px;padding:4px 10px;font-size:13px;font-weight:900;color:#E91E8C;">${photo.side || (i === 0 ? 'A' : 'B')}</div>
+          ${voted ? `<div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.7);border-radius:8px;padding:4px 8px;font-size:12px;">${photoVoteCount[photo.id] || 0} votes</div>` : ''}
+        </div>`
+      }).join('')}
     </div>`
   } else if (photos.length >= 1) {
     photosHtml = `<div style="cursor:${canVote ? 'pointer' : 'default'};"
@@ -101,8 +124,6 @@ function renderProject(p) {
       <img src="${photos[0].url}" style="width:100%;max-height:420px;object-fit:cover;display:block;" alt="">
     </div>`
   }
-
-  const totalVotes = photos.reduce((sum, ph) => sum + (ph.vote_count || 0), 0)
 
   return `<div class="card fade-in" style="padding:0;overflow:hidden;margin-bottom:20px;">
     <div style="display:flex;align-items:center;gap:12px;padding:16px 18px;">
@@ -125,7 +146,6 @@ function renderProject(p) {
 }
 
 async function photoVote(photoId, projectId) {
-  if (!currentUser) return
   const { error } = await db.from('photo_votes').insert({ user_id: currentUser.id, photo_id: photoId, project_id: projectId })
   if (error) { console.error(error); return }
   votedIds.add(projectId)
@@ -133,7 +153,7 @@ async function photoVote(photoId, projectId) {
 }
 
 async function duelVote(winnerId, loserId, projectId) {
-  if (!currentUser || !loserId) return
+  if (!loserId) return
   const { error } = await db.from('duel_votes').insert({ user_id: currentUser.id, project_id: projectId, winner_photo_id: winnerId, loser_photo_id: loserId })
   if (error) { console.error(error); return }
   votedIds.add(projectId)
