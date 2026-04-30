@@ -149,7 +149,7 @@ async function handleSubmit() {
     for (var i = 0; i < selectedFiles.length; i++) {
       var file = selectedFiles[i];
       var ext = file.name.split('.').pop() || 'jpg';
-      var path = currentUser.id + '/' + project.id + '/' + Date.now() + '_' + i + '.' + ext;
+      var path = 'display/' + currentUser.id + '/' + Date.now() + '_' + i + '.' + ext;
 
       var uploadResult = await db.storage.from('photos').upload(path, file);
       if (uploadResult.error) { throw uploadResult.error; }
