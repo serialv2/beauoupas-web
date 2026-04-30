@@ -7,8 +7,6 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-<!-- Sidebar -->
 <aside class="sidebar">
   <div class="sidebar-logo">BeauOuPas</div>
   <nav id="sidebar-nav"></nav>
@@ -17,11 +15,8 @@
     <div id="sidebar-user"></div>
   </div>
 </aside>
-
-<!-- Bottom nav mobile -->
 <nav class="bottom-nav" id="bottom-nav"></nav>
 
-<!-- Contenu -->
 <main class="main-content">
   <div style="max-width:680px;margin:0 auto;">
     <div style="margin-bottom:28px;">
@@ -48,12 +43,21 @@ async function init() {
 }
 
 async function loadFeed() {
-  const { data: projects } = await db
+  document.getElementById('feed-container').innerHTML = '<div class="spinner"></div>'
+
+  const { data: projects, error } = await db
     .from('projects')
     .select('*, profiles(username, avatar_url), project_photos(id, url, vote_count)')
     .eq('status', 'active')
+    .eq('is_open', true)
     .order('created_at', { ascending: false })
     .limit(30)
+
+  if (error) {
+    console.error(error)
+    document.getElementById('feed-container').innerHTML = `<div class="card" style="text-align:center;padding:40px;"><p style="color:#ef5350;">Erreur : ${error.message}</p></div>`
+    return
+  }
 
   if (!projects || projects.length === 0) {
     document.getElementById('feed-container').innerHTML = `
@@ -69,10 +73,10 @@ async function loadFeed() {
 
 function renderProject(p) {
   const photos = p.project_photos || []
-  const isDuel = photos.length === 2
+  const isDuel = p.type === 'duel' || photos.length === 2
   const username = p.profiles?.username || '?'
   const avatarUrl = p.profiles?.avatar_url
-  const isOwn = p.user_id === currentUser.id
+  const isOwn = p.owner_id === currentUser.id
   const voted = votedIds.has(p.id)
   const canVote = !voted && !isOwn
 
@@ -81,24 +85,26 @@ function renderProject(p) {
     : `<span style="font-size:16px;font-weight:900;">${username[0]?.toUpperCase()}</span>`
 
   let photosHtml = ''
-  if (isDuel) {
+  if (isDuel && photos.length >= 2) {
     photosHtml = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;">
-      ${photos.map((photo, i) => `
+      ${photos.slice(0,2).map((photo, i) => `
         <div style="position:relative;cursor:${canVote ? 'pointer' : 'default'};"
-             onclick="${canVote ? `duelVote('${photo.id}','${photos[1-i].id}','${p.id}')` : ''}">
+             onclick="${canVote ? `duelVote('${photo.id}','${photos[1-i]?.id}','${p.id}')` : ''}">
           <img src="${photo.url}" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;" alt="">
           <div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.6);border-radius:8px;padding:4px 10px;font-size:13px;font-weight:900;color:#E91E8C;">${i === 0 ? 'A' : 'B'}</div>
           ${voted ? `<div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.7);border-radius:8px;padding:4px 8px;font-size:12px;">${photo.vote_count} votes</div>` : ''}
         </div>`).join('')}
     </div>`
-  } else if (photos.length === 1) {
+  } else if (photos.length >= 1) {
     photosHtml = `<div style="cursor:${canVote ? 'pointer' : 'default'};"
          onclick="${canVote ? `photoVote('${photos[0].id}','${p.id}')` : ''}">
       <img src="${photos[0].url}" style="width:100%;max-height:420px;object-fit:cover;display:block;" alt="">
     </div>`
   }
 
-  return `<div class="card fade-in" style="padding:0;overflow:hidden;margin-bottom:20px;" id="project-${p.id}">
+  const totalVotes = photos.reduce((sum, ph) => sum + (ph.vote_count || 0), 0)
+
+  return `<div class="card fade-in" style="padding:0;overflow:hidden;margin-bottom:20px;">
     <div style="display:flex;align-items:center;gap:12px;padding:16px 18px;">
       <div class="avatar" style="width:40px;height:40px;">${avatarHtml}</div>
       <div style="flex:1;">
@@ -110,7 +116,7 @@ function renderProject(p) {
     ${p.title ? `<div style="padding:0 18px 14px;font-weight:700;font-size:16px;">${p.title}</div>` : ''}
     ${photosHtml}
     <div style="padding:14px 18px;display:flex;align-items:center;justify-content:space-between;">
-      <span style="font-size:13px;color:#555;">🗳️ ${p.vote_count} votes</span>
+      <span style="font-size:13px;color:#555;">🗳️ ${totalVotes} votes</span>
       ${canVote ? `<span style="font-size:13px;color:#E91E8C;font-weight:700;">${isDuel ? '👆 Clique A ou B' : '👆 Clique pour voter'}</span>` : ''}
       ${voted ? `<span style="font-size:13px;color:#4CAF50;font-weight:700;">✅ Voté !</span>` : ''}
       ${isOwn ? `<span style="font-size:13px;color:#555;">Votre projet</span>` : ''}
@@ -119,13 +125,17 @@ function renderProject(p) {
 }
 
 async function photoVote(photoId, projectId) {
-  await db.from('photo_votes').insert({ user_id: currentUser.id, photo_id: photoId, project_id: projectId })
+  if (!currentUser) return
+  const { error } = await db.from('photo_votes').insert({ user_id: currentUser.id, photo_id: photoId, project_id: projectId })
+  if (error) { console.error(error); return }
   votedIds.add(projectId)
   loadFeed()
 }
 
 async function duelVote(winnerId, loserId, projectId) {
-  await db.from('duel_votes').insert({ user_id: currentUser.id, project_id: projectId, winner_photo_id: winnerId, loser_photo_id: loserId })
+  if (!currentUser || !loserId) return
+  const { error } = await db.from('duel_votes').insert({ user_id: currentUser.id, project_id: projectId, winner_photo_id: winnerId, loser_photo_id: loserId })
+  if (error) { console.error(error); return }
   votedIds.add(projectId)
   loadFeed()
 }
