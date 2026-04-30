@@ -51,6 +51,11 @@ let allFriends = []
 async function init() {
   currentUser = await requireAuth()
   if (!currentUser) return
+  var profile = await getProfile(currentUser.id);
+if (!profile || !profile.username || !profile.gender || !profile.birth_date) {
+  window.location.href = 'complete-profile.html';
+  return;
+}
   renderNav('friends.html')
   loadSidebarProfile()
   loadFriends()
