@@ -24,7 +24,6 @@
       <div id="success" class="alert alert-success"></div>
 
       <div style="display:flex;flex-direction:column;gap:18px;">
-        <!-- Type -->
         <div>
           <label class="input-label">Type de projet</label>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;">
@@ -39,19 +38,16 @@
           </div>
         </div>
 
-        <!-- Titre -->
         <div>
           <label class="input-label">Titre</label>
           <input class="input" id="title" placeholder="Comment je suis ?">
         </div>
 
-        <!-- Description -->
         <div>
           <label class="input-label">Description <span style="color:#444;">(optionnel)</span></label>
           <textarea class="input" id="description" placeholder="Donne plus de contexte..." rows="3" style="resize:vertical;"></textarea>
         </div>
 
-        <!-- Upload -->
         <div>
           <label class="input-label" id="upload-label">Photo (1 requise)</label>
           <label style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:28px;border-radius:14px;cursor:pointer;border:2px dashed #292929;background:#111;color:#555;font-size:14px;">
@@ -133,7 +129,7 @@ async function handleSubmit() {
         owner_id: currentUser.id,
         title,
         description: document.getElementById('description').value,
-        type: projectType === 'duel' ? 'duel' : 'photo',
+        type: projectType,
         status: 'active',
         is_open: true
       })
@@ -141,6 +137,7 @@ async function handleSubmit() {
 
     if (projErr) throw projErr
 
+    // Upload photos — side A ou B pour duel
     for (let i = 0; i < selectedFiles.length; i++) {
       const file = selectedFiles[i]
       const ext = file.name.split('.').pop() || 'jpg'
@@ -151,8 +148,7 @@ async function handleSubmit() {
       await db.from('project_photos').insert({
         project_id: project.id,
         url: urlData.publicUrl,
-        vote_count: 0,
-        position: i
+        side: projectType === 'duel' ? (i === 0 ? 'A' : 'B') : null
       })
     }
 
