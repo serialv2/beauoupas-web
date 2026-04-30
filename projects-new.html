@@ -21,18 +21,20 @@
 
     <div class="card" style="padding:28px;">
       <div id="error" class="alert alert-error"></div>
+      <div id="success" class="alert alert-success"></div>
 
       <div style="display:flex;flex-direction:column;gap:18px;">
+
         <!-- Type -->
         <div>
           <label class="input-label">Type de projet</label>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;">
-            <button id="btn-photo" class="btn" onclick="setType('photo')"
-              style="padding:14px;border-radius:12px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;">
+            <button id="btn-photo" onclick="setType('photo')"
+              style="padding:14px;border-radius:12px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;cursor:pointer;font-size:15px;font-family:Arial;">
               📸 Photo unique
             </button>
-            <button id="btn-duel" class="btn btn-ghost" onclick="setType('duel')"
-              style="padding:14px;border-radius:12px;">
+            <button id="btn-duel" onclick="setType('duel')"
+              style="padding:14px;border-radius:12px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:15px;font-family:Arial;">
               ⚖️ Duel A/B
             </button>
           </div>
@@ -41,7 +43,7 @@
         <!-- Titre -->
         <div>
           <label class="input-label">Titre</label>
-          <input class="input" id="title" placeholder="Comment je suis ?" required>
+          <input class="input" id="title" placeholder="Comment je suis ?">
         </div>
 
         <!-- Description -->
@@ -53,7 +55,7 @@
         <!-- Upload -->
         <div>
           <label class="input-label" id="upload-label">Photo (1 requise)</label>
-          <label style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:28px;border-radius:14px;cursor:pointer;border:2px dashed #292929;background:#111;color:#555;font-size:14px;transition:border-color 0.15s;" id="upload-zone">
+          <label style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:28px;border-radius:14px;cursor:pointer;border:2px dashed #292929;background:#111;color:#555;font-size:14px;">
             <span style="font-size:36px;">📁</span>
             <span id="upload-text">Clique pour choisir une photo</span>
             <input type="file" id="file-input" accept="image/*" style="display:none;" onchange="handleFiles(this)">
@@ -91,13 +93,13 @@ function setType(type) {
   document.getElementById('file-input').multiple = type === 'duel'
 
   if (type === 'photo') {
-    document.getElementById('btn-photo').style.cssText = 'padding:14px;border-radius:12px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;'
-    document.getElementById('btn-duel').style.cssText = 'padding:14px;border-radius:12px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;'
+    document.getElementById('btn-photo').style.cssText = 'padding:14px;border-radius:12px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;cursor:pointer;font-size:15px;font-family:Arial;'
+    document.getElementById('btn-duel').style.cssText = 'padding:14px;border-radius:12px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:15px;font-family:Arial;'
     document.getElementById('upload-label').textContent = 'Photo (1 requise)'
     document.getElementById('upload-text').textContent = 'Clique pour choisir une photo'
   } else {
-    document.getElementById('btn-duel').style.cssText = 'padding:14px;border-radius:12px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;'
-    document.getElementById('btn-photo').style.cssText = 'padding:14px;border-radius:12px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;'
+    document.getElementById('btn-duel').style.cssText = 'padding:14px;border-radius:12px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;cursor:pointer;font-size:15px;font-family:Arial;'
+    document.getElementById('btn-photo').style.cssText = 'padding:14px;border-radius:12px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:15px;font-family:Arial;'
     document.getElementById('upload-label').textContent = 'Photos (2 requises)'
     document.getElementById('upload-text').textContent = 'Clique pour choisir 2 photos'
   }
@@ -106,7 +108,6 @@ function setType(type) {
 function handleFiles(input) {
   const files = Array.from(input.files)
   selectedFiles = projectType === 'duel' ? files.slice(0, 2) : files.slice(0, 1)
-
   const cols = selectedFiles.length > 1 ? '1fr 1fr' : '1fr'
   document.getElementById('previews').style.gridTemplateColumns = cols
   document.getElementById('previews').innerHTML = selectedFiles.map((f, i) => {
@@ -120,32 +121,52 @@ function handleFiles(input) {
 
 async function handleSubmit() {
   const title = document.getElementById('title').value.trim()
+  document.getElementById('error').style.display = 'none'
+  document.getElementById('success').style.display = 'none'
+
   if (!title) { showError('error', 'Le titre est obligatoire.'); return }
   if (selectedFiles.length === 0) { showError('error', 'Ajoute au moins une photo.'); return }
   if (projectType === 'duel' && selectedFiles.length < 2) { showError('error', 'Le duel nécessite 2 photos.'); return }
 
   setLoading('submitBtn', true, '🚀 Créer le projet')
-  document.getElementById('error').style.display = 'none'
 
   try {
     // Créer le projet
     const { data: project, error: projErr } = await db.from('projects')
-      .insert({ user_id: currentUser.id, title, description: document.getElementById('description').value, status: 'active', vote_count: 0 })
+      .insert({
+        user_id: currentUser.id,
+        title,
+        description: document.getElementById('description').value,
+        status: 'active',
+        vote_count: 0
+      })
       .select().single()
+
     if (projErr) throw projErr
 
-    // Upload photos
+    // Upload photos dans le bucket "photos"
     for (let i = 0; i < selectedFiles.length; i++) {
       const file = selectedFiles[i]
-      const path = `${currentUser.id}/${project.id}/${Date.now()}_${i}.jpg`
-      const { error: upErr } = await db.storage.from('project-photos').upload(path, file)
+      const ext = file.name.split('.').pop() || 'jpg'
+      const path = `${currentUser.id}/${project.id}/${Date.now()}_${i}.${ext}`
+
+      const { error: upErr } = await db.storage.from('photos').upload(path, file)
       if (upErr) throw upErr
-      const { data: urlData } = db.storage.from('project-photos').getPublicUrl(path)
-      await db.from('project_photos').insert({ project_id: project.id, url: urlData.publicUrl, vote_count: 0, position: i })
+
+      const { data: urlData } = db.storage.from('photos').getPublicUrl(path)
+      await db.from('project_photos').insert({
+        project_id: project.id,
+        url: urlData.publicUrl,
+        vote_count: 0,
+        position: i
+      })
     }
 
-    window.location.href = 'projects.html'
+    showSuccess('success', '✅ Projet créé ! Redirection...')
+    setTimeout(() => window.location.href = 'projects.html', 1200)
+
   } catch(err) {
+    console.error(err)
     showError('error', err.message || 'Erreur lors de la création.')
     setLoading('submitBtn', false, '🚀 Créer le projet')
   }
