@@ -5,6 +5,53 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BeauOuPas — Nouveau projet</title>
 <link rel="stylesheet" href="style.css">
+<style>
+.photo-slot {
+  border: 2px dashed #292929;
+  border-radius: 14px;
+  background: #111;
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  overflow: hidden;
+  position: relative;
+}
+.photo-slot:hover { border-color: #E91E8C; }
+.photo-slot img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
+.photo-slot .slot-label {
+  position: absolute;
+  top: 8px; left: 8px;
+  background: rgba(0,0,0,0.7);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-weight: 900;
+  color: #E91E8C;
+  font-size: 14px;
+  z-index: 2;
+}
+.photo-slot .slot-remove {
+  position: absolute;
+  top: 8px; right: 8px;
+  background: rgba(0,0,0,0.7);
+  border: none;
+  border-radius: 50%;
+  width: 28px; height: 28px;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  z-index: 2;
+  display: none;
+}
+.photo-slot.filled .slot-remove { display: flex; align-items: center; justify-content: center; }
+.photo-slot .slot-placeholder { color: #444; text-align: center; }
+.photo-slot .slot-placeholder span { font-size: 32px; display: block; margin-bottom: 8px; }
+.range-container { position: relative; }
+.range-labels { display: flex; justify-content: space-between; font-size: 12px; color: #666; margin-top: 6px; }
+</style>
 </head>
 <body>
 <aside class="sidebar">
@@ -23,8 +70,9 @@
       <div id="error" class="alert alert-error"></div>
       <div id="success" class="alert alert-success"></div>
 
-      <div style="display:flex;flex-direction:column;gap:18px;">
+      <div style="display:flex;flex-direction:column;gap:20px;">
 
+        <!-- Type -->
         <div>
           <label class="input-label">Type de projet</label>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;">
@@ -39,24 +87,65 @@
           </div>
         </div>
 
+        <!-- Titre -->
         <div>
           <label class="input-label">Titre</label>
           <input class="input" id="title" placeholder="Comment je suis ?">
         </div>
 
+        <!-- Description -->
         <div>
           <label class="input-label">Description <span style="color:#444;">(optionnel)</span></label>
           <textarea class="input" id="description" placeholder="Donne plus de contexte..." rows="3" style="resize:vertical;"></textarea>
         </div>
 
+        <!-- Photos -->
+        <div id="photos-section">
+          <label class="input-label" id="photos-label">Photo</label>
+          <div id="photos-grid" style="display:grid;grid-template-columns:1fr;gap:12px;margin-top:8px;">
+            <!-- Slot photo unique -->
+            <div class="photo-slot" id="slot-single" onclick="triggerFile('file-single')">
+              <div class="slot-placeholder"><span>📁</span>Clique pour choisir une photo</div>
+              <button class="slot-remove" onclick="removePhoto('single', event)">✕</button>
+              <input type="file" id="file-single" accept="image/*" style="display:none;" onchange="handleFile(this, 'single')">
+            </div>
+          </div>
+        </div>
+
+        <!-- Filtre genre -->
         <div>
-          <label class="input-label" id="upload-label">Photo (1 requise)</label>
-          <label style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:28px;border-radius:14px;cursor:pointer;border:2px dashed #292929;background:#111;color:#555;font-size:14px;">
-            <span style="font-size:36px;">📁</span>
-            <span id="upload-text">Clique pour choisir une photo</span>
-            <input type="file" id="file-input" accept="image/*" style="display:none;" onchange="handleFiles(this)">
-          </label>
-          <div id="previews" style="display:grid;gap:10px;margin-top:12px;"></div>
+          <label class="input-label">Montrer à</label>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:6px;">
+            <button id="gf-all" onclick="setGenderFilter('all')"
+              style="padding:10px;border-radius:10px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;cursor:pointer;font-size:13px;font-family:Arial;">
+              👥 Tous
+            </button>
+            <button id="gf-male" onclick="setGenderFilter('male')"
+              style="padding:10px;border-radius:10px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:13px;font-family:Arial;">
+              👨 Hommes
+            </button>
+            <button id="gf-female" onclick="setGenderFilter('female')"
+              style="padding:10px;border-radius:10px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:13px;font-family:Arial;">
+              👩 Femmes
+            </button>
+          </div>
+        </div>
+
+        <!-- Tranche d'âge -->
+        <div>
+          <label class="input-label">Tranche d'âge : <span id="age-display" style="color:#E91E8C;font-weight:800;">18 – 99 ans</span></label>
+          <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px;">
+            <div>
+              <div style="font-size:12px;color:#666;margin-bottom:4px;">Âge minimum</div>
+              <input type="range" id="age-min" min="13" max="99" value="18"
+                style="width:100%;accent-color:#E91E8C;" oninput="updateAgeDisplay()">
+            </div>
+            <div>
+              <div style="font-size:12px;color:#666;margin-bottom:4px;">Âge maximum</div>
+              <input type="range" id="age-max" min="13" max="99" value="99"
+                style="width:100%;accent-color:#E91E8C;" oninput="updateAgeDisplay()">
+            </div>
+          </div>
         </div>
 
         <button class="btn btn-primary btn-full" id="submitBtn" onclick="handleSubmit()">
@@ -75,95 +164,186 @@
 
 var currentUser = null;
 var projectType = 'photo';
-var selectedFiles = [];
+var genderFilter = 'all';
+var photoFiles = { single: null, left: null, right: null };
+var photoPreviews = { single: null, left: null, right: null };
 
 async function init() {
   currentUser = await requireAuth();
   if (!currentUser) return;
+
+  // Vérifier profil complet
+  var profile = await getProfile(currentUser.id);
+  if (!profile || !profile.username || !profile.gender || !profile.birth_date) {
+    window.location.href = 'complete-profile.html';
+    return;
+  }
+
   renderNav('projects.html');
   loadSidebarProfile();
 }
 
 function setType(type) {
   projectType = type;
-  selectedFiles = [];
-  document.getElementById('previews').innerHTML = '';
-  document.getElementById('file-input').multiple = (type === 'duel');
+  photoFiles = { single: null, left: null, right: null };
+  photoPreviews = { single: null, left: null, right: null };
 
   if (type === 'photo') {
     document.getElementById('btn-photo').style.cssText = 'padding:14px;border-radius:12px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;cursor:pointer;font-size:15px;font-family:Arial;';
     document.getElementById('btn-duel').style.cssText = 'padding:14px;border-radius:12px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:15px;font-family:Arial;';
-    document.getElementById('upload-label').textContent = 'Photo (1 requise)';
-    document.getElementById('upload-text').textContent = 'Clique pour choisir une photo';
+    document.getElementById('photos-label').textContent = 'Photo';
+    document.getElementById('photos-grid').style.gridTemplateColumns = '1fr';
+    document.getElementById('photos-grid').innerHTML =
+      '<div class="photo-slot" id="slot-single" onclick="triggerFile(\'file-single\')">' +
+        '<div class="slot-placeholder"><span>📁</span>Clique pour choisir une photo</div>' +
+        '<button class="slot-remove" onclick="removePhoto(\'single\', event)">✕</button>' +
+        '<input type="file" id="file-single" accept="image/*" style="display:none;" onchange="handleFile(this, \'single\')">' +
+      '</div>';
   } else {
     document.getElementById('btn-duel').style.cssText = 'padding:14px;border-radius:12px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;cursor:pointer;font-size:15px;font-family:Arial;';
     document.getElementById('btn-photo').style.cssText = 'padding:14px;border-radius:12px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:15px;font-family:Arial;';
-    document.getElementById('upload-label').textContent = 'Photos (2 requises)';
-    document.getElementById('upload-text').textContent = 'Clique pour choisir 2 photos';
+    document.getElementById('photos-label').textContent = 'Photos du duel';
+    document.getElementById('photos-grid').style.gridTemplateColumns = '1fr 1fr';
+    document.getElementById('photos-grid').innerHTML =
+      '<div>' +
+        '<div style="font-size:12px;color:#888;margin-bottom:6px;font-weight:700;">PHOTO A (Gauche)</div>' +
+        '<div class="photo-slot" id="slot-left" onclick="triggerFile(\'file-left\')">' +
+          '<div class="slot-placeholder"><span>📁</span>Photo A</div>' +
+          '<div class="slot-label">A</div>' +
+          '<button class="slot-remove" onclick="removePhoto(\'left\', event)">✕</button>' +
+          '<input type="file" id="file-left" accept="image/*" style="display:none;" onchange="handleFile(this, \'left\')">' +
+        '</div>' +
+      '</div>' +
+      '<div>' +
+        '<div style="font-size:12px;color:#888;margin-bottom:6px;font-weight:700;">PHOTO B (Droite)</div>' +
+        '<div class="photo-slot" id="slot-right" onclick="triggerFile(\'file-right\')">' +
+          '<div class="slot-placeholder"><span>📁</span>Photo B</div>' +
+          '<div class="slot-label">B</div>' +
+          '<button class="slot-remove" onclick="removePhoto(\'right\', event)">✕</button>' +
+          '<input type="file" id="file-right" accept="image/*" style="display:none;" onchange="handleFile(this, \'right\')">' +
+        '</div>' +
+      '</div>';
   }
 }
 
-function handleFiles(input) {
-  var files = Array.from(input.files);
-  selectedFiles = (projectType === 'duel') ? files.slice(0, 2) : files.slice(0, 1);
-  document.getElementById('previews').style.gridTemplateColumns = selectedFiles.length > 1 ? '1fr 1fr' : '1fr';
-  document.getElementById('previews').innerHTML = selectedFiles.map(function(f, i) {
-    var url = URL.createObjectURL(f);
-    var label = (projectType === 'duel')
-      ? '<div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.7);border-radius:8px;padding:4px 10px;font-weight:900;color:#E91E8C;">' + (i === 0 ? 'A' : 'B') + '</div>'
-      : '';
-    return '<div style="position:relative;"><img src="' + url + '" style="width:100%;height:160px;object-fit:cover;border-radius:12px;" alt="">' + label + '</div>';
-  }).join('');
+function triggerFile(inputId) {
+  var input = document.getElementById(inputId);
+  if (input) input.click();
+}
+
+function handleFile(input, slot) {
+  var file = input.files[0];
+  if (!file) return;
+  photoFiles[slot] = file;
+  var url = URL.createObjectURL(file);
+  photoPreviews[slot] = url;
+  var slotEl = document.getElementById('slot-' + slot);
+  if (!slotEl) return;
+  slotEl.classList.add('filled');
+  // Retirer ancien aperçu
+  var oldImg = slotEl.querySelector('img');
+  if (oldImg) oldImg.remove();
+  var img = document.createElement('img');
+  img.src = url;
+  slotEl.insertBefore(img, slotEl.firstChild);
+}
+
+function removePhoto(slot, event) {
+  event.stopPropagation();
+  photoFiles[slot] = null;
+  photoPreviews[slot] = null;
+  var slotEl = document.getElementById('slot-' + slot);
+  if (!slotEl) return;
+  slotEl.classList.remove('filled');
+  var img = slotEl.querySelector('img');
+  if (img) img.remove();
+  var input = slotEl.querySelector('input[type="file"]');
+  if (input) input.value = '';
+}
+
+function setGenderFilter(gf) {
+  genderFilter = gf;
+  var map = { all: 'gf-all', male: 'gf-male', female: 'gf-female' };
+  Object.keys(map).forEach(function(k) {
+    var btn = document.getElementById(map[k]);
+    if (!btn) return;
+    if (k === gf) {
+      btn.style.cssText = 'padding:10px;border-radius:10px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;cursor:pointer;font-size:13px;font-family:Arial;';
+    } else {
+      btn.style.cssText = 'padding:10px;border-radius:10px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:13px;font-family:Arial;';
+    }
+  });
+}
+
+function updateAgeDisplay() {
+  var min = parseInt(document.getElementById('age-min').value);
+  var max = parseInt(document.getElementById('age-max').value);
+  if (min > max) {
+    document.getElementById('age-min').value = max;
+    min = max;
+  }
+  document.getElementById('age-display').textContent = min + ' – ' + max + ' ans';
+}
+
+async function uploadPhoto(file, projectId, slot) {
+  var ext = file.name.split('.').pop() || 'jpg';
+  var path = 'display/' + currentUser.id + '/' + Date.now() + '_' + slot + '.' + ext;
+  var uploadResult = await db.storage.from('photos').upload(path, file);
+  if (uploadResult.error) throw uploadResult.error;
+  var urlResult = db.storage.from('photos').getPublicUrl(path);
+  return urlResult.data.publicUrl;
 }
 
 async function handleSubmit() {
   var title = document.getElementById('title').value.trim();
   var description = document.getElementById('description').value;
+  var minAge = parseInt(document.getElementById('age-min').value);
+  var maxAge = parseInt(document.getElementById('age-max').value);
 
   document.getElementById('error').style.display = 'none';
   document.getElementById('success').style.display = 'none';
 
   if (!title) { showError('error', 'Le titre est obligatoire.'); return; }
-  if (selectedFiles.length === 0) { showError('error', 'Ajoute au moins une photo.'); return; }
-  if (projectType === 'duel' && selectedFiles.length < 2) { showError('error', 'Le duel nécessite 2 photos.'); return; }
 
-  setLoading('submitBtn', true, '🚀 Créer le projet');
+  if (projectType === 'photo' && !photoFiles.single) {
+    showError('error', 'Ajoute une photo.'); return;
+  }
+  if (projectType === 'duel' && (!photoFiles.left || !photoFiles.right)) {
+    showError('error', 'Ajoute les 2 photos du duel (A et B).'); return;
+  }
+
+  setLoading('submitBtn', true, '🚀 Création en cours...');
 
   try {
-    // ✅ Utiliser les valeurs exactes de l'enum project_type
-    var dbType = (projectType === 'duel') ? 'duel' : 'photo_vote';
-
+    // Créer le projet
     var insertResult = await db.from('projects').insert({
       owner_id: currentUser.id,
       title: title,
       description: description,
-      type: dbType,
+      type: projectType === 'duel' ? 'duel' : 'photo_vote',
       status: 'approved',
-      is_open: true
+      is_open: true,
+      gender_filter: genderFilter === 'all' ? null : genderFilter,
+      min_age: minAge,
+      max_age: maxAge
     }).select().single();
 
-    if (insertResult.error) { throw insertResult.error; }
-
+    if (insertResult.error) throw insertResult.error;
     var project = insertResult.data;
 
-    for (var i = 0; i < selectedFiles.length; i++) {
-      var file = selectedFiles[i];
-      var ext = file.name.split('.').pop() || 'jpg';
-      var path = 'display/' + currentUser.id + '/' + Date.now() + '_' + i + '.' + ext;
+    // Upload et insertion photos
+    if (projectType === 'photo') {
+      var url = await uploadPhoto(photoFiles.single, project.id, 'single');
+      var r = await db.from('project_photos').insert({ project_id: project.id, url: url, side: 'single' });
+      if (r.error) throw r.error;
+    } else {
+      var urlLeft = await uploadPhoto(photoFiles.left, project.id, 'left');
+      var rLeft = await db.from('project_photos').insert({ project_id: project.id, url: urlLeft, side: 'left' });
+      if (rLeft.error) throw rLeft.error;
 
-      var uploadResult = await db.storage.from('photos').upload(path, file);
-      if (uploadResult.error) { throw uploadResult.error; }
-
-      var urlResult = db.storage.from('photos').getPublicUrl(path);
-      var publicUrl = urlResult.data.publicUrl;
-
-      var photoInsert = await db.from('project_photos').insert({
-        project_id: project.id,
-        url: publicUrl,
-        side: (projectType === 'duel') ? (i === 0 ? 'A' : 'B') : null
-      });
-
-      if (photoInsert.error) { throw photoInsert.error; }
+      var urlRight = await uploadPhoto(photoFiles.right, project.id, 'right');
+      var rRight = await db.from('project_photos').insert({ project_id: project.id, url: urlRight, side: 'right' });
+      if (rRight.error) throw rRight.error;
     }
 
     showSuccess('success', '✅ Projet créé ! Redirection...');
@@ -177,7 +357,6 @@ async function handleSubmit() {
 }
 
 init();
-
 </script>
 </body>
 </html>
