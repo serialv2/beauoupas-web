@@ -5,6 +5,56 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BeauOuPas — Feed</title>
 <link rel="stylesheet" href="style.css">
+<style>
+.vote-buttons {
+  display: flex;
+  gap: 10px;
+  padding: 14px 18px;
+  border-top: 1px solid #1A1A1A;
+}
+.vote-btn {
+  flex: 1;
+  padding: 14px;
+  border-radius: 12px;
+  border: 2px solid #292929;
+  background: transparent;
+  color: #888;
+  font-size: 20px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: Arial;
+}
+.vote-btn:hover { transform: scale(1.05); }
+.vote-btn.like:hover  { border-color: #4CAF50; background: rgba(76,175,80,0.1); }
+.vote-btn.bof:hover   { border-color: #FF9800; background: rgba(255,152,0,0.1); }
+.vote-btn.dislike:hover { border-color: #ef5350; background: rgba(244,67,54,0.1); }
+.duel-btn {
+  flex: 1;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+}
+.duel-btn:hover .duel-overlay { opacity: 1; }
+.duel-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(233,30,140,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 900;
+  color: white;
+  opacity: 0;
+  transition: opacity 0.15s;
+  border-radius: 0;
+}
+.project-card {
+  margin-bottom: 24px;
+}
+</style>
 </head>
 <body>
 <aside class="sidebar">
@@ -18,8 +68,8 @@
 <nav class="bottom-nav" id="bottom-nav"></nav>
 
 <main class="main-content">
-  <div style="max-width:680px;margin:0 auto;">
-    <div style="margin-bottom:28px;">
+  <div style="max-width:600px;margin:0 auto;">
+    <div style="margin-bottom:24px;">
       <h1 style="font-size:28px;font-weight:900;">📸 Feed</h1>
       <p style="color:#666;margin-top:6px;font-size:14px;">Vote sur les projets de la communauté</p>
     </div>
@@ -31,136 +81,222 @@
 <script src="app.js"></script>
 <script src="navbar.js"></script>
 <script>
-let currentUser = null
-const votedIds = new Set()
+let currentUser = null;
+let currentProfile = null;
+let projects = [];
+let currentIndex = 0;
 
 async function init() {
-  currentUser = await requireAuth()
-  if (!currentUser) return
-  renderNav('feed.html')
-  loadSidebarProfile()
-  loadFeed()
+  currentUser = await requireAuth();
+  if (!currentUser) return;
+  renderNav('feed.html');
+  loadSidebarProfile();
+  currentProfile = await getProfile(currentUser.id);
+  loadFeed();
 }
 
 async function loadFeed() {
-  document.getElementById('feed-container').innerHTML = '<div class="spinner"></div>'
+  document.getElementById('feed-container').innerHTML = '<div class="spinner"></div>';
 
-  const { data: projects, error } = await db
-    .from('projects')
+  // Récupérer les projets approuvés qui ne sont pas les nôtres
+  const result = await db.from('projects')
     .select('*, profiles(username, avatar_url), project_photos(id, url, side)')
     .eq('status', 'approved')
     .eq('is_open', true)
+    .neq('owner_id', currentUser.id)
     .order('created_at', { ascending: false })
-    .limit(30)
+    .limit(50);
 
-  if (error) {
-    document.getElementById('feed-container').innerHTML = `<div class="card" style="text-align:center;padding:40px;"><p style="color:#ef5350;">Erreur : ${error.message}</p></div>`
-    return
+  if (result.error) {
+    document.getElementById('feed-container').innerHTML = '<div class="card" style="text-align:center;padding:40px;"><p style="color:#ef5350;">Erreur : ' + result.error.message + '</p></div>';
+    return;
   }
 
-  if (!projects || projects.length === 0) {
-    document.getElementById('feed-container').innerHTML = `
-      <div class="card" style="text-align:center;padding:60px;">
-        <div style="font-size:48px;margin-bottom:12px;">📭</div>
-        <p style="color:#666;font-size:16px;">Aucun projet pour l'instant</p>
-      </div>`
-    return
+  // Récupérer les projets déjà votés par l'utilisateur
+  const allIds = (result.data || []).map(function(p) { return p.id; });
+  let votedProjectIds = new Set();
+
+  if (allIds.length > 0) {
+    const pvResult = await db.from('photo_votes').select('project_id').eq('user_id', currentUser.id).in('project_id', allIds);
+    const dvResult = await db.from('duel_votes').select('project_id').eq('user_id', currentUser.id).in('project_id', allIds);
+    (pvResult.data || []).forEach(function(v) { votedProjectIds.add(v.project_id); });
+    (dvResult.data || []).forEach(function(v) { votedProjectIds.add(v.project_id); });
   }
 
-  // Compter les votes pour chaque projet
-  const projectIds = projects.map(p => p.id)
-  const { data: photoVotes } = await db.from('photo_votes').select('project_id, photo_id').in('project_id', projectIds)
-  const { data: duelVotes } = await db.from('duel_votes').select('project_id').in('project_id', projectIds)
+  // Garder seulement les projets non encore votés
+  projects = (result.data || []).filter(function(p) { return !votedProjectIds.has(p.id); });
+  currentIndex = 0;
 
-  // Votes de l'utilisateur
-  const userPhotoVotes = new Set((photoVotes || []).filter(v => v.user_id === currentUser.id).map(v => v.project_id))
-  const userDuelVotes = new Set((duelVotes || []).filter(v => v.user_id === currentUser.id).map(v => v.project_id))
+  if (projects.length === 0) {
+    document.getElementById('feed-container').innerHTML = '<div class="card" style="text-align:center;padding:60px;"><div style="font-size:48px;margin-bottom:12px;">🎉</div><h3 style="font-size:20px;margin-bottom:8px;">Tout voté !</h3><p style="color:#666;">Tu as voté sur tous les projets disponibles.<br>Reviens plus tard !</p></div>';
+    return;
+  }
 
-  // Compter votes par projet
-  const voteCount = {}
-  const photoVoteCount = {}
-  ;(photoVotes || []).forEach(v => {
-    voteCount[v.project_id] = (voteCount[v.project_id] || 0) + 1
-    photoVoteCount[v.photo_id] = (photoVoteCount[v.photo_id] || 0) + 1
-  })
-  ;(duelVotes || []).forEach(v => {
-    voteCount[v.project_id] = (voteCount[v.project_id] || 0) + 1
-  })
-
-  document.getElementById('feed-container').innerHTML = projects.map(p => {
-    const voted = votedIds.has(p.id)
-    return renderProject(p, voted, voteCount[p.id] || 0, photoVoteCount)
-  }).join('')
+  showCurrentProject();
 }
 
-function renderProject(p, voted, totalVotes, photoVoteCount) {
-  const photos = (p.project_photos || []).sort((a, b) => (a.side === 'A' ? -1 : 1))
-  const isDuel = p.type === 'duel' || photos.length === 2
-  const username = p.profiles?.username || '?'
-  const avatarUrl = p.profiles?.avatar_url
-  const isOwn = p.owner_id === currentUser.id
-  const canVote = !voted && !isOwn
+function showCurrentProject() {
+  if (currentIndex >= projects.length) {
+    document.getElementById('feed-container').innerHTML = '<div class="card" style="text-align:center;padding:60px;"><div style="font-size:48px;margin-bottom:12px;">🎉</div><h3 style="font-size:20px;margin-bottom:8px;">Tout voté !</h3><p style="color:#666;">Tu as voté sur tous les projets disponibles.<br>Reviens plus tard !</p></div>';
+    return;
+  }
+
+  const p = projects[currentIndex];
+  const photos = (p.project_photos || []).sort(function(a, b) {
+    if (a.side === 'A') return -1;
+    if (b.side === 'A') return 1;
+    return 0;
+  });
+  const isDuel = p.type === 'duel' || photos.length === 2;
+  const username = p.profiles ? p.profiles.username : '?';
+  const avatarUrl = p.profiles ? p.profiles.avatar_url : null;
+  const remaining = projects.length - currentIndex;
 
   const avatarHtml = avatarUrl
-    ? `<img src="${avatarUrl}" style="width:100%;height:100%;object-fit:cover;" alt="">`
-    : `<span style="font-size:16px;font-weight:900;">${username[0]?.toUpperCase()}</span>`
+    ? '<img src="' + avatarUrl + '" style="width:100%;height:100%;object-fit:cover;" alt="">'
+    : '<span style="font-size:16px;font-weight:900;">' + username[0].toUpperCase() + '</span>';
 
-  let photosHtml = ''
+  let photosHtml = '';
+  let buttonsHtml = '';
+
   if (isDuel && photos.length >= 2) {
-    photosHtml = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;">
-      ${photos.slice(0,2).map((photo, i) => {
-        const otherPhoto = photos[1-i]
-        return `<div style="position:relative;cursor:${canVote ? 'pointer' : 'default'};"
-             onclick="${canVote ? `duelVote('${photo.id}','${otherPhoto?.id}','${p.id}')` : ''}">
-          <img src="${photo.url}" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;" alt="">
-          <div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.6);border-radius:8px;padding:4px 10px;font-size:13px;font-weight:900;color:#E91E8C;">${photo.side || (i === 0 ? 'A' : 'B')}</div>
-          ${voted ? `<div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.7);border-radius:8px;padding:4px 8px;font-size:12px;">${photoVoteCount[photo.id] || 0} votes</div>` : ''}
-        </div>`
-      }).join('')}
-    </div>`
+    // Duel : clic sur la photo = vote
+    photosHtml = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;">'
+      + photos.slice(0, 2).map(function(photo, i) {
+          const side = photo.side || (i === 0 ? 'A' : 'B');
+          return '<button class="duel-btn" onclick="voteDuel(\'' + p.id + '\',\'' + side + '\')">'
+            + '<img src="' + photo.url + '" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;" alt="">'
+            + '<div class="duel-overlay">' + side + '</div>'
+            + '<div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.65);border-radius:8px;padding:4px 12px;font-size:14px;font-weight:900;color:#E91E8C;">' + side + '</div>'
+            + '</button>';
+        }).join('')
+      + '</div>';
+    buttonsHtml = '<div style="padding:12px 18px;text-align:center;"><p style="color:#888;font-size:13px;">👆 Clique sur A ou B pour voter</p></div>';
   } else if (photos.length >= 1) {
-    photosHtml = `<div style="cursor:${canVote ? 'pointer' : 'default'};"
-         onclick="${canVote ? `photoVote('${photos[0].id}','${p.id}')` : ''}">
-      <img src="${photos[0].url}" style="width:100%;max-height:420px;object-fit:cover;display:block;" alt="">
-    </div>`
+    // Photo unique
+    photosHtml = '<div><img src="' + photos[0].url + '" style="width:100%;max-height:440px;object-fit:cover;display:block;" alt=""></div>';
+    buttonsHtml = '<div class="vote-buttons">'
+      + '<button class="vote-btn like" onclick="votePhoto(\'' + p.id + '\',\'like\')" title="J\'aime">👍<div style="font-size:11px;color:#888;margin-top:4px;">J\'aime</div></button>'
+      + '<button class="vote-btn bof" onclick="votePhoto(\'' + p.id + '\',\'bof\')" title="Bof">😐<div style="font-size:11px;color:#888;margin-top:4px;">Bof</div></button>'
+      + '<button class="vote-btn dislike" onclick="votePhoto(\'' + p.id + '\',\'dislike\')" title="J\'aime pas">👎<div style="font-size:11px;color:#888;margin-top:4px;">J\'aime pas</div></button>'
+      + '</div>';
   }
 
-  return `<div class="card fade-in" style="padding:0;overflow:hidden;margin-bottom:20px;">
-    <div style="display:flex;align-items:center;gap:12px;padding:16px 18px;">
-      <div class="avatar" style="width:40px;height:40px;">${avatarHtml}</div>
-      <div style="flex:1;">
-        <div style="font-weight:800;font-size:14px;">@${username}</div>
-        <div style="font-size:12px;color:#555;">${new Date(p.created_at).toLocaleDateString('fr-FR')}</div>
-      </div>
-      <span class="badge badge-pink">${isDuel ? '⚖️ Duel' : '📸 Vote'}</span>
-    </div>
-    ${p.title ? `<div style="padding:0 18px 14px;font-weight:700;font-size:16px;">${p.title}</div>` : ''}
-    ${photosHtml}
-    <div style="padding:14px 18px;display:flex;align-items:center;justify-content:space-between;">
-      <span style="font-size:13px;color:#555;">🗳️ ${totalVotes} votes</span>
-      ${canVote ? `<span style="font-size:13px;color:#E91E8C;font-weight:700;">${isDuel ? '👆 Clique A ou B' : '👆 Clique pour voter'}</span>` : ''}
-      ${voted ? `<span style="font-size:13px;color:#4CAF50;font-weight:700;">✅ Voté !</span>` : ''}
-      ${isOwn ? `<span style="font-size:13px;color:#555;">Votre projet</span>` : ''}
-    </div>
-  </div>`
+  const html = '<div class="card project-card fade-in" style="padding:0;overflow:hidden;">'
+    // Header
+    + '<div style="display:flex;align-items:center;gap:12px;padding:14px 18px;">'
+    + '<div class="avatar" style="width:40px;height:40px;">' + avatarHtml + '</div>'
+    + '<div style="flex:1;">'
+    + '<div style="font-weight:800;font-size:14px;">@' + username + '</div>'
+    + '<div style="font-size:12px;color:#555;">' + new Date(p.created_at).toLocaleDateString('fr-FR') + '</div>'
+    + '</div>'
+    + '<span class="badge badge-pink">' + (isDuel ? '⚖️ Duel' : '📸 Vote') + '</span>'
+    + '<span style="font-size:12px;color:#555;margin-left:8px;">' + remaining + ' restant' + (remaining > 1 ? 's' : '') + '</span>'
+    + '</div>'
+    // Titre
+    + (p.title ? '<div style="padding:0 18px 12px;font-weight:700;font-size:16px;">' + p.title + '</div>' : '')
+    // Description
+    + (p.description ? '<div style="padding:0 18px 12px;font-size:14px;color:#888;">' + p.description + '</div>' : '')
+    // Photos
+    + photosHtml
+    // Boutons vote
+    + buttonsHtml
+    // Passer
+    + '<div style="padding:10px 18px 14px;text-align:center;">'
+    + '<button onclick="skipProject()" style="background:none;border:none;color:#444;cursor:pointer;font-size:13px;">Passer →</button>'
+    + '</div>'
+    + '</div>';
+
+  document.getElementById('feed-container').innerHTML = html;
 }
 
-async function photoVote(photoId, projectId) {
-  const { error } = await db.from('photo_votes').insert({ user_id: currentUser.id, photo_id: photoId, project_id: projectId })
-  if (error) { console.error(error); return }
-  votedIds.add(projectId)
-  loadFeed()
+async function votePhoto(projectId, rating) {
+  // Désactiver les boutons immédiatement
+  document.querySelectorAll('.vote-btn').forEach(function(btn) { btn.disabled = true; btn.style.opacity = '0.5'; });
+
+  const gender = currentProfile ? currentProfile.gender : null;
+  const age = currentProfile && currentProfile.birth_date ? getAge(currentProfile.birth_date) : null;
+
+  const result = await db.from('photo_votes').insert({
+    user_id: currentUser.id,
+    project_id: projectId,
+    rating: rating,
+    voter_gender: gender,
+    voter_age: age
+  });
+
+  if (result.error) {
+    console.error(result.error);
+    document.querySelectorAll('.vote-btn').forEach(function(btn) { btn.disabled = false; btn.style.opacity = '1'; });
+    return;
+  }
+
+  // Animation puis projet suivant
+  showVotedFeedback(rating);
+  setTimeout(function() { nextProject(); }, 600);
 }
 
-async function duelVote(winnerId, loserId, projectId) {
-  if (!loserId) return
-  const { error } = await db.from('duel_votes').insert({ user_id: currentUser.id, project_id: projectId, winner_photo_id: winnerId, loser_photo_id: loserId })
-  if (error) { console.error(error); return }
-  votedIds.add(projectId)
-  loadFeed()
+async function voteDuel(projectId, chosenSide) {
+  document.querySelectorAll('.duel-btn').forEach(function(btn) { btn.disabled = true; });
+
+  const gender = currentProfile ? currentProfile.gender : null;
+  const age = currentProfile && currentProfile.birth_date ? getAge(currentProfile.birth_date) : null;
+
+  const result = await db.from('duel_votes').insert({
+    user_id: currentUser.id,
+    project_id: projectId,
+    chosen_side: chosenSide,
+    voter_gender: gender,
+    voter_age: age
+  });
+
+  if (result.error) {
+    console.error(result.error);
+    document.querySelectorAll('.duel-btn').forEach(function(btn) { btn.disabled = false; });
+    return;
+  }
+
+  showVotedFeedback('duel_' + chosenSide);
+  setTimeout(function() { nextProject(); }, 600);
 }
 
-init()
+function showVotedFeedback(type) {
+  const card = document.querySelector('.project-card');
+  if (!card) return;
+
+  let emoji = '✅';
+  let color = '#4CAF50';
+  if (type === 'like') { emoji = '👍'; color = '#4CAF50'; }
+  else if (type === 'bof') { emoji = '😐'; color = '#FF9800'; }
+  else if (type === 'dislike') { emoji = '👎'; color = '#ef5350'; }
+  else if (type.startsWith('duel_')) { emoji = '✅ ' + type.replace('duel_', ''); color = '#E91E8C'; }
+
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;font-size:60px;z-index:10;border-radius:22px;';
+  overlay.textContent = emoji;
+  card.style.position = 'relative';
+  card.appendChild(overlay);
+}
+
+function nextProject() {
+  currentIndex++;
+  showCurrentProject();
+}
+
+function skipProject() {
+  currentIndex++;
+  showCurrentProject();
+}
+
+function getAge(birthDate) {
+  const today = new Date();
+  const birth = new Date(birthDate);
+  let age = today.getFullYear() - birth.getFullYear();
+  if (today < new Date(today.getFullYear(), birth.getMonth(), birth.getDate())) age--;
+  return age;
+}
+
+init();
 </script>
 </body>
 </html>
