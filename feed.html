@@ -48,7 +48,7 @@ async function loadFeed() {
   const { data: projects, error } = await db
     .from('projects')
     .select('*, profiles(username, avatar_url), project_photos(id, url, side)')
-    .eq('status', 'active')
+    .eq('status', 'approved')
     .eq('is_open', true)
     .order('created_at', { ascending: false })
     .limit(30)
