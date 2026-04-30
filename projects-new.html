@@ -24,6 +24,7 @@
       <div id="success" class="alert alert-success"></div>
 
       <div style="display:flex;flex-direction:column;gap:18px;">
+
         <div>
           <label class="input-label">Type de projet</label>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;">
@@ -61,6 +62,7 @@
         <button class="btn btn-primary btn-full" id="submitBtn" onclick="handleSubmit()">
           🚀 Créer le projet
         </button>
+
       </div>
     </div>
   </div>
@@ -70,98 +72,126 @@
 <script src="app.js"></script>
 <script src="navbar.js"></script>
 <script>
-let currentUser = null
-let projectType = 'photo'
-let selectedFiles = []
+
+let currentUser = null;
+let projectType = 'photo';
+let selectedFiles = [];
 
 async function init() {
-  currentUser = await requireAuth()
-  if (!currentUser) return
-  renderNav('projects.html')
-  loadSidebarProfile()
+  currentUser = await requireAuth();
+  if (!currentUser) return;
+  renderNav('projects.html');
+  loadSidebarProfile();
 }
 
 function setType(type) {
-  projectType = type
-  selectedFiles = []
-  document.getElementById('previews').innerHTML = ''
-  document.getElementById('file-input').multiple = type === 'duel'
+  projectType = type;
+  selectedFiles = [];
+  document.getElementById('previews').innerHTML = '';
+  document.getElementById('file-input').multiple = (type === 'duel');
+
   if (type === 'photo') {
-    document.getElementById('btn-photo').style.cssText = 'padding:14px;border-radius:12px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;cursor:pointer;font-size:15px;font-family:Arial;'
-    document.getElementById('btn-duel').style.cssText = 'padding:14px;border-radius:12px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:15px;font-family:Arial;'
-    document.getElementById('upload-label').textContent = 'Photo (1 requise)'
-    document.getElementById('upload-text').textContent = 'Clique pour choisir une photo'
+    document.getElementById('btn-photo').style.cssText = 'padding:14px;border-radius:12px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;cursor:pointer;font-size:15px;font-family:Arial;';
+    document.getElementById('btn-duel').style.cssText = 'padding:14px;border-radius:12px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:15px;font-family:Arial;';
+    document.getElementById('upload-label').textContent = 'Photo (1 requise)';
+    document.getElementById('upload-text').textContent = 'Clique pour choisir une photo';
   } else {
-    document.getElementById('btn-duel').style.cssText = 'padding:14px;border-radius:12px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;cursor:pointer;font-size:15px;font-family:Arial;'
-    document.getElementById('btn-photo').style.cssText = 'padding:14px;border-radius:12px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:15px;font-family:Arial;'
-    document.getElementById('upload-label').textContent = 'Photos (2 requises)'
-    document.getElementById('upload-text').textContent = 'Clique pour choisir 2 photos'
+    document.getElementById('btn-duel').style.cssText = 'padding:14px;border-radius:12px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;cursor:pointer;font-size:15px;font-family:Arial;';
+    document.getElementById('btn-photo').style.cssText = 'padding:14px;border-radius:12px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:15px;font-family:Arial;';
+    document.getElementById('upload-label').textContent = 'Photos (2 requises)';
+    document.getElementById('upload-text').textContent = 'Clique pour choisir 2 photos';
   }
 }
 
 function handleFiles(input) {
-  const files = Array.from(input.files)
-  selectedFiles = projectType === 'duel' ? files.slice(0, 2) : files.slice(0, 1)
-  document.getElementById('previews').style.gridTemplateColumns = selectedFiles.length > 1 ? '1fr 1fr' : '1fr'
-  document.getElementById('previews').innerHTML = selectedFiles.map((f, i) => {
-    const url = URL.createObjectURL(f)
-    return `<div style="position:relative;">
-      <img src="${url}" style="width:100%;height:160px;object-fit:cover;border-radius:12px;" alt="">
-      ${projectType === 'duel' ? `<div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.7);border-radius:8px;padding:4px 10px;font-weight:900;color:#E91E8C;">${i === 0 ? 'A' : 'B'}</div>` : ''}
-    </div>`
-  }).join('')
+  const files = Array.from(input.files);
+  selectedFiles = (projectType === 'duel') ? files.slice(0, 2) : files.slice(0, 1);
+  document.getElementById('previews').style.gridTemplateColumns = selectedFiles.length > 1 ? '1fr 1fr' : '1fr';
+  document.getElementById('previews').innerHTML = selectedFiles.map(function(f, i) {
+    const url = URL.createObjectURL(f);
+    const label = (projectType === 'duel') ? '<div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.7);border-radius:8px;padding:4px 10px;font-weight:900;color:#E91E8C;">' + (i === 0 ? 'A' : 'B') + '</div>' : '';
+    return '<div style="position:relative;"><img src="' + url + '" style="width:100%;height:160px;object-fit:cover;border-radius:12px;" alt="">' + label + '</div>';
+  }).join('');
 }
 
 async function handleSubmit() {
-  const title = document.getElementById('title').value.trim()
-  document.getElementById('error').style.display = 'none'
-  document.getElementById('success').style.display = 'none'
+  const title = document.getElementById('title').value.trim();
+  const description = document.getElementById('description').value;
 
-  if (!title) { showError('error', 'Le titre est obligatoire.'); return }
-  if (selectedFiles.length === 0) { showError('error', 'Ajoute au moins une photo.'); return }
-  if (projectType === 'duel' && selectedFiles.length < 2) { showError('error', 'Le duel nécessite 2 photos.'); return }
+  document.getElementById('error').style.display = 'none';
+  document.getElementById('success').style.display = 'none';
 
-  setLoading('submitBtn', true, '🚀 Créer le projet')
+  if (!title) {
+    showError('error', 'Le titre est obligatoire.');
+    return;
+  }
+  if (selectedFiles.length === 0) {
+    showError('error', 'Ajoute au moins une photo.');
+    return;
+  }
+  if (projectType === 'duel' && selectedFiles.length < 2) {
+    showError('error', 'Le duel nécessite 2 photos.');
+    return;
+  }
+
+  setLoading('submitBtn', true, '🚀 Créer le projet');
 
   try {
-    const { data: project, error: projErr } = await db.from('projects')
-      .insert({
-        owner_id: currentUser.id,
-        title,
-        description: document.getElementById('description').value,
-        type: projectType,
-        status: 'active',
-        is_open: true
-      })
-      .select().single()
+    // Créer le projet
+    const insertResult = await db.from('projects').insert({
+      owner_id: currentUser.id,
+      title: title,
+      description: description,
+      type: projectType,
+      status: 'approved',
+      is_open: true
+    }).select().single();
 
-    if (projErr) throw projErr
-
-    // Upload photos — side A ou B pour duel
-    for (let i = 0; i < selectedFiles.length; i++) {
-      const file = selectedFiles[i]
-      const ext = file.name.split('.').pop() || 'jpg'
-      const path = `${currentUser.id}/${project.id}/${Date.now()}_${i}.${ext}`
-      const { error: upErr } = await db.storage.from('photos').upload(path, file)
-      if (upErr) throw upErr
-      const { data: urlData } = db.storage.from('photos').getPublicUrl(path)
-      await db.from('project_photos').insert({
-        project_id: project.id,
-        url: urlData.publicUrl,
-        side: projectType === 'duel' ? (i === 0 ? 'A' : 'B') : null
-      })
+    if (insertResult.error) {
+      throw insertResult.error;
     }
 
-    showSuccess('success', '✅ Projet créé ! Redirection...')
-    setTimeout(() => window.location.href = 'projects.html', 1200)
+    const project = insertResult.data;
+
+    // Upload les photos
+    for (let i = 0; i < selectedFiles.length; i++) {
+      const file = selectedFiles[i];
+      const ext = file.name.split('.').pop() || 'jpg';
+      const path = currentUser.id + '/' + project.id + '/' + Date.now() + '_' + i + '.' + ext;
+
+      const uploadResult = await db.storage.from('photos').upload(path, file);
+      if (uploadResult.error) {
+        throw uploadResult.error;
+      }
+
+      const urlResult = db.storage.from('photos').getPublicUrl(path);
+      const publicUrl = urlResult.data.publicUrl;
+
+      const photoInsert = await db.from('project_photos').insert({
+        project_id: project.id,
+        url: publicUrl,
+        side: (projectType === 'duel') ? (i === 0 ? 'A' : 'B') : null
+      });
+
+      if (photoInsert.error) {
+        throw photoInsert.error;
+      }
+    }
+
+    showSuccess('success', '✅ Projet créé ! Redirection...');
+    setTimeout(function() {
+      window.location.href = 'projects.html';
+    }, 1200);
+
   } catch(err) {
-    console.error(err)
-    showError('error', err.message || 'Erreur lors de la création.')
-    setLoading('submitBtn', false, '🚀 Créer le projet')
+    console.error(err);
+    showError('error', err.message || 'Erreur lors de la création.');
+    setLoading('submitBtn', false, '🚀 Créer le projet');
   }
 }
 
-init()
+init();
+
 </script>
 </body>
 </html>
