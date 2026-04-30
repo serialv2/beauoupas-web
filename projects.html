@@ -5,6 +5,49 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BeauOuPas — Mes projets</title>
 <link rel="stylesheet" href="style.css">
+<style>
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+.stat-box {
+  background: #1A1A1A;
+  border: 1px solid #292929;
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+}
+.stat-box .stat-value {
+  font-size: 22px;
+  font-weight: 900;
+  color: #E91E8C;
+}
+.stat-box .stat-label {
+  font-size: 11px;
+  color: #666;
+  margin-top: 4px;
+}
+.stat-bar {
+  height: 6px;
+  background: #1A1A1A;
+  border-radius: 3px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+.stat-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+.project-detail {
+  display: none;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #1A1A1A;
+}
+</style>
 </head>
 <body>
 <aside class="sidebar">
@@ -18,7 +61,7 @@
 <nav class="bottom-nav" id="bottom-nav"></nav>
 
 <main class="main-content">
-  <div style="max-width:800px;margin:0 auto;">
+  <div style="max-width:900px;margin:0 auto;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;">
       <div>
         <h1 style="font-size:28px;font-weight:900;">📸 Mes projets</h1>
@@ -34,82 +77,143 @@
 <script src="app.js"></script>
 <script src="navbar.js"></script>
 <script>
-let currentUser = null
+let currentUser = null;
 
 async function init() {
-  currentUser = await requireAuth()
-  if (!currentUser) return
-  renderNav('projects.html')
-  loadSidebarProfile()
-  loadProjects()
+  currentUser = await requireAuth();
+  if (!currentUser) return;
+  renderNav('projects.html');
+  loadSidebarProfile();
+  loadProjects();
 }
 
 async function loadProjects() {
-  const { data, error } = await db.from('projects')
+  // ✅ Filtrer uniquement les projets de l'utilisateur connecté
+  const result = await db.from('projects')
     .select('*, project_photos(id, url, side)')
     .eq('owner_id', currentUser.id)
-    .order('created_at', { ascending: false })
+    .order('created_at', { ascending: false });
 
-  if (error) { console.error(error); return }
-
-  const list = data || []
-  document.getElementById('count').textContent = `${list.length} projet${list.length !== 1 ? 's' : ''}`
-
-  // Compter les votes
-  const ids = list.map(p => p.id)
-  let voteCount = {}
-  if (ids.length > 0) {
-    const { data: pv } = await db.from('photo_votes').select('project_id').in('project_id', ids)
-    const { data: dv } = await db.from('duel_votes').select('project_id').in('project_id', ids)
-    ;(pv || []).forEach(v => voteCount[v.project_id] = (voteCount[v.project_id] || 0) + 1)
-    ;(dv || []).forEach(v => voteCount[v.project_id] = (voteCount[v.project_id] || 0) + 1)
+  if (result.error) {
+    console.error(result.error);
+    document.getElementById('projects-container').innerHTML = '<p style="color:#ef5350;">Erreur : ' + result.error.message + '</p>';
+    return;
   }
+
+  const list = result.data || [];
+  document.getElementById('count').textContent = list.length + ' projet' + (list.length !== 1 ? 's' : '');
 
   if (list.length === 0) {
-    document.getElementById('projects-container').innerHTML = `
-      <div class="card" style="text-align:center;padding:60px;">
-        <div style="font-size:48px;margin-bottom:16px;">📸</div>
-        <h3 style="font-size:20px;margin-bottom:8px;">Aucun projet</h3>
-        <p style="color:#666;margin-bottom:24px;">Crée ton premier projet !</p>
-        <a href="projects-new.html" class="btn btn-primary" style="text-decoration:none;">➕ Créer un projet</a>
-      </div>`
-    return
+    document.getElementById('projects-container').innerHTML = '<div class="card" style="text-align:center;padding:60px;"><div style="font-size:48px;margin-bottom:16px;">📸</div><h3 style="font-size:20px;margin-bottom:8px;">Aucun projet</h3><p style="color:#666;margin-bottom:24px;">Crée ton premier projet !</p><a href="projects-new.html" class="btn btn-primary" style="text-decoration:none;">➕ Créer un projet</a></div>';
+    return;
   }
 
-  document.getElementById('projects-container').innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px;">
-      ${list.map(p => {
-        const photos = p.project_photos || []
-        const firstPhoto = photos[0]?.url
-        return `<div class="card" style="padding:0;overflow:hidden;">
-          ${firstPhoto
-            ? `<div style="position:relative;">
-                <img src="${firstPhoto}" style="width:100%;height:200px;object-fit:cover;display:block;" alt="">
-                <div style="position:absolute;top:10px;right:10px;">
-                  <span class="badge ${p.status === 'active' ? 'badge-green' : 'badge-orange'}">${p.status === 'active' ? '● Actif' : '⏸ Inactif'}</span>
-                </div>
-              </div>`
-            : `<div style="height:200px;background:#1A1A1A;display:flex;align-items:center;justify-content:center;font-size:48px;">📸</div>`}
-          <div style="padding:16px;">
-            <div style="font-weight:800;font-size:15px;margin-bottom:4px;">${p.title || 'Sans titre'}</div>
-            <div style="font-size:13px;color:#555;margin-bottom:12px;">🗳️ ${voteCount[p.id] || 0} votes · ${p.type === 'duel' ? '⚖️ Duel' : '📸 Photo'}</div>
-            <button class="btn btn-ghost btn-sm btn-full" onclick="deleteProject('${p.id}')">🗑️ Supprimer</button>
-          </div>
-        </div>`
-      }).join('')}
-    </div>`
+  // Charger les votes pour tous les projets
+  const ids = list.map(function(p) { return p.id; });
+
+  const pvResult = await db.from('photo_votes').select('project_id, user_id, rating, voter_gender, voter_age').in('project_id', ids);
+  const dvResult = await db.from('duel_votes').select('project_id, user_id, chosen_side, voter_gender, voter_age').in('project_id', ids);
+
+  const photoVotes = pvResult.data || [];
+  const duelVotes = dvResult.data || [];
+
+  const html = list.map(function(p) {
+    const photos = p.project_photos || [];
+    const firstPhoto = photos[0] ? photos[0].url : null;
+    const isDuel = p.type === 'duel';
+
+    // Votes du projet
+    const pv = photoVotes.filter(function(v) { return v.project_id === p.id; });
+    const dv = duelVotes.filter(function(v) { return v.project_id === p.id; });
+    const totalVotes = isDuel ? dv.length : pv.length;
+
+    // Stats photo unique : rating
+    const likes = pv.filter(function(v) { return v.rating === 'like'; }).length;
+    const bofs = pv.filter(function(v) { return v.rating === 'bof'; }).length;
+    const dislikes = pv.filter(function(v) { return v.rating === 'dislike'; }).length;
+
+    // Stats duel : chosen_side
+    const votesA = dv.filter(function(v) { return v.chosen_side === 'A'; }).length;
+    const votesB = dv.filter(function(v) { return v.chosen_side === 'B'; }).length;
+
+    // Stats genre
+    const allVotes = isDuel ? dv : pv;
+    const menVotes = allVotes.filter(function(v) { return v.voter_gender === 'male'; }).length;
+    const womenVotes = allVotes.filter(function(v) { return v.voter_gender === 'female'; }).length;
+    const otherVotes = allVotes.filter(function(v) { return v.voter_gender !== 'male' && v.voter_gender !== 'female'; }).length;
+
+    // Pourcentages
+    function pct(val, total) {
+      return total > 0 ? Math.round(val / total * 100) : 0;
+    }
+
+    const statusLabel = p.status === 'approved' ? '● Approuvé' : (p.status === 'pending' ? '⏳ En attente' : '⏸ ' + p.status);
+    const statusClass = p.status === 'approved' ? 'badge-green' : 'badge-orange';
+
+    // Stats HTML
+    let statsHtml = '';
+    if (totalVotes > 0) {
+      if (!isDuel) {
+        // Stats photo unique
+        statsHtml += '<div class="stats-grid">';
+        statsHtml += '<div class="stat-box"><div class="stat-value">' + likes + '</div><div class="stat-label">👍 J\'aime</div></div>';
+        statsHtml += '<div class="stat-box"><div class="stat-value">' + bofs + '</div><div class="stat-label">😐 Bof</div></div>';
+        statsHtml += '<div class="stat-box"><div class="stat-value">' + dislikes + '</div><div class="stat-label">👎 J\'aime pas</div></div>';
+        statsHtml += '<div class="stat-box"><div class="stat-value">' + totalVotes + '</div><div class="stat-label">🗳️ Total</div></div>';
+        statsHtml += '</div>';
+      } else {
+        // Stats duel
+        statsHtml += '<div style="margin-top:14px;">';
+        statsHtml += '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;"><span style="color:#E91E8C;font-weight:800;">A — ' + votesA + ' votes (' + pct(votesA, totalVotes) + '%)</span><span style="color:#888;font-weight:800;">B — ' + votesB + ' votes (' + pct(votesB, totalVotes) + '%)</span></div>';
+        statsHtml += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">';
+        statsHtml += '<div class="stat-bar"><div class="stat-bar-fill" style="width:' + pct(votesA, totalVotes) + '%;background:#E91E8C;"></div></div>';
+        statsHtml += '<div class="stat-bar"><div class="stat-bar-fill" style="width:' + pct(votesB, totalVotes) + '%;background:#3F51B5;"></div></div>';
+        statsHtml += '</div></div>';
+      }
+
+      // Stats genre
+      statsHtml += '<div style="margin-top:14px;">';
+      statsHtml += '<div style="font-size:12px;color:#888;margin-bottom:8px;font-weight:700;">VOTES PAR GENRE</div>';
+      statsHtml += '<div class="stats-grid">';
+      statsHtml += '<div class="stat-box"><div class="stat-value" style="color:#3F51B5;">' + menVotes + '</div><div class="stat-label">👨 Hommes</div><div class="stat-bar" style="margin-top:8px;"><div class="stat-bar-fill" style="width:' + pct(menVotes, totalVotes) + '%;background:#3F51B5;"></div></div></div>';
+      statsHtml += '<div class="stat-box"><div class="stat-value" style="color:#E91E8C;">' + womenVotes + '</div><div class="stat-label">👩 Femmes</div><div class="stat-bar" style="margin-top:8px;"><div class="stat-bar-fill" style="width:' + pct(womenVotes, totalVotes) + '%;background:#E91E8C;"></div></div></div>';
+      if (otherVotes > 0) {
+        statsHtml += '<div class="stat-box"><div class="stat-value" style="color:#FF9800;">' + otherVotes + '</div><div class="stat-label">🧑 Autres</div><div class="stat-bar" style="margin-top:8px;"><div class="stat-bar-fill" style="width:' + pct(otherVotes, totalVotes) + '%;background:#FF9800;"></div></div></div>';
+      }
+      statsHtml += '</div></div>';
+    } else {
+      statsHtml = '<p style="color:#555;font-size:13px;margin-top:12px;text-align:center;">Aucun vote pour l\'instant</p>';
+    }
+
+    return '<div class="card" style="padding:0;overflow:hidden;margin-bottom:20px;">'
+      + (firstPhoto ? '<div style="position:relative;"><img src="' + firstPhoto + '" style="width:100%;height:220px;object-fit:cover;display:block;" alt=""><div style="position:absolute;top:10px;right:10px;"><span class="badge ' + statusClass + '">' + statusLabel + '</span></div></div>' : '<div style="height:120px;background:#1A1A1A;display:flex;align-items:center;justify-content:center;font-size:48px;">📸</div>')
+      + '<div style="padding:18px;">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">'
+      + '<div style="font-weight:900;font-size:17px;">' + (p.title || 'Sans titre') + '</div>'
+      + '<span class="badge badge-pink">' + (isDuel ? '⚖️ Duel' : '📸 Photo') + '</span>'
+      + '</div>'
+      + '<div style="font-size:13px;color:#555;margin-bottom:12px;">' + new Date(p.created_at).toLocaleDateString('fr-FR') + ' · 🗳️ ' + totalVotes + ' vote' + (totalVotes !== 1 ? 's' : '') + '</div>'
+      + statsHtml
+      + '<div style="display:flex;gap:8px;margin-top:16px;">'
+      + '<button class="btn btn-ghost btn-sm" style="flex:1;" onclick="deleteProject(\'' + p.id + '\')">🗑️ Supprimer</button>'
+      + '</div>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+
+  document.getElementById('projects-container').innerHTML = html;
 }
 
 async function deleteProject(id) {
-  if (!confirm('Supprimer ce projet définitivement ?')) return
-  await db.from('project_photos').delete().eq('project_id', id)
-  await db.from('photo_votes').delete().eq('project_id', id)
-  await db.from('duel_votes').delete().eq('project_id', id)
-  await db.from('projects').delete().eq('id', id)
-  loadProjects()
+  if (!confirm('Supprimer ce projet définitivement ?')) return;
+  await db.from('project_photos').delete().eq('project_id', id);
+  await db.from('photo_votes').delete().eq('project_id', id);
+  await db.from('duel_votes').delete().eq('project_id', id);
+  await db.from('projects').delete().eq('id', id);
+  loadProjects();
 }
 
-init()
+init();
 </script>
 </body>
 </html>
