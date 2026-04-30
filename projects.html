@@ -45,14 +45,17 @@ async function init() {
 }
 
 async function loadProjects() {
-  const { data } = await db.from('projects')
+  const { data, error } = await db.from('projects')
     .select('*, project_photos(id, url, vote_count)')
-    .eq('user_id', currentUser.id)
+    .eq('owner_id', currentUser.id)
     .order('created_at', { ascending: false })
 
-  document.getElementById('count').textContent = `${(data||[]).length} projet${(data||[]).length !== 1 ? 's' : ''}`
+  if (error) { console.error(error); return }
 
-  if (!data || data.length === 0) {
+  const list = data || []
+  document.getElementById('count').textContent = `${list.length} projet${list.length !== 1 ? 's' : ''}`
+
+  if (list.length === 0) {
     document.getElementById('projects-container').innerHTML = `
       <div class="card" style="text-align:center;padding:60px;">
         <div style="font-size:48px;margin-bottom:16px;">📸</div>
@@ -65,19 +68,20 @@ async function loadProjects() {
 
   document.getElementById('projects-container').innerHTML = `
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px;">
-      ${data.map(p => {
+      ${list.map(p => {
         const photos = p.project_photos || []
         const firstPhoto = photos[0]?.url
+        const totalVotes = photos.reduce((s, ph) => s + (ph.vote_count || 0), 0)
         return `<div class="card" style="padding:0;overflow:hidden;">
           ${firstPhoto ? `<div style="position:relative;">
             <img src="${firstPhoto}" style="width:100%;height:200px;object-fit:cover;display:block;" alt="">
             <div style="position:absolute;top:10px;right:10px;">
               <span class="badge ${p.status === 'active' ? 'badge-green' : 'badge-orange'}">${p.status === 'active' ? '● Actif' : '⏸ Inactif'}</span>
             </div>
-          </div>` : ''}
+          </div>` : `<div style="height:200px;background:#1A1A1A;display:flex;align-items:center;justify-content:center;font-size:48px;">📸</div>`}
           <div style="padding:16px;">
             <div style="font-weight:800;font-size:15px;margin-bottom:4px;">${p.title || 'Sans titre'}</div>
-            <div style="font-size:13px;color:#555;margin-bottom:12px;">🗳️ ${p.vote_count} votes</div>
+            <div style="font-size:13px;color:#555;margin-bottom:12px;">🗳️ ${totalVotes} votes · ${p.type === 'duel' ? '⚖️ Duel' : '📸 Photo'}</div>
             <button class="btn btn-ghost btn-sm btn-full" onclick="deleteProject('${p.id}')">🗑️ Supprimer</button>
           </div>
         </div>`
@@ -87,6 +91,7 @@ async function loadProjects() {
 
 async function deleteProject(id) {
   if (!confirm('Supprimer ce projet définitivement ?')) return
+  await db.from('project_photos').delete().eq('project_id', id)
   await db.from('projects').delete().eq('id', id)
   loadProjects()
 }
