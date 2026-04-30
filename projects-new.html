@@ -8,7 +8,7 @@
 <style>
 .photo-slot {
   border: 2px dashed #292929;
-  border-radius: 14px;
+  border-radius: 12px;
   background: #111;
   aspect-ratio: 1;
   display: flex;
@@ -19,38 +19,27 @@
   transition: border-color 0.15s;
   overflow: hidden;
   position: relative;
+  max-height: 160px;
 }
 .photo-slot:hover { border-color: #E91E8C; }
-.photo-slot img { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
+.photo-slot img { width:100%; height:100%; object-fit:cover; position:absolute; inset:0; }
 .photo-slot .slot-label {
-  position: absolute;
-  top: 8px; left: 8px;
-  background: rgba(0,0,0,0.7);
-  border-radius: 8px;
-  padding: 4px 10px;
-  font-weight: 900;
-  color: #E91E8C;
-  font-size: 14px;
-  z-index: 2;
+  position:absolute; top:6px; left:6px;
+  background:rgba(0,0,0,0.7); border-radius:6px;
+  padding:3px 8px; font-weight:900; color:#E91E8C; font-size:13px; z-index:2;
 }
 .photo-slot .slot-remove {
-  position: absolute;
-  top: 8px; right: 8px;
-  background: rgba(0,0,0,0.7);
-  border: none;
-  border-radius: 50%;
-  width: 28px; height: 28px;
-  color: white;
-  font-size: 14px;
-  cursor: pointer;
-  z-index: 2;
-  display: none;
+  position:absolute; top:6px; right:6px;
+  background:rgba(0,0,0,0.7); border:none; border-radius:50%;
+  width:24px; height:24px; color:white; font-size:12px;
+  cursor:pointer; z-index:2; display:none;
+  align-items:center; justify-content:center;
 }
-.photo-slot.filled .slot-remove { display: flex; align-items: center; justify-content: center; }
-.photo-slot .slot-placeholder { color: #444; text-align: center; }
-.photo-slot .slot-placeholder span { font-size: 32px; display: block; margin-bottom: 8px; }
-.range-container { position: relative; }
-.range-labels { display: flex; justify-content: space-between; font-size: 12px; color: #666; margin-top: 6px; }
+.photo-slot.filled .slot-remove { display:flex; }
+.photo-slot .slot-placeholder { color:#444; text-align:center; font-size:12px; }
+.photo-slot .slot-placeholder span { font-size:26px; display:block; margin-bottom:6px; }
+.form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.age-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 </style>
 </head>
 <body>
@@ -63,92 +52,89 @@
 
 <main class="main-content">
   <div style="max-width:560px;margin:0 auto;">
-    <button onclick="history.back()" style="background:none;border:none;color:#888;cursor:pointer;font-size:14px;margin-bottom:12px;">← Retour</button>
-    <h1 style="font-size:26px;font-weight:900;margin-bottom:24px;">➕ Nouveau projet</h1>
+    <button onclick="history.back()" style="background:none;border:none;color:#888;cursor:pointer;font-size:14px;margin-bottom:10px;">← Retour</button>
+    <h1 style="font-size:22px;font-weight:900;margin-bottom:16px;">➕ Nouveau projet</h1>
 
-    <div class="card" style="padding:28px;">
+    <div class="card" style="padding:20px;">
       <div id="error" class="alert alert-error"></div>
       <div id="success" class="alert alert-success"></div>
 
-      <div style="display:flex;flex-direction:column;gap:20px;">
+      <div style="display:flex;flex-direction:column;gap:14px;">
 
-        <!-- Type -->
-        <div>
-          <label class="input-label">Type de projet</label>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;">
-            <button id="btn-photo" onclick="setType('photo')"
-              style="padding:14px;border-radius:12px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;cursor:pointer;font-size:15px;font-family:Arial;">
-              📸 Photo unique
-            </button>
-            <button id="btn-duel" onclick="setType('duel')"
-              style="padding:14px;border-radius:12px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:15px;font-family:Arial;">
-              ⚖️ Duel A/B
-            </button>
+        <!-- Type + Titre sur la même ligne -->
+        <div class="form-row">
+          <div>
+            <label class="input-label" style="font-size:12px;">Type</label>
+            <div style="display:flex;gap:6px;margin-top:4px;">
+              <button id="btn-photo" onclick="setType('photo')"
+                style="flex:1;padding:10px 6px;border-radius:10px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;cursor:pointer;font-size:12px;font-family:Arial;">
+                📸 Photo
+              </button>
+              <button id="btn-duel" onclick="setType('duel')"
+                style="flex:1;padding:10px 6px;border-radius:10px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:12px;font-family:Arial;">
+                ⚖️ Duel
+              </button>
+            </div>
+          </div>
+          <div>
+            <label class="input-label" style="font-size:12px;">Montrer à</label>
+            <div style="display:flex;gap:4px;margin-top:4px;">
+              <button id="gf-all" onclick="setGenderFilter('all')"
+                style="flex:1;padding:10px 4px;border-radius:10px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;cursor:pointer;font-size:11px;font-family:Arial;">
+                👥
+              </button>
+              <button id="gf-male" onclick="setGenderFilter('male')"
+                style="flex:1;padding:10px 4px;border-radius:10px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:11px;font-family:Arial;">
+                👨
+              </button>
+              <button id="gf-female" onclick="setGenderFilter('female')"
+                style="flex:1;padding:10px 4px;border-radius:10px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:11px;font-family:Arial;">
+                👩
+              </button>
+            </div>
           </div>
         </div>
 
         <!-- Titre -->
         <div>
-          <label class="input-label">Titre</label>
-          <input class="input" id="title" placeholder="Comment je suis ?">
+          <label class="input-label" style="font-size:12px;">Titre *</label>
+          <input class="input" id="title" placeholder="Comment je suis ?" style="padding:10px 14px;font-size:14px;">
         </div>
 
         <!-- Description -->
         <div>
-          <label class="input-label">Description <span style="color:#444;">(optionnel)</span></label>
-          <textarea class="input" id="description" placeholder="Donne plus de contexte..." rows="3" style="resize:vertical;"></textarea>
+          <label class="input-label" style="font-size:12px;">Description <span style="color:#444;">(optionnel)</span></label>
+          <textarea class="input" id="description" placeholder="Contexte..." rows="2" style="resize:none;padding:10px 14px;font-size:14px;"></textarea>
         </div>
 
         <!-- Photos -->
-        <div id="photos-section">
-          <label class="input-label" id="photos-label">Photo</label>
-          <div id="photos-grid" style="display:grid;grid-template-columns:1fr;gap:12px;margin-top:8px;">
-            <!-- Slot photo unique -->
+        <div>
+          <label class="input-label" id="photos-label" style="font-size:12px;">Photo</label>
+          <div id="photos-grid" style="display:grid;grid-template-columns:1fr;gap:10px;margin-top:6px;">
             <div class="photo-slot" id="slot-single" onclick="triggerFile('file-single')">
-              <div class="slot-placeholder"><span>📁</span>Clique pour choisir une photo</div>
-              <button class="slot-remove" onclick="removePhoto('single', event)">✕</button>
-              <input type="file" id="file-single" accept="image/*" style="display:none;" onchange="handleFile(this, 'single')">
+              <div class="slot-placeholder"><span>📁</span>Choisir une photo</div>
+              <button class="slot-remove" onclick="removePhoto('single',event)">✕</button>
+              <input type="file" id="file-single" accept="image/*" style="display:none;" onchange="handleFile(this,'single')">
             </div>
           </div>
         </div>
 
-        <!-- Filtre genre -->
+        <!-- Âge min/max sur la même ligne -->
         <div>
-          <label class="input-label">Montrer à</label>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:6px;">
-            <button id="gf-all" onclick="setGenderFilter('all')"
-              style="padding:10px;border-radius:10px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;cursor:pointer;font-size:13px;font-family:Arial;">
-              👥 Tous
-            </button>
-            <button id="gf-male" onclick="setGenderFilter('male')"
-              style="padding:10px;border-radius:10px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:13px;font-family:Arial;">
-              👨 Hommes
-            </button>
-            <button id="gf-female" onclick="setGenderFilter('female')"
-              style="padding:10px;border-radius:10px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:13px;font-family:Arial;">
-              👩 Femmes
-            </button>
-          </div>
-        </div>
-
-        <!-- Tranche d'âge -->
-        <div>
-          <label class="input-label">Tranche d'âge : <span id="age-display" style="color:#E91E8C;font-weight:800;">18 – 99 ans</span></label>
-          <div style="margin-top:10px;display:flex;flex-direction:column;gap:10px;">
+          <label class="input-label" style="font-size:12px;">Tranche d'âge : <span id="age-display" style="color:#E91E8C;font-weight:800;">18 – 99 ans</span></label>
+          <div class="age-row" style="margin-top:8px;">
             <div>
-              <div style="font-size:12px;color:#666;margin-bottom:4px;">Âge minimum</div>
-              <input type="range" id="age-min" min="13" max="99" value="18"
-                style="width:100%;accent-color:#E91E8C;" oninput="updateAgeDisplay()">
+              <div style="font-size:11px;color:#666;margin-bottom:4px;">Min</div>
+              <input type="range" id="age-min" min="13" max="99" value="18" style="width:100%;accent-color:#E91E8C;" oninput="updateAgeDisplay()">
             </div>
             <div>
-              <div style="font-size:12px;color:#666;margin-bottom:4px;">Âge maximum</div>
-              <input type="range" id="age-max" min="13" max="99" value="99"
-                style="width:100%;accent-color:#E91E8C;" oninput="updateAgeDisplay()">
+              <div style="font-size:11px;color:#666;margin-bottom:4px;">Max</div>
+              <input type="range" id="age-max" min="13" max="99" value="99" style="width:100%;accent-color:#E91E8C;" oninput="updateAgeDisplay()">
             </div>
           </div>
         </div>
 
-        <button class="btn btn-primary btn-full" id="submitBtn" onclick="handleSubmit()">
+        <button class="btn btn-primary btn-full" id="submitBtn" onclick="handleSubmit()" style="padding:14px;">
           🚀 Créer le projet
         </button>
 
@@ -161,24 +147,19 @@
 <script src="app.js"></script>
 <script src="navbar.js"></script>
 <script>
-
 var currentUser = null;
 var projectType = 'photo';
 var genderFilter = 'all';
 var photoFiles = { single: null, left: null, right: null };
-var photoPreviews = { single: null, left: null, right: null };
 
 async function init() {
   currentUser = await requireAuth();
   if (!currentUser) return;
-
-  // Vérifier profil complet
   var profile = await getProfile(currentUser.id);
   if (!profile || !profile.username || !profile.gender || !profile.birth_date) {
     window.location.href = 'complete-profile.html';
     return;
   }
-
   renderNav('projects.html');
   loadSidebarProfile();
 }
@@ -186,61 +167,55 @@ async function init() {
 function setType(type) {
   projectType = type;
   photoFiles = { single: null, left: null, right: null };
-  photoPreviews = { single: null, left: null, right: null };
 
   if (type === 'photo') {
-    document.getElementById('btn-photo').style.cssText = 'padding:14px;border-radius:12px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;cursor:pointer;font-size:15px;font-family:Arial;';
-    document.getElementById('btn-duel').style.cssText = 'padding:14px;border-radius:12px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:15px;font-family:Arial;';
+    document.getElementById('btn-photo').style.cssText = 'flex:1;padding:10px 6px;border-radius:10px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;cursor:pointer;font-size:12px;font-family:Arial;';
+    document.getElementById('btn-duel').style.cssText = 'flex:1;padding:10px 6px;border-radius:10px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:12px;font-family:Arial;';
     document.getElementById('photos-label').textContent = 'Photo';
     document.getElementById('photos-grid').style.gridTemplateColumns = '1fr';
     document.getElementById('photos-grid').innerHTML =
       '<div class="photo-slot" id="slot-single" onclick="triggerFile(\'file-single\')">' +
-        '<div class="slot-placeholder"><span>📁</span>Clique pour choisir une photo</div>' +
-        '<button class="slot-remove" onclick="removePhoto(\'single\', event)">✕</button>' +
-        '<input type="file" id="file-single" accept="image/*" style="display:none;" onchange="handleFile(this, \'single\')">' +
+        '<div class="slot-placeholder"><span>📁</span>Choisir une photo</div>' +
+        '<button class="slot-remove" onclick="removePhoto(\'single\',event)">✕</button>' +
+        '<input type="file" id="file-single" accept="image/*" style="display:none;" onchange="handleFile(this,\'single\')">' +
       '</div>';
   } else {
-    document.getElementById('btn-duel').style.cssText = 'padding:14px;border-radius:12px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;cursor:pointer;font-size:15px;font-family:Arial;';
-    document.getElementById('btn-photo').style.cssText = 'padding:14px;border-radius:12px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:15px;font-family:Arial;';
+    document.getElementById('btn-duel').style.cssText = 'flex:1;padding:10px 6px;border-radius:10px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;cursor:pointer;font-size:12px;font-family:Arial;';
+    document.getElementById('btn-photo').style.cssText = 'flex:1;padding:10px 6px;border-radius:10px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:12px;font-family:Arial;';
     document.getElementById('photos-label').textContent = 'Photos du duel';
     document.getElementById('photos-grid').style.gridTemplateColumns = '1fr 1fr';
     document.getElementById('photos-grid').innerHTML =
       '<div>' +
-        '<div style="font-size:12px;color:#888;margin-bottom:6px;font-weight:700;">PHOTO A (Gauche)</div>' +
+        '<div style="font-size:11px;color:#888;margin-bottom:4px;font-weight:700;">A — Gauche</div>' +
         '<div class="photo-slot" id="slot-left" onclick="triggerFile(\'file-left\')">' +
           '<div class="slot-placeholder"><span>📁</span>Photo A</div>' +
           '<div class="slot-label">A</div>' +
-          '<button class="slot-remove" onclick="removePhoto(\'left\', event)">✕</button>' +
-          '<input type="file" id="file-left" accept="image/*" style="display:none;" onchange="handleFile(this, \'left\')">' +
+          '<button class="slot-remove" onclick="removePhoto(\'left\',event)">✕</button>' +
+          '<input type="file" id="file-left" accept="image/*" style="display:none;" onchange="handleFile(this,\'left\')">' +
         '</div>' +
       '</div>' +
       '<div>' +
-        '<div style="font-size:12px;color:#888;margin-bottom:6px;font-weight:700;">PHOTO B (Droite)</div>' +
+        '<div style="font-size:11px;color:#888;margin-bottom:4px;font-weight:700;">B — Droite</div>' +
         '<div class="photo-slot" id="slot-right" onclick="triggerFile(\'file-right\')">' +
           '<div class="slot-placeholder"><span>📁</span>Photo B</div>' +
           '<div class="slot-label">B</div>' +
-          '<button class="slot-remove" onclick="removePhoto(\'right\', event)">✕</button>' +
-          '<input type="file" id="file-right" accept="image/*" style="display:none;" onchange="handleFile(this, \'right\')">' +
+          '<button class="slot-remove" onclick="removePhoto(\'right\',event)">✕</button>' +
+          '<input type="file" id="file-right" accept="image/*" style="display:none;" onchange="handleFile(this,\'right\')">' +
         '</div>' +
       '</div>';
   }
 }
 
-function triggerFile(inputId) {
-  var input = document.getElementById(inputId);
-  if (input) input.click();
-}
+function triggerFile(id) { var el = document.getElementById(id); if (el) el.click(); }
 
 function handleFile(input, slot) {
   var file = input.files[0];
   if (!file) return;
   photoFiles[slot] = file;
   var url = URL.createObjectURL(file);
-  photoPreviews[slot] = url;
   var slotEl = document.getElementById('slot-' + slot);
   if (!slotEl) return;
   slotEl.classList.add('filled');
-  // Retirer ancien aperçu
   var oldImg = slotEl.querySelector('img');
   if (oldImg) oldImg.remove();
   var img = document.createElement('img');
@@ -251,7 +226,6 @@ function handleFile(input, slot) {
 function removePhoto(slot, event) {
   event.stopPropagation();
   photoFiles[slot] = null;
-  photoPreviews[slot] = null;
   var slotEl = document.getElementById('slot-' + slot);
   if (!slotEl) return;
   slotEl.classList.remove('filled');
@@ -263,14 +237,14 @@ function removePhoto(slot, event) {
 
 function setGenderFilter(gf) {
   genderFilter = gf;
-  var map = { all: 'gf-all', male: 'gf-male', female: 'gf-female' };
-  Object.keys(map).forEach(function(k) {
-    var btn = document.getElementById(map[k]);
+  var ids = { all:'gf-all', male:'gf-male', female:'gf-female' };
+  Object.keys(ids).forEach(function(k) {
+    var btn = document.getElementById(ids[k]);
     if (!btn) return;
     if (k === gf) {
-      btn.style.cssText = 'padding:10px;border-radius:10px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;cursor:pointer;font-size:13px;font-family:Arial;';
+      btn.style.cssText = 'flex:1;padding:10px 4px;border-radius:10px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;cursor:pointer;font-size:11px;font-family:Arial;';
     } else {
-      btn.style.cssText = 'padding:10px;border-radius:10px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:13px;font-family:Arial;';
+      btn.style.cssText = 'flex:1;padding:10px 4px;border-radius:10px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:11px;font-family:Arial;';
     }
   });
 }
@@ -278,20 +252,16 @@ function setGenderFilter(gf) {
 function updateAgeDisplay() {
   var min = parseInt(document.getElementById('age-min').value);
   var max = parseInt(document.getElementById('age-max').value);
-  if (min > max) {
-    document.getElementById('age-min').value = max;
-    min = max;
-  }
+  if (min > max) { document.getElementById('age-min').value = max; min = max; }
   document.getElementById('age-display').textContent = min + ' – ' + max + ' ans';
 }
 
-async function uploadPhoto(file, projectId, slot) {
+async function uploadPhoto(file, slot) {
   var ext = file.name.split('.').pop() || 'jpg';
   var path = 'display/' + currentUser.id + '/' + Date.now() + '_' + slot + '.' + ext;
-  var uploadResult = await db.storage.from('photos').upload(path, file);
-  if (uploadResult.error) throw uploadResult.error;
-  var urlResult = db.storage.from('photos').getPublicUrl(path);
-  return urlResult.data.publicUrl;
+  var r = await db.storage.from('photos').upload(path, file);
+  if (r.error) throw r.error;
+  return db.storage.from('photos').getPublicUrl(path).data.publicUrl;
 }
 
 async function handleSubmit() {
@@ -304,19 +274,13 @@ async function handleSubmit() {
   document.getElementById('success').style.display = 'none';
 
   if (!title) { showError('error', 'Le titre est obligatoire.'); return; }
+  if (projectType === 'photo' && !photoFiles.single) { showError('error', 'Ajoute une photo.'); return; }
+  if (projectType === 'duel' && (!photoFiles.left || !photoFiles.right)) { showError('error', 'Ajoute les 2 photos (A et B).'); return; }
 
-  if (projectType === 'photo' && !photoFiles.single) {
-    showError('error', 'Ajoute une photo.'); return;
-  }
-  if (projectType === 'duel' && (!photoFiles.left || !photoFiles.right)) {
-    showError('error', 'Ajoute les 2 photos du duel (A et B).'); return;
-  }
-
-  setLoading('submitBtn', true, '🚀 Création en cours...');
+  setLoading('submitBtn', true, '⏳ Création...');
 
   try {
-    // Créer le projet
-    var insertResult = await db.from('projects').insert({
+    var r = await db.from('projects').insert({
       owner_id: currentUser.id,
       title: title,
       description: description,
@@ -328,26 +292,24 @@ async function handleSubmit() {
       max_age: maxAge
     }).select().single();
 
-    if (insertResult.error) throw insertResult.error;
-    var project = insertResult.data;
+    if (r.error) throw r.error;
+    var project = r.data;
 
-    // Upload et insertion photos
     if (projectType === 'photo') {
-      var url = await uploadPhoto(photoFiles.single, project.id, 'single');
-      var r = await db.from('project_photos').insert({ project_id: project.id, url: url, side: 'single' });
-      if (r.error) throw r.error;
+      var url = await uploadPhoto(photoFiles.single, 'single');
+      var ri = await db.from('project_photos').insert({ project_id: project.id, url: url, side: 'single' });
+      if (ri.error) throw ri.error;
     } else {
-      var urlLeft = await uploadPhoto(photoFiles.left, project.id, 'left');
-      var rLeft = await db.from('project_photos').insert({ project_id: project.id, url: urlLeft, side: 'left' });
-      if (rLeft.error) throw rLeft.error;
-
-      var urlRight = await uploadPhoto(photoFiles.right, project.id, 'right');
-      var rRight = await db.from('project_photos').insert({ project_id: project.id, url: urlRight, side: 'right' });
-      if (rRight.error) throw rRight.error;
+      var urlL = await uploadPhoto(photoFiles.left, 'left');
+      var rl = await db.from('project_photos').insert({ project_id: project.id, url: urlL, side: 'left' });
+      if (rl.error) throw rl.error;
+      var urlR = await uploadPhoto(photoFiles.right, 'right');
+      var rr = await db.from('project_photos').insert({ project_id: project.id, url: urlR, side: 'right' });
+      if (rr.error) throw rr.error;
     }
 
-    showSuccess('success', '✅ Projet créé ! Redirection...');
-    setTimeout(function() { window.location.href = 'projects.html'; }, 1200);
+    showSuccess('success', '✅ Projet créé !');
+    setTimeout(function() { window.location.href = 'projects.html'; }, 1000);
 
   } catch(err) {
     console.error(err);
