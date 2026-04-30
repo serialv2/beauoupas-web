@@ -93,7 +93,9 @@ async function handleRegister() {
 async function handleGoogle() {
   await db.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: window.location.origin + '/feed.html' }
+    options: { 
+      redirectTo: 'https://serialv2.github.io/beauoupas-web/feed.html'
+    }
   })
 }
 </script>
