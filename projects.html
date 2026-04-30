@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeauOuPas — Mes projets</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo">BeauOuPas</div>
+  <nav id="sidebar-nav"></nav>
+  <div class="sidebar-footer">
+    <a href="projects-new.html" class="btn btn-primary btn-full" style="margin-bottom:14px;text-decoration:none;">➕ Nouveau projet</a>
+    <div id="sidebar-user"></div>
+  </div>
+</aside>
+<nav class="bottom-nav" id="bottom-nav"></nav>
+
+<main class="main-content">
+  <div style="max-width:800px;margin:0 auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;">
+      <div>
+        <h1 style="font-size:28px;font-weight:900;">📸 Mes projets</h1>
+        <p id="count" style="color:#666;margin-top:6px;font-size:14px;"></p>
+      </div>
+      <a href="projects-new.html" class="btn btn-primary btn-sm" style="text-decoration:none;">➕ Nouveau</a>
+    </div>
+    <div id="projects-container"><div class="spinner"></div></div>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script src="navbar.js"></script>
+<script>
+let currentUser = null
+
+async function init() {
+  currentUser = await requireAuth()
+  if (!currentUser) return
+  renderNav('projects.html')
+  loadSidebarProfile()
+  loadProjects()
+}
+
+async function loadProjects() {
+  const { data } = await db.from('projects')
+    .select('*, project_photos(id, url, vote_count)')
+    .eq('user_id', currentUser.id)
+    .order('created_at', { ascending: false })
+
+  document.getElementById('count').textContent = `${(data||[]).length} projet${(data||[]).length !== 1 ? 's' : ''}`
+
+  if (!data || data.length === 0) {
+    document.getElementById('projects-container').innerHTML = `
+      <div class="card" style="text-align:center;padding:60px;">
+        <div style="font-size:48px;margin-bottom:16px;">📸</div>
+        <h3 style="font-size:20px;margin-bottom:8px;">Aucun projet</h3>
+        <p style="color:#666;margin-bottom:24px;">Crée ton premier projet !</p>
+        <a href="projects-new.html" class="btn btn-primary" style="text-decoration:none;">➕ Créer un projet</a>
+      </div>`
+    return
+  }
+
+  document.getElementById('projects-container').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px;">
+      ${data.map(p => {
+        const photos = p.project_photos || []
+        const firstPhoto = photos[0]?.url
+        return `<div class="card" style="padding:0;overflow:hidden;">
+          ${firstPhoto ? `<div style="position:relative;">
+            <img src="${firstPhoto}" style="width:100%;height:200px;object-fit:cover;display:block;" alt="">
+            <div style="position:absolute;top:10px;right:10px;">
+              <span class="badge ${p.status === 'active' ? 'badge-green' : 'badge-orange'}">${p.status === 'active' ? '● Actif' : '⏸ Inactif'}</span>
+            </div>
+          </div>` : ''}
+          <div style="padding:16px;">
+            <div style="font-weight:800;font-size:15px;margin-bottom:4px;">${p.title || 'Sans titre'}</div>
+            <div style="font-size:13px;color:#555;margin-bottom:12px;">🗳️ ${p.vote_count} votes</div>
+            <button class="btn btn-ghost btn-sm btn-full" onclick="deleteProject('${p.id}')">🗑️ Supprimer</button>
+          </div>
+        </div>`
+      }).join('')}
+    </div>`
+}
+
+async function deleteProject(id) {
+  if (!confirm('Supprimer ce projet définitivement ?')) return
+  await db.from('projects').delete().eq('id', id)
+  loadProjects()
+}
+
+init()
+</script>
+</body>
+</html>

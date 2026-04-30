@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>BeauOuPas</title>
+<style>
+body { background:#070707; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; }
+.spinner { width:40px;height:40px;border:3px solid #E91E8C;border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="spinner"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script>
+db.auth.getSession().then(({ data: { session } }) => {
+  window.location.href = session ? 'feed.html' : 'login.html'
+})
+</script>
+</body>
+</html>

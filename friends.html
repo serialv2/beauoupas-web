@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeauOuPas — Amis</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-logo">BeauOuPas</div>
+  <nav id="sidebar-nav"></nav>
+  <div class="sidebar-footer">
+    <a href="projects-new.html" class="btn btn-primary btn-full" style="margin-bottom:14px;text-decoration:none;">➕ Nouveau projet</a>
+    <div id="sidebar-user"></div>
+  </div>
+</aside>
+<nav class="bottom-nav" id="bottom-nav"></nav>
+
+<main class="main-content">
+  <div style="max-width:680px;margin:0 auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;">
+      <div>
+        <h1 style="font-size:28px;font-weight:900;">👥 Amis</h1>
+        <p id="count" style="color:#666;margin-top:6px;font-size:14px;"></p>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="generateInvite()">🔗 Inviter</button>
+    </div>
+
+    <!-- Recherche -->
+    <div style="display:flex;gap:10px;margin-bottom:24px;">
+      <input class="input" id="search-input" placeholder="🔍 Rechercher un utilisateur..." style="flex:1;"
+        onkeydown="if(event.key==='Enter') searchUsers()">
+      <button class="btn btn-primary btn-sm" onclick="searchUsers()">Chercher</button>
+      <button class="btn btn-ghost btn-sm" id="cancel-search" onclick="cancelSearch()" style="display:none;">✕</button>
+    </div>
+
+    <div id="search-results" style="display:none;margin-bottom:24px;"></div>
+    <div id="pending-container"></div>
+    <div id="friends-container"><div class="spinner"></div></div>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script src="navbar.js"></script>
+<script>
+let currentUser = null
+let allFriends = []
+
+async function init() {
+  currentUser = await requireAuth()
+  if (!currentUser) return
+  renderNav('friends.html')
+  loadSidebarProfile()
+  loadFriends()
+}
+
+async function loadFriends() {
+  const [sent, received] = await Promise.all([
+    db.from('friendships').select('*').eq('requester_id', currentUser.id),
+    db.from('friendships').select('*').eq('receiver_id', currentUser.id)
+  ])
+
+  allFriends = []
+  for (const f of (sent.data || [])) {
+    const { data: p } = await db.from('profiles').select('username, avatar_url').eq('id', f.receiver_id).single()
+    if (p) allFriends.push({ ...f, other_id: f.receiver_id, username: p.username, avatar_url: p.avatar_url, is_requester: true })
+  }
+  for (const f of (received.data || [])) {
+    const { data: p } = await db.from('profiles').select('username, avatar_url').eq('id', f.requester_id).single()
+    if (p) allFriends.push({ ...f, other_id: f.requester_id, username: p.username, avatar_url: p.avatar_url, is_requester: false })
+  }
+
+  renderFriends()
+}
+
+function renderFriends() {
+  const accepted = allFriends.filter(f => f.status === 'accepted')
+  const pendingReceived = allFriends.filter(f => f.status === 'pending' && !f.is_requester)
+
+  document.getElementById('count').textContent = `${accepted.length} ami${accepted.length !== 1 ? 's' : ''}`
+
+  // Demandes reçues
+  if (pendingReceived.length > 0) {
+    document.getElementById('pending-container').innerHTML = `
+      <div class="card" style="margin-bottom:20px;padding:16px;">
+        <div style="font-weight:800;font-size:13px;color:#E91E8C;margin-bottom:12px;">📩 DEMANDES REÇUES</div>
+        ${pendingReceived.map(f => `
+          <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #1A1A1A;">
+            ${avatarHtml(f, 38)}
+            <div style="flex:1;font-weight:700;">@${f.username}</div>
+            <button class="btn btn-primary btn-sm" onclick="acceptFriend('${f.id}')">✅ Accepter</button>
+            <button class="btn btn-ghost btn-sm" onclick="deleteFriend('${f.id}')">✕</button>
+          </div>`).join('')}
+      </div>`
+  } else {
+    document.getElementById('pending-container').innerHTML = ''
+  }
+
+  // Liste amis
+  if (accepted.length === 0) {
+    document.getElementById('friends-container').innerHTML = `
+      <div class="card" style="text-align:center;padding:50px;">
+        <div style="font-size:48px;margin-bottom:12px;">👥</div>
+        <p style="color:#666;">Aucun ami pour l'instant. Invite des gens !</p>
+      </div>`
+  } else {
+    document.getElementById('friends-container').innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        ${accepted.map(f => `
+          <div class="card" style="display:flex;align-items:center;gap:12px;padding:14px 16px;">
+            ${avatarHtml(f, 42)}
+            <div style="flex:1;font-weight:700;">@${f.username}</div>
+            <button onclick="deleteFriend('${f.id}')" style="background:none;border:none;color:#555;cursor:pointer;font-size:18px;padding:4px;">🗑️</button>
+          </div>`).join('')}
+      </div>`
+  }
+}
+
+function avatarHtml(f, size) {
+  return `<div class="avatar" style="width:${size}px;height:${size}px;font-size:${size*0.4}px;">
+    ${f.avatar_url ? `<img src="${f.avatar_url}" alt="">` : f.username[0]?.toUpperCase()}
+  </div>`
+}
+
+async function searchUsers() {
+  const query = document.getElementById('search-input').value.trim()
+  if (!query) return
+  document.getElementById('cancel-search').style.display = ''
+  document.getElementById('search-results').style.display = 'block'
+  document.getElementById('search-results').innerHTML = '<div class="spinner"></div>'
+
+  const { data } = await db.from('profiles').select('id, username, avatar_url').ilike('username', `%${query}%`).limit(15)
+  const existingIds = new Map(allFriends.map(f => [f.other_id, f]))
+
+  if (!data || data.length === 0) {
+    document.getElementById('search-results').innerHTML = `<div class="card" style="text-align:center;padding:30px;"><p style="color:#666;">Aucun résultat pour "${query}"</p></div>`
+    return
+  }
+
+  const results = data.filter(p => p.id !== currentUser.id)
+  document.getElementById('search-results').innerHTML = `
+    <div class="card" style="padding:16px;">
+      <div style="font-weight:800;font-size:13px;color:#888;margin-bottom:12px;">RÉSULTATS</div>
+      ${results.map(p => {
+        const rel = existingIds.get(p.id)
+        const avatarEl = p.avatar_url
+          ? `<div class="avatar" style="width:38px;height:38px;"><img src="${p.avatar_url}" alt=""></div>`
+          : `<div class="avatar" style="width:38px;height:38px;font-size:15px;">${p.username[0]?.toUpperCase()}</div>`
+        let actionBtn = `<button class="btn btn-primary btn-sm" onclick="sendRequest('${p.id}')">➕ Ajouter</button>`
+        if (rel?.status === 'pending') actionBtn = `<span style="font-size:13px;color:#FF9800;">⏳ En attente</span>`
+        if (rel?.status === 'accepted') actionBtn = `<span style="font-size:13px;color:#4CAF50;">✅ Ami</span>`
+        return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #1A1A1A;">
+          ${avatarEl}
+          <div style="flex:1;font-weight:700;">@${p.username}</div>
+          ${actionBtn}
+        </div>`
+      }).join('')}
+    </div>`
+}
+
+function cancelSearch() {
+  document.getElementById('search-input').value = ''
+  document.getElementById('search-results').style.display = 'none'
+  document.getElementById('cancel-search').style.display = 'none'
+}
+
+async function sendRequest(targetId) {
+  await db.from('friendships').insert({ requester_id: currentUser.id, receiver_id: targetId, status: 'pending' })
+  loadFriends()
+  searchUsers()
+}
+
+async function acceptFriend(friendshipId) {
+  await db.from('friendships').update({ status: 'accepted' }).eq('id', friendshipId)
+  loadFriends()
+}
+
+async function deleteFriend(friendshipId) {
+  if (!confirm('Supprimer cette relation ?')) return
+  await db.from('friendships').delete().eq('id', friendshipId)
+  loadFriends()
+}
+
+async function generateInvite() {
+  const code = Math.random().toString(36).substring(2, 14).toUpperCase()
+  await db.from('friend_invites').insert({ inviter_id: currentUser.id, code, expires_at: new Date(Date.now() + 7*86400000).toISOString() })
+  const link = `https://beauoupas.fr/invite/${code}`
+  navigator.clipboard.writeText(link).then(() => alert('✅ Lien copié !\n\n' + link))
+}
+
+init()
+</script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeauOuPas — Inscription</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="auth-page">
+  <div class="auth-box fade-in">
+    <div class="auth-logo">BeauOuPas</div>
+    <div class="auth-sub">Rejoins la communauté 🎉</div>
+
+    <div class="card">
+      <h2 style="font-size:22px;font-weight:900;margin-bottom:6px;">Créer un compte</h2>
+      <p style="color:#666;font-size:14px;margin-bottom:24px;">C'est gratuit et rapide !</p>
+
+      <div id="error" class="alert alert-error"></div>
+      <div id="success" class="alert alert-success"></div>
+
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        <div>
+          <label class="input-label">Pseudo</label>
+          <input class="input" type="text" id="username" placeholder="@monpseudo">
+        </div>
+        <div>
+          <label class="input-label">Email</label>
+          <input class="input" type="email" id="email" placeholder="ton@email.com">
+        </div>
+        <div>
+          <label class="input-label">Mot de passe</label>
+          <input class="input" type="password" id="password" placeholder="6 caractères minimum">
+        </div>
+        <button class="btn btn-primary btn-full" id="registerBtn" onclick="handleRegister()">
+          🎉 Créer mon compte
+        </button>
+      </div>
+
+      <div class="divider">ou</div>
+
+      <button class="btn btn-secondary btn-full" onclick="handleGoogle()">
+        <span style="font-size:18px;font-weight:900;">G</span> Continuer avec Google
+      </button>
+
+      <p style="text-align:center;margin-top:20px;font-size:14px;color:#666;">
+        Déjà un compte ?
+        <a href="login.html" style="color:#E91E8C;font-weight:700;text-decoration:none;">Se connecter</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script>
+async function handleRegister() {
+  const username = document.getElementById('username').value.trim()
+  const email = document.getElementById('email').value.trim()
+  const password = document.getElementById('password').value
+
+  if (!username || !email || !password) { showError('error', 'Remplis tous les champs.'); return }
+  if (password.length < 6) { showError('error', 'Le mot de passe doit faire au moins 6 caractères.'); return }
+
+  setLoading('registerBtn', true, '🎉 Créer mon compte')
+
+  const { data, error } = await db.auth.signUp({
+    email, password,
+    options: { data: { username } }
+  })
+
+  if (error) {
+    showError('error', error.message)
+    setLoading('registerBtn', false, '🎉 Créer mon compte')
+    return
+  }
+
+  // Créer le profil
+  if (data.user) {
+    await db.from('profiles').upsert({
+      id: data.user.id,
+      username,
+      credits: 0,
+      profile_completed: false
+    })
+  }
+
+  setLoading('registerBtn', false, '🎉 Créer mon compte')
+  showSuccess('success', '✅ Compte créé ! Redirection...')
+  setTimeout(() => window.location.href = 'feed.html', 1500)
+}
+
+async function handleGoogle() {
+  await db.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.origin + '/feed.html' }
+  })
+}
+</script>
+</body>
+</html>
