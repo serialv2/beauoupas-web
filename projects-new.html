@@ -24,7 +24,6 @@
       <div id="success" class="alert alert-success"></div>
 
       <div style="display:flex;flex-direction:column;gap:18px;">
-
         <!-- Type -->
         <div>
           <label class="input-label">Type de projet</label>
@@ -91,7 +90,6 @@ function setType(type) {
   selectedFiles = []
   document.getElementById('previews').innerHTML = ''
   document.getElementById('file-input').multiple = type === 'duel'
-
   if (type === 'photo') {
     document.getElementById('btn-photo').style.cssText = 'padding:14px;border-radius:12px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;cursor:pointer;font-size:15px;font-family:Arial;'
     document.getElementById('btn-duel').style.cssText = 'padding:14px;border-radius:12px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:15px;font-family:Arial;'
@@ -108,8 +106,7 @@ function setType(type) {
 function handleFiles(input) {
   const files = Array.from(input.files)
   selectedFiles = projectType === 'duel' ? files.slice(0, 2) : files.slice(0, 1)
-  const cols = selectedFiles.length > 1 ? '1fr 1fr' : '1fr'
-  document.getElementById('previews').style.gridTemplateColumns = cols
+  document.getElementById('previews').style.gridTemplateColumns = selectedFiles.length > 1 ? '1fr 1fr' : '1fr'
   document.getElementById('previews').innerHTML = selectedFiles.map((f, i) => {
     const url = URL.createObjectURL(f)
     return `<div style="position:relative;">
@@ -131,28 +128,25 @@ async function handleSubmit() {
   setLoading('submitBtn', true, '🚀 Créer le projet')
 
   try {
-    // Créer le projet
     const { data: project, error: projErr } = await db.from('projects')
       .insert({
-        user_id: currentUser.id,
+        owner_id: currentUser.id,
         title,
         description: document.getElementById('description').value,
+        type: projectType === 'duel' ? 'duel' : 'photo',
         status: 'active',
-        vote_count: 0
+        is_open: true
       })
       .select().single()
 
     if (projErr) throw projErr
 
-    // Upload photos dans le bucket "photos"
     for (let i = 0; i < selectedFiles.length; i++) {
       const file = selectedFiles[i]
       const ext = file.name.split('.').pop() || 'jpg'
       const path = `${currentUser.id}/${project.id}/${Date.now()}_${i}.${ext}`
-
       const { error: upErr } = await db.storage.from('photos').upload(path, file)
       if (upErr) throw upErr
-
       const { data: urlData } = db.storage.from('photos').getPublicUrl(path)
       await db.from('project_photos').insert({
         project_id: project.id,
@@ -164,7 +158,6 @@ async function handleSubmit() {
 
     showSuccess('success', '✅ Projet créé ! Redirection...')
     setTimeout(() => window.location.href = 'projects.html', 1200)
-
   } catch(err) {
     console.error(err)
     showError('error', err.message || 'Erreur lors de la création.')
