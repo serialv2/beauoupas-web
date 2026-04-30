@@ -6,53 +6,17 @@
 <title>BeauOuPas — Feed</title>
 <link rel="stylesheet" href="style.css">
 <style>
-.vote-buttons {
-  display: flex;
-  gap: 10px;
-  padding: 14px 18px;
-  border-top: 1px solid #1A1A1A;
-}
-.vote-btn {
-  flex: 1;
-  padding: 14px 8px;
-  border-radius: 12px;
-  border: 2px solid #292929;
-  background: transparent;
-  color: #888;
-  font-size: 22px;
-  cursor: pointer;
-  transition: all 0.15s;
-  font-family: Arial;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-.vote-btn span.label { font-size: 11px; color: #666; }
+.vote-buttons { display:flex; gap:10px; padding:14px 18px; border-top:1px solid #1A1A1A; }
+.vote-btn { flex:1; padding:14px 8px; border-radius:12px; border:2px solid #292929; background:transparent; color:#888; font-size:22px; cursor:pointer; transition:all 0.15s; font-family:Arial; display:flex; flex-direction:column; align-items:center; gap:4px; }
+.vote-btn span.label { font-size:11px; color:#666; }
 .vote-btn.like:hover  { border-color:#4CAF50; background:rgba(76,175,80,0.1); color:#4CAF50; }
 .vote-btn.bof:hover   { border-color:#FF9800; background:rgba(255,152,0,0.1); color:#FF9800; }
 .vote-btn.dislike:hover { border-color:#ef5350; background:rgba(244,67,54,0.1); color:#ef5350; }
-.duel-photo-btn {
-  flex: 1; padding: 0; border: none;
-  background: transparent; cursor: pointer;
-  position: relative; overflow: hidden;
-}
-.duel-photo-btn:hover .duel-overlay { opacity: 1; }
-.duel-overlay {
-  position: absolute; inset: 0;
-  background: rgba(233,30,140,0.35);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 36px; font-weight: 900; color: white;
-  opacity: 0; transition: opacity 0.15s;
-}
-.project-card { margin-bottom: 24px; position: relative; }
-.voted-overlay {
-  position: absolute; inset: 0;
-  background: rgba(0,0,0,0.65);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 64px; z-index: 10;
-  border-radius: 22px; pointer-events: none;
-}
+.duel-photo-btn { flex:1; padding:0; border:none; background:transparent; cursor:pointer; position:relative; overflow:hidden; }
+.duel-photo-btn:hover .duel-overlay { opacity:1; }
+.duel-overlay { position:absolute; inset:0; background:rgba(233,30,140,0.35); display:flex; align-items:center; justify-content:center; font-size:36px; font-weight:900; color:white; opacity:0; transition:opacity 0.15s; }
+.project-card { margin-bottom:24px; position:relative; }
+.voted-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.65); display:flex; align-items:center; justify-content:center; font-size:64px; z-index:10; border-radius:22px; pointer-events:none; }
 </style>
 </head>
 <body>
@@ -88,15 +52,11 @@ var currentIndex = 0;
 async function init() {
   currentUser = await requireAuth();
   if (!currentUser) return;
-
   currentProfile = await getProfile(currentUser.id);
-
-  // Vérifier profil complet
   if (!currentProfile || !currentProfile.username || !currentProfile.gender || !currentProfile.birth_date) {
     window.location.href = 'complete-profile.html';
     return;
   }
-
   renderNav('feed.html');
   loadSidebarProfile();
   loadFeed();
@@ -105,6 +65,7 @@ async function init() {
 async function loadFeed() {
   document.getElementById('feed-container').innerHTML = '<div class="spinner"></div>';
 
+  // Récupérer TOUS les projets approuvés sauf les siens
   var result = await db.from('projects')
     .select('*, profiles(username, avatar_url), project_photos(id, url, side)')
     .eq('status', 'approved')
@@ -129,15 +90,12 @@ async function loadFeed() {
     (dv.data || []).forEach(function(v) { votedIds.add(v.project_id); });
   }
 
-  // Filtrer selon préférences du profil
-  var userGender = currentProfile.gender;
-  var userAge = currentProfile.birth_date ? getAge(currentProfile.birth_date) : null;
+  var userAge = (currentProfile && currentProfile.birth_date) ? getAge(currentProfile.birth_date) : null;
+  var userGender = currentProfile ? currentProfile.gender : null;
 
   projects = allProjects.filter(function(p) {
     if (votedIds.has(p.id)) return false;
-    // Filtre genre
     if (p.gender_filter && p.gender_filter !== userGender) return false;
-    // Filtre âge
     if (userAge !== null) {
       if (p.min_age && userAge < p.min_age) return false;
       if (p.max_age && userAge > p.max_age) return false;
@@ -161,11 +119,7 @@ function showCurrentProject() {
   }
 
   var p = projects[currentIndex];
-  var photos = (p.project_photos || []).slice().sort(function(a, b) {
-    if (a.side === 'left') return -1;
-    if (b.side === 'left') return 1;
-    return 0;
-  });
+  var photos = (p.project_photos || []).slice();
   var isDuel = p.type === 'duel';
   var username = (p.profiles && p.profiles.username) ? p.profiles.username : '?';
   var avatarUrl = (p.profiles && p.profiles.avatar_url) ? p.profiles.avatar_url : null;
@@ -173,39 +127,44 @@ function showCurrentProject() {
 
   var avatarHtml = avatarUrl
     ? '<img src="' + avatarUrl + '" style="width:100%;height:100%;object-fit:cover;" alt="">'
-    : '<span style="font-size:16px;font-weight:900;">' + username[0].toUpperCase() + '</span>';
+    : '<span style="font-size:16px;font-weight:900;">' + (username[0] || '?').toUpperCase() + '</span>';
 
   var photosHtml = '';
   var buttonsHtml = '';
 
-  if (isDuel && photos.length >= 2) {
-    var photoL = photos.find(function(ph) { return ph.side === 'left'; }) || photos[0];
-    var photoR = photos.find(function(ph) { return ph.side === 'right'; }) || photos[1];
+  if (isDuel) {
+    // Chercher photo gauche et droite — compatibilité site (left/right) ET appli (A/B)
+    var photoL = photos.find(function(ph) { return ph.side === 'left' || ph.side === 'A'; }) || photos[0];
+    var photoR = photos.find(function(ph) { return ph.side === 'right' || ph.side === 'B'; }) || photos[1];
 
-    photosHtml =
-      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;">' +
-        '<button class="duel-photo-btn" onclick="voteDuel(\'' + p.id + '\',\'left\')">' +
-          '<img src="' + photoL.url + '" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;" alt="">' +
-          '<div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.65);border-radius:8px;padding:4px 12px;font-size:14px;font-weight:900;color:#E91E8C;">A</div>' +
-          '<div class="duel-overlay">✅ A</div>' +
-        '</button>' +
-        '<button class="duel-photo-btn" onclick="voteDuel(\'' + p.id + '\',\'right\')">' +
-          '<img src="' + photoR.url + '" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;" alt="">' +
-          '<div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.65);border-radius:8px;padding:4px 12px;font-size:14px;font-weight:900;color:#E91E8C;">B</div>' +
-          '<div class="duel-overlay">✅ B</div>' +
-        '</button>' +
-      '</div>';
-    buttonsHtml = '<div style="padding:12px 18px;text-align:center;"><p style="color:#888;font-size:13px;">👆 Clique sur A ou B pour voter</p></div>';
-
-  } else if (photos.length >= 1) {
+    if (photoL && photoR) {
+      photosHtml =
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;">' +
+          '<button class="duel-photo-btn" onclick="voteDuel(\'' + p.id + '\',\'left\')">' +
+            '<img src="' + photoL.url + '" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;" alt="">' +
+            '<div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.65);border-radius:8px;padding:4px 12px;font-size:14px;font-weight:900;color:#E91E8C;">A</div>' +
+            '<div class="duel-overlay">✅ A</div>' +
+          '</button>' +
+          '<button class="duel-photo-btn" onclick="voteDuel(\'' + p.id + '\',\'right\')">' +
+            '<img src="' + photoR.url + '" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;" alt="">' +
+            '<div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.65);border-radius:8px;padding:4px 12px;font-size:14px;font-weight:900;color:#E91E8C;">B</div>' +
+            '<div class="duel-overlay">✅ B</div>' +
+          '</button>' +
+        '</div>';
+      buttonsHtml = '<div style="padding:12px 18px;text-align:center;"><p style="color:#888;font-size:13px;">👆 Clique sur A ou B pour voter</p></div>';
+    }
+  } else {
+    // Photo unique — compatibilité site (single) ET appli (null ou autre)
     var photo = photos.find(function(ph) { return ph.side === 'single'; }) || photos[0];
-    photosHtml = '<div><img src="' + photo.url + '" style="width:100%;max-height:440px;object-fit:cover;display:block;" alt=""></div>';
-    buttonsHtml =
-      '<div class="vote-buttons">' +
-        '<button class="vote-btn like" onclick="votePhoto(\'' + p.id + '\', 1)">👍<span class="label">J\'aime</span></button>' +
-        '<button class="vote-btn bof" onclick="votePhoto(\'' + p.id + '\', 0)">😐<span class="label">Bof</span></button>' +
-        '<button class="vote-btn dislike" onclick="votePhoto(\'' + p.id + '\', -1)">👎<span class="label">J\'aime pas</span></button>' +
-      '</div>';
+    if (photo) {
+      photosHtml = '<div><img src="' + photo.url + '" style="width:100%;max-height:440px;object-fit:cover;display:block;" alt=""></div>';
+      buttonsHtml =
+        '<div class="vote-buttons">' +
+          '<button class="vote-btn like" onclick="votePhoto(\'' + p.id + '\', 1)">👍<span class="label">J\'aime</span></button>' +
+          '<button class="vote-btn bof" onclick="votePhoto(\'' + p.id + '\', 2)">😐<span class="label">Bof</span></button>' +
+          '<button class="vote-btn dislike" onclick="votePhoto(\'' + p.id + '\', 3)">👎<span class="label">J\'aime pas</span></button>' +
+        '</div>';
+    }
   }
 
   var html =
@@ -250,7 +209,7 @@ async function votePhoto(projectId, ratingValue) {
     return;
   }
 
-  var emoji = ratingValue === 1 ? '👍' : ratingValue === 0 ? '😐' : '👎';
+  var emoji = ratingValue === 1 ? '👍' : ratingValue === 2 ? '😐' : '👎';
   showVotedOverlay(emoji);
   setTimeout(function() { nextProject(); }, 700);
 }
