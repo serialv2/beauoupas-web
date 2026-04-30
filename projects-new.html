@@ -73,9 +73,9 @@
 <script src="navbar.js"></script>
 <script>
 
-let currentUser = null;
-let projectType = 'photo';
-let selectedFiles = [];
+var currentUser = null;
+var projectType = 'photo';
+var selectedFiles = [];
 
 async function init() {
   currentUser = await requireAuth();
@@ -104,84 +104,70 @@ function setType(type) {
 }
 
 function handleFiles(input) {
-  const files = Array.from(input.files);
+  var files = Array.from(input.files);
   selectedFiles = (projectType === 'duel') ? files.slice(0, 2) : files.slice(0, 1);
   document.getElementById('previews').style.gridTemplateColumns = selectedFiles.length > 1 ? '1fr 1fr' : '1fr';
   document.getElementById('previews').innerHTML = selectedFiles.map(function(f, i) {
-    const url = URL.createObjectURL(f);
-    const label = (projectType === 'duel') ? '<div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.7);border-radius:8px;padding:4px 10px;font-weight:900;color:#E91E8C;">' + (i === 0 ? 'A' : 'B') + '</div>' : '';
+    var url = URL.createObjectURL(f);
+    var label = (projectType === 'duel')
+      ? '<div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.7);border-radius:8px;padding:4px 10px;font-weight:900;color:#E91E8C;">' + (i === 0 ? 'A' : 'B') + '</div>'
+      : '';
     return '<div style="position:relative;"><img src="' + url + '" style="width:100%;height:160px;object-fit:cover;border-radius:12px;" alt="">' + label + '</div>';
   }).join('');
 }
 
 async function handleSubmit() {
-  const title = document.getElementById('title').value.trim();
-  const description = document.getElementById('description').value;
+  var title = document.getElementById('title').value.trim();
+  var description = document.getElementById('description').value;
 
   document.getElementById('error').style.display = 'none';
   document.getElementById('success').style.display = 'none';
 
-  if (!title) {
-    showError('error', 'Le titre est obligatoire.');
-    return;
-  }
-  if (selectedFiles.length === 0) {
-    showError('error', 'Ajoute au moins une photo.');
-    return;
-  }
-  if (projectType === 'duel' && selectedFiles.length < 2) {
-    showError('error', 'Le duel nécessite 2 photos.');
-    return;
-  }
+  if (!title) { showError('error', 'Le titre est obligatoire.'); return; }
+  if (selectedFiles.length === 0) { showError('error', 'Ajoute au moins une photo.'); return; }
+  if (projectType === 'duel' && selectedFiles.length < 2) { showError('error', 'Le duel nécessite 2 photos.'); return; }
 
   setLoading('submitBtn', true, '🚀 Créer le projet');
 
   try {
-    // Créer le projet
-    const insertResult = await db.from('projects').insert({
+    // ✅ Utiliser les valeurs exactes de l'enum project_type
+    var dbType = (projectType === 'duel') ? 'duel' : 'photo_vote';
+
+    var insertResult = await db.from('projects').insert({
       owner_id: currentUser.id,
       title: title,
       description: description,
-      type: projectType,
+      type: dbType,
       status: 'approved',
       is_open: true
     }).select().single();
 
-    if (insertResult.error) {
-      throw insertResult.error;
-    }
+    if (insertResult.error) { throw insertResult.error; }
 
-    const project = insertResult.data;
+    var project = insertResult.data;
 
-    // Upload les photos
-    for (let i = 0; i < selectedFiles.length; i++) {
-      const file = selectedFiles[i];
-      const ext = file.name.split('.').pop() || 'jpg';
-      const path = currentUser.id + '/' + project.id + '/' + Date.now() + '_' + i + '.' + ext;
+    for (var i = 0; i < selectedFiles.length; i++) {
+      var file = selectedFiles[i];
+      var ext = file.name.split('.').pop() || 'jpg';
+      var path = currentUser.id + '/' + project.id + '/' + Date.now() + '_' + i + '.' + ext;
 
-      const uploadResult = await db.storage.from('photos').upload(path, file);
-      if (uploadResult.error) {
-        throw uploadResult.error;
-      }
+      var uploadResult = await db.storage.from('photos').upload(path, file);
+      if (uploadResult.error) { throw uploadResult.error; }
 
-      const urlResult = db.storage.from('photos').getPublicUrl(path);
-      const publicUrl = urlResult.data.publicUrl;
+      var urlResult = db.storage.from('photos').getPublicUrl(path);
+      var publicUrl = urlResult.data.publicUrl;
 
-      const photoInsert = await db.from('project_photos').insert({
+      var photoInsert = await db.from('project_photos').insert({
         project_id: project.id,
         url: publicUrl,
         side: (projectType === 'duel') ? (i === 0 ? 'A' : 'B') : null
       });
 
-      if (photoInsert.error) {
-        throw photoInsert.error;
-      }
+      if (photoInsert.error) { throw photoInsert.error; }
     }
 
     showSuccess('success', '✅ Projet créé ! Redirection...');
-    setTimeout(function() {
-      window.location.href = 'projects.html';
-    }, 1200);
+    setTimeout(function() { window.location.href = 'projects.html'; }, 1200);
 
   } catch(err) {
     console.error(err);
