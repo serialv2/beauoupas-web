@@ -12,6 +12,60 @@
 .stat-label { font-size:11px; color:#666; margin-top:4px; }
 .stat-bar { height:6px; background:#222; border-radius:3px; margin-top:8px; overflow:hidden; }
 .stat-bar-fill { height:100%; border-radius:3px; }
+
+.lightbox {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.92);
+  z-index: 999;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.lightbox.open { display: flex; }
+.lightbox img {
+  max-width: 100%;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 12px;
+}
+.lightbox-close {
+  position: absolute;
+  top: 16px; right: 16px;
+  background: rgba(255,255,255,0.15);
+  border: none; border-radius: 50%;
+  width: 40px; height: 40px;
+  color: white; font-size: 20px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.lightbox {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.92);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.lightbox.open { display: flex; }
+.lightbox img {
+  max-width: 100%;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 12px;
+}
+.lightbox-close {
+  position: absolute;
+  top: 16px; right: 20px;
+  background: none; border: none;
+  color: white; font-size: 32px;
+  cursor: pointer; z-index: 1001;
+  line-height: 1;
+}
 </style>
 </head>
 <body>
@@ -43,6 +97,21 @@
 <script src="navbar.js"></script>
 <script>
 var currentUser = null;
+
+
+function openLightbox(url) {
+  document.getElementById('lightbox-img').src = url;
+  document.getElementById('lightbox').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.body.style.overflow = '';
+}
+// Fermer avec Escape
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeLightbox();
+});
 
 async function init() {
   currentUser = await requireAuth();
@@ -94,9 +163,9 @@ async function loadProjects() {
     var totalVotes = isDuel ? dv.length : pv.length;
 
     // ✅ Valeurs correctes : 1=j'aime, 2=bof, 3=j'aime pas
-    var likes    = pv.filter(function(v) { return v.rating === 3; }).length;
+    var likes    = pv.filter(function(v) { return v.rating === 1; }).length;
     var bofs     = pv.filter(function(v) { return v.rating === 2; }).length;
-    var dislikes = pv.filter(function(v) { return v.rating === 1; }).length;
+    var dislikes = pv.filter(function(v) { return v.rating === 3; }).length;
 
     // ✅ Duel : compatibilité left/right ET A/B
     var votesLeft  = dv.filter(function(v) { return v.chosen_side === 'left' || v.chosen_side === 'A'; }).length;
@@ -150,7 +219,7 @@ async function loadProjects() {
     }
 
     return '<div class="card" style="padding:0;overflow:hidden;margin-bottom:20px;">' +
-      (firstPhoto ? '<div style="position:relative;"><img src="' + firstPhoto.url + '" style="width:100%;height:220px;object-fit:cover;display:block;" alt=""><div style="position:absolute;top:10px;right:10px;"><span class="badge ' + statusClass + '">' + statusLabel + '</span></div></div>' : '<div style="height:120px;background:#1A1A1A;display:flex;align-items:center;justify-content:center;font-size:48px;">📸</div>') +
+      (firstPhoto ? '<div style="position:relative;"><img src="' + firstPhoto.url + '" style="width:100%;height:220px;object-fit:cover;display:block;cursor:zoom-in;" alt="" onclick="openLightbox(this.src)"><div style="position:absolute;top:10px;right:10px;"><span class="badge ' + statusClass + '">' + statusLabel + '</span></div></div>' : '<div style="height:120px;background:#1A1A1A;display:flex;align-items:center;justify-content:center;font-size:48px;">📸</div>') +
       '<div style="padding:18px;">' +
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">' +
       '<div style="font-weight:900;font-size:17px;">' + (p.title || 'Sans titre') + '</div>' +
@@ -175,7 +244,35 @@ async function deleteProject(id) {
   loadProjects();
 }
 
+
+function openLightbox(url) {
+  document.getElementById('lightbox-img').src = url;
+  document.getElementById('lightbox').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeLightbox();
+});
+
 init();
 </script>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightbox-img" src="" alt="">
+</div>
+
 </body>
 </html>
