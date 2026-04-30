@@ -95,7 +95,7 @@ async function loadFeed() {
 
   projects = allProjects.filter(function(p) {
     if (votedIds.has(p.id)) return false;
-    if (p.gender_filter && p.gender_filter !== userGender) return false;
+    if (p.gender_filter && p.gender_filter !== 'both' && p.gender_filter !== userGender) return false;
     if (userAge !== null) {
       if (p.min_age && userAge < p.min_age) return false;
       if (p.max_age && userAge > p.max_age) return false;
