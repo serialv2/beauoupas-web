@@ -323,7 +323,7 @@ async function handleSubmit() {
       type: projectType === 'duel' ? 'duel' : 'photo_vote',
       status: 'approved',
       is_open: true,
-      gender_filter: genderFilter === 'all' ? null : genderFilter,
+      gender_filter: genderFilter === 'all' ? 'both' : genderFilter,
       min_age: minAge,
       max_age: maxAge
     }).select().single();
