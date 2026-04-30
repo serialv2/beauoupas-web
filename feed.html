@@ -14,49 +14,70 @@
 }
 .vote-btn {
   flex: 1;
-  padding: 14px;
+  padding: 14px 8px;
   border-radius: 12px;
   border: 2px solid #292929;
   background: transparent;
   color: #888;
-  font-size: 20px;
+  font-size: 22px;
   cursor: pointer;
   transition: all 0.15s;
   font-family: Arial;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
 }
-.vote-btn:hover { transform: scale(1.05); }
-.vote-btn.like:hover  { border-color: #4CAF50; background: rgba(76,175,80,0.1); }
-.vote-btn.bof:hover   { border-color: #FF9800; background: rgba(255,152,0,0.1); }
-.vote-btn.dislike:hover { border-color: #ef5350; background: rgba(244,67,54,0.1); }
-.duel-btn {
+.vote-btn span.label {
+  font-size: 11px;
+  color: #666;
+}
+.vote-btn.like:hover  { border-color: #4CAF50; background: rgba(76,175,80,0.1); color: #4CAF50; }
+.vote-btn.bof:hover   { border-color: #FF9800; background: rgba(255,152,0,0.1); color: #FF9800; }
+.vote-btn.dislike:hover { border-color: #ef5350; background: rgba(244,67,54,0.1); color: #ef5350; }
+.duel-photo-btn {
   flex: 1;
   padding: 0;
   border: none;
   background: transparent;
   cursor: pointer;
   position: relative;
+  overflow: hidden;
 }
-.duel-btn:hover .duel-overlay { opacity: 1; }
+.duel-photo-btn:hover .duel-overlay { opacity: 1; }
 .duel-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(233,30,140,0.3);
+  background: rgba(233,30,140,0.35);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
+  font-size: 36px;
   font-weight: 900;
   color: white;
   opacity: 0;
   transition: opacity 0.15s;
-  border-radius: 0;
 }
 .project-card {
   margin-bottom: 24px;
+  position: relative;
+}
+.voted-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 64px;
+  z-index: 10;
+  border-radius: 22px;
+  pointer-events: none;
 }
 </style>
 </head>
 <body>
+
 <aside class="sidebar">
   <div class="sidebar-logo">BeauOuPas</div>
   <nav id="sidebar-nav"></nav>
@@ -65,6 +86,7 @@
     <div id="sidebar-user"></div>
   </div>
 </aside>
+
 <nav class="bottom-nav" id="bottom-nav"></nav>
 
 <main class="main-content">
@@ -81,10 +103,11 @@
 <script src="app.js"></script>
 <script src="navbar.js"></script>
 <script>
-let currentUser = null;
-let currentProfile = null;
-let projects = [];
-let currentIndex = 0;
+
+var currentUser = null;
+var currentProfile = null;
+var projects = [];
+var currentIndex = 0;
 
 async function init() {
   currentUser = await requireAuth();
@@ -98,8 +121,7 @@ async function init() {
 async function loadFeed() {
   document.getElementById('feed-container').innerHTML = '<div class="spinner"></div>';
 
-  // Récupérer les projets approuvés qui ne sont pas les nôtres
-  const result = await db.from('projects')
+  var result = await db.from('projects')
     .select('*, profiles(username, avatar_url), project_photos(id, url, side)')
     .eq('status', 'approved')
     .eq('is_open', true)
@@ -112,137 +134,155 @@ async function loadFeed() {
     return;
   }
 
-  // Récupérer les projets déjà votés par l'utilisateur
-  const allIds = (result.data || []).map(function(p) { return p.id; });
-  let votedProjectIds = new Set();
+  var allProjects = result.data || [];
+  var allIds = allProjects.map(function(p) { return p.id; });
+  var votedIds = new Set();
 
   if (allIds.length > 0) {
-    const pvResult = await db.from('photo_votes').select('project_id').eq('user_id', currentUser.id).in('project_id', allIds);
-    const dvResult = await db.from('duel_votes').select('project_id').eq('user_id', currentUser.id).in('project_id', allIds);
-    (pvResult.data || []).forEach(function(v) { votedProjectIds.add(v.project_id); });
-    (dvResult.data || []).forEach(function(v) { votedProjectIds.add(v.project_id); });
+    var pv = await db.from('photo_votes').select('project_id').eq('user_id', currentUser.id).in('project_id', allIds);
+    var dv = await db.from('duel_votes').select('project_id').eq('user_id', currentUser.id).in('project_id', allIds);
+    (pv.data || []).forEach(function(v) { votedIds.add(v.project_id); });
+    (dv.data || []).forEach(function(v) { votedIds.add(v.project_id); });
   }
 
-  // Garder seulement les projets non encore votés
-  projects = (result.data || []).filter(function(p) { return !votedProjectIds.has(p.id); });
+  projects = allProjects.filter(function(p) { return !votedIds.has(p.id); });
   currentIndex = 0;
-
-  if (projects.length === 0) {
-    document.getElementById('feed-container').innerHTML = '<div class="card" style="text-align:center;padding:60px;"><div style="font-size:48px;margin-bottom:12px;">🎉</div><h3 style="font-size:20px;margin-bottom:8px;">Tout voté !</h3><p style="color:#666;">Tu as voté sur tous les projets disponibles.<br>Reviens plus tard !</p></div>';
-    return;
-  }
-
   showCurrentProject();
 }
 
 function showCurrentProject() {
   if (currentIndex >= projects.length) {
-    document.getElementById('feed-container').innerHTML = '<div class="card" style="text-align:center;padding:60px;"><div style="font-size:48px;margin-bottom:12px;">🎉</div><h3 style="font-size:20px;margin-bottom:8px;">Tout voté !</h3><p style="color:#666;">Tu as voté sur tous les projets disponibles.<br>Reviens plus tard !</p></div>';
+    document.getElementById('feed-container').innerHTML =
+      '<div class="card" style="text-align:center;padding:60px;">' +
+      '<div style="font-size:56px;margin-bottom:16px;">🎉</div>' +
+      '<h3 style="font-size:20px;margin-bottom:10px;">Tout voté !</h3>' +
+      '<p style="color:#666;">Tu as voté sur tous les projets disponibles.<br>Reviens plus tard !</p>' +
+      '</div>';
     return;
   }
 
-  const p = projects[currentIndex];
-  const photos = (p.project_photos || []).sort(function(a, b) {
+  var p = projects[currentIndex];
+  var photos = (p.project_photos || []).slice().sort(function(a, b) {
     if (a.side === 'A') return -1;
     if (b.side === 'A') return 1;
     return 0;
   });
-  const isDuel = p.type === 'duel' || photos.length === 2;
-  const username = p.profiles ? p.profiles.username : '?';
-  const avatarUrl = p.profiles ? p.profiles.avatar_url : null;
-  const remaining = projects.length - currentIndex;
+  var isDuel = p.type === 'duel' || photos.length === 2;
+  var username = (p.profiles && p.profiles.username) ? p.profiles.username : '?';
+  var avatarUrl = (p.profiles && p.profiles.avatar_url) ? p.profiles.avatar_url : null;
+  var remaining = projects.length - currentIndex;
 
-  const avatarHtml = avatarUrl
+  var avatarHtml = avatarUrl
     ? '<img src="' + avatarUrl + '" style="width:100%;height:100%;object-fit:cover;" alt="">'
     : '<span style="font-size:16px;font-weight:900;">' + username[0].toUpperCase() + '</span>';
 
-  let photosHtml = '';
-  let buttonsHtml = '';
+  var photosHtml = '';
+  var buttonsHtml = '';
 
   if (isDuel && photos.length >= 2) {
-    // Duel : clic sur la photo = vote
-    photosHtml = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;">'
-      + photos.slice(0, 2).map(function(photo, i) {
-          const side = photo.side || (i === 0 ? 'A' : 'B');
-          return '<button class="duel-btn" onclick="voteDuel(\'' + p.id + '\',\'' + side + '\')">'
-            + '<img src="' + photo.url + '" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;" alt="">'
-            + '<div class="duel-overlay">' + side + '</div>'
-            + '<div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.65);border-radius:8px;padding:4px 12px;font-size:14px;font-weight:900;color:#E91E8C;">' + side + '</div>'
-            + '</button>';
-        }).join('')
-      + '</div>';
+    var photo0 = photos[0];
+    var photo1 = photos[1];
+    var side0 = photo0.side || 'A';
+    var side1 = photo1.side || 'B';
+
+    photosHtml =
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;">' +
+        '<button class="duel-photo-btn" onclick="voteDuel(\'' + p.id + '\',\'' + side0 + '\')">' +
+          '<img src="' + photo0.url + '" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;" alt="">' +
+          '<div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.65);border-radius:8px;padding:4px 12px;font-size:14px;font-weight:900;color:#E91E8C;">' + side0 + '</div>' +
+          '<div class="duel-overlay">✅ ' + side0 + '</div>' +
+        '</button>' +
+        '<button class="duel-photo-btn" onclick="voteDuel(\'' + p.id + '\',\'' + side1 + '\')">' +
+          '<img src="' + photo1.url + '" style="width:100%;aspect-ratio:1;object-fit:cover;display:block;" alt="">' +
+          '<div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.65);border-radius:8px;padding:4px 12px;font-size:14px;font-weight:900;color:#E91E8C;">' + side1 + '</div>' +
+          '<div class="duel-overlay">✅ ' + side1 + '</div>' +
+        '</button>' +
+      '</div>';
     buttonsHtml = '<div style="padding:12px 18px;text-align:center;"><p style="color:#888;font-size:13px;">👆 Clique sur A ou B pour voter</p></div>';
+
   } else if (photos.length >= 1) {
-    // Photo unique
     photosHtml = '<div><img src="' + photos[0].url + '" style="width:100%;max-height:440px;object-fit:cover;display:block;" alt=""></div>';
-    buttonsHtml = '<div class="vote-buttons">'
-      + '<button class="vote-btn like" onclick="votePhoto(\'' + p.id + '\',\'like\')" title="J\'aime">👍<div style="font-size:11px;color:#888;margin-top:4px;">J\'aime</div></button>'
-      + '<button class="vote-btn bof" onclick="votePhoto(\'' + p.id + '\',\'bof\')" title="Bof">😐<div style="font-size:11px;color:#888;margin-top:4px;">Bof</div></button>'
-      + '<button class="vote-btn dislike" onclick="votePhoto(\'' + p.id + '\',\'dislike\')" title="J\'aime pas">👎<div style="font-size:11px;color:#888;margin-top:4px;">J\'aime pas</div></button>'
-      + '</div>';
+    buttonsHtml =
+      '<div class="vote-buttons">' +
+        '<button class="vote-btn like" onclick="votePhoto(\'' + p.id + '\', 1)">' +
+          '👍<span class="label">J\'aime</span>' +
+        '</button>' +
+        '<button class="vote-btn bof" onclick="votePhoto(\'' + p.id + '\', 0)">' +
+          '😐<span class="label">Bof</span>' +
+        '</button>' +
+        '<button class="vote-btn dislike" onclick="votePhoto(\'' + p.id + '\', -1)">' +
+          '👎<span class="label">J\'aime pas</span>' +
+        '</button>' +
+      '</div>';
   }
 
-  const html = '<div class="card project-card fade-in" style="padding:0;overflow:hidden;">'
-    // Header
-    + '<div style="display:flex;align-items:center;gap:12px;padding:14px 18px;">'
-    + '<div class="avatar" style="width:40px;height:40px;">' + avatarHtml + '</div>'
-    + '<div style="flex:1;">'
-    + '<div style="font-weight:800;font-size:14px;">@' + username + '</div>'
-    + '<div style="font-size:12px;color:#555;">' + new Date(p.created_at).toLocaleDateString('fr-FR') + '</div>'
-    + '</div>'
-    + '<span class="badge badge-pink">' + (isDuel ? '⚖️ Duel' : '📸 Vote') + '</span>'
-    + '<span style="font-size:12px;color:#555;margin-left:8px;">' + remaining + ' restant' + (remaining > 1 ? 's' : '') + '</span>'
-    + '</div>'
-    // Titre
-    + (p.title ? '<div style="padding:0 18px 12px;font-weight:700;font-size:16px;">' + p.title + '</div>' : '')
-    // Description
-    + (p.description ? '<div style="padding:0 18px 12px;font-size:14px;color:#888;">' + p.description + '</div>' : '')
-    // Photos
-    + photosHtml
-    // Boutons vote
-    + buttonsHtml
-    // Passer
-    + '<div style="padding:10px 18px 14px;text-align:center;">'
-    + '<button onclick="skipProject()" style="background:none;border:none;color:#444;cursor:pointer;font-size:13px;">Passer →</button>'
-    + '</div>'
-    + '</div>';
+  var html =
+    '<div class="card project-card" id="current-project">' +
+      '<div style="display:flex;align-items:center;gap:12px;padding:14px 18px;">' +
+        '<div class="avatar" style="width:40px;height:40px;">' + avatarHtml + '</div>' +
+        '<div style="flex:1;">' +
+          '<div style="font-weight:800;font-size:14px;">@' + username + '</div>' +
+          '<div style="font-size:12px;color:#555;">' + new Date(p.created_at).toLocaleDateString('fr-FR') + '</div>' +
+        '</div>' +
+        '<span class="badge badge-pink">' + (isDuel ? '⚖️ Duel' : '📸 Vote') + '</span>' +
+        '<span style="font-size:12px;color:#444;margin-left:8px;">' + remaining + ' restant' + (remaining > 1 ? 's' : '') + '</span>' +
+      '</div>' +
+      (p.title ? '<div style="padding:0 18px 12px;font-weight:700;font-size:16px;">' + p.title + '</div>' : '') +
+      (p.description ? '<div style="padding:0 18px 12px;font-size:14px;color:#777;">' + p.description + '</div>' : '') +
+      photosHtml +
+      buttonsHtml +
+      '<div style="padding:8px 18px 14px;text-align:center;">' +
+        '<button onclick="skipProject()" style="background:none;border:none;color:#444;cursor:pointer;font-size:13px;padding:8px 16px;">Passer →</button>' +
+      '</div>' +
+    '</div>';
 
   document.getElementById('feed-container').innerHTML = html;
 }
 
-async function votePhoto(projectId, rating) {
-  // Désactiver les boutons immédiatement
-  document.querySelectorAll('.vote-btn').forEach(function(btn) { btn.disabled = true; btn.style.opacity = '0.5'; });
+async function votePhoto(projectId, ratingValue) {
+  // Désactiver les boutons
+  var buttons = document.querySelectorAll('.vote-btn');
+  for (var i = 0; i < buttons.length; i++) {
+    buttons[i].disabled = true;
+    buttons[i].style.opacity = '0.4';
+  }
 
-  const gender = currentProfile ? currentProfile.gender : null;
-  const age = currentProfile && currentProfile.birth_date ? getAge(currentProfile.birth_date) : null;
+  var gender = currentProfile ? currentProfile.gender : null;
+  var age = (currentProfile && currentProfile.birth_date) ? getAge(currentProfile.birth_date) : null;
 
-  const result = await db.from('photo_votes').insert({
+  var result = await db.from('photo_votes').insert({
     user_id: currentUser.id,
     project_id: projectId,
-    rating: rating,
+    rating: ratingValue,
     voter_gender: gender,
     voter_age: age
   });
 
   if (result.error) {
-    console.error(result.error);
-    document.querySelectorAll('.vote-btn').forEach(function(btn) { btn.disabled = false; btn.style.opacity = '1'; });
+    console.error('Erreur vote:', result.error);
+    var buttons2 = document.querySelectorAll('.vote-btn');
+    for (var j = 0; j < buttons2.length; j++) {
+      buttons2[j].disabled = false;
+      buttons2[j].style.opacity = '1';
+    }
     return;
   }
 
-  // Animation puis projet suivant
-  showVotedFeedback(rating);
-  setTimeout(function() { nextProject(); }, 600);
+  var emoji = ratingValue === 1 ? '👍' : ratingValue === 0 ? '😐' : '👎';
+  showVotedOverlay(emoji);
+  setTimeout(function() { nextProject(); }, 700);
 }
 
 async function voteDuel(projectId, chosenSide) {
-  document.querySelectorAll('.duel-btn').forEach(function(btn) { btn.disabled = true; });
+  var buttons = document.querySelectorAll('.duel-photo-btn');
+  for (var i = 0; i < buttons.length; i++) {
+    buttons[i].disabled = true;
+  }
 
-  const gender = currentProfile ? currentProfile.gender : null;
-  const age = currentProfile && currentProfile.birth_date ? getAge(currentProfile.birth_date) : null;
+  var gender = currentProfile ? currentProfile.gender : null;
+  var age = (currentProfile && currentProfile.birth_date) ? getAge(currentProfile.birth_date) : null;
 
-  const result = await db.from('duel_votes').insert({
+  var result = await db.from('duel_votes').insert({
     user_id: currentUser.id,
     project_id: projectId,
     chosen_side: chosenSide,
@@ -251,30 +291,24 @@ async function voteDuel(projectId, chosenSide) {
   });
 
   if (result.error) {
-    console.error(result.error);
-    document.querySelectorAll('.duel-btn').forEach(function(btn) { btn.disabled = false; });
+    console.error('Erreur vote duel:', result.error);
+    var buttons2 = document.querySelectorAll('.duel-photo-btn');
+    for (var j = 0; j < buttons2.length; j++) {
+      buttons2[j].disabled = false;
+    }
     return;
   }
 
-  showVotedFeedback('duel_' + chosenSide);
-  setTimeout(function() { nextProject(); }, 600);
+  showVotedOverlay('✅');
+  setTimeout(function() { nextProject(); }, 700);
 }
 
-function showVotedFeedback(type) {
-  const card = document.querySelector('.project-card');
+function showVotedOverlay(emoji) {
+  var card = document.getElementById('current-project');
   if (!card) return;
-
-  let emoji = '✅';
-  let color = '#4CAF50';
-  if (type === 'like') { emoji = '👍'; color = '#4CAF50'; }
-  else if (type === 'bof') { emoji = '😐'; color = '#FF9800'; }
-  else if (type === 'dislike') { emoji = '👎'; color = '#ef5350'; }
-  else if (type.startsWith('duel_')) { emoji = '✅ ' + type.replace('duel_', ''); color = '#E91E8C'; }
-
-  const overlay = document.createElement('div');
-  overlay.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;font-size:60px;z-index:10;border-radius:22px;';
+  var overlay = document.createElement('div');
+  overlay.className = 'voted-overlay';
   overlay.textContent = emoji;
-  card.style.position = 'relative';
   card.appendChild(overlay);
 }
 
@@ -289,14 +323,15 @@ function skipProject() {
 }
 
 function getAge(birthDate) {
-  const today = new Date();
-  const birth = new Date(birthDate);
-  let age = today.getFullYear() - birth.getFullYear();
+  var today = new Date();
+  var birth = new Date(birthDate);
+  var age = today.getFullYear() - birth.getFullYear();
   if (today < new Date(today.getFullYear(), birth.getMonth(), birth.getDate())) age--;
   return age;
 }
 
 init();
+
 </script>
 </body>
 </html>
