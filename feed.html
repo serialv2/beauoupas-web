@@ -202,10 +202,10 @@ function renderPollButtons(project) {
   if (options.length === 0) return '<div style="padding:16px;text-align:center;color:#555;">Aucune option</div>';
   return '<div style="display:flex;flex-direction:column;gap:8px;padding:16px 18px;">' +
     options.map(function(opt) {
-      return '<button class="poll-vote-btn" onclick="votePoll('' + project.id + '','' + opt.id + '')" ' +
+     return '<button class="poll-vote-btn" onclick="votePoll(\'' + project.id + '\',\'' + opt.id + '\')" ' +
         'style="padding:14px 18px;border-radius:12px;border:2px solid #292929;background:transparent;color:#EEEEEE;font-size:15px;cursor:pointer;text-align:left;transition:all 0.15s;font-family:Arial;" ' +
-        'onmouseover="this.style.borderColor='#E91E8C';this.style.background='rgba(233,30,140,0.1)';this.style.color='#E91E8C'" ' +
-        'onmouseout="this.style.borderColor='#292929';this.style.background='transparent';this.style.color='#EEEEEE'">' +
+       'onmouseover="this.style.borderColor=\'#E91E8C\';this.style.background=\'rgba(233,30,140,0.1)\';this.style.color=\'#E91E8C\'" ' +
+        'onmouseout="this.style.borderColor=\'#292929\';this.style.background=\'transparent\';this.style.color=\'#EEEEEE\'">' +
         opt.text +
         '</button>';
     }).join('') +
