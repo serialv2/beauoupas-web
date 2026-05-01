@@ -10,14 +10,34 @@
 .vote-buttons { display:flex; gap:10px; padding:14px 18px; border-top:1px solid #1A1A1A; }
 .vote-btn { flex:1; padding:14px 8px; border-radius:12px; border:2px solid #292929; background:transparent; color:#888; font-size:22px; cursor:pointer; transition:all 0.15s; font-family:Arial; display:flex; flex-direction:column; align-items:center; gap:4px; }
 .vote-btn span.label { font-size:11px; color:#666; }
-.vote-btn.like:hover { border-color:#4CAF50; background:rgba(76,175,80,0.1); color:#4CAF50; }
-.vote-btn.bof:hover { border-color:#FF9800; background:rgba(255,152,0,0.1); color:#FF9800; }
-.vote-btn.dislike:hover { border-color:#ef5350; background:rgba(244,67,54,0.1); color:#ef5350; }
-.duel-photo-btn { flex:1; padding:0; border:none; background:transparent; cursor:pointer; position:relative; overflow:hidden; }
-.duel-overlay { position:absolute; inset:0; background:rgba(233,30,140,0.35); display:flex; align-items:center; justify-content:center; font-size:36px; font-weight:900; color:white; opacity:0; transition:opacity 0.15s; }
-.duel-photo-btn:hover .duel-overlay { opacity:1; }
-.project-card { margin-bottom:24px; position:relative; }
-.voted-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.65); display:flex; align-items:center; justify-content:center; font-size:64px; z-index:10; border-radius:22px; pointer-events:none; }
+
+@media (hover:hover) {
+  .vote-btn.like:hover { border-color:#4CAF50; background:rgba(76,175,80,0.1); color:#4CAF50; }
+  .vote-btn.bof:hover { border-color:#FF9800; background:rgba(255,152,0,0.1); color:#FF9800; }
+  .vote-btn.dislike:hover { border-color:#ef5350; background:rgba(244,67,54,0.1); color:#ef5350; }
+}
+
+.project-card { margin-bottom:24px; position:relative; overflow:hidden; }
+
+.voted-overlay {
+  position:absolute;
+  inset:0;
+  background:rgba(0,0,0,0.65);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:64px;
+  z-index:10;
+  border-radius:22px;
+  pointer-events:none;
+  animation:votePop 0.45s ease forwards;
+}
+
+@keyframes votePop {
+  0% { opacity:0; transform:scale(0.7); }
+  30% { opacity:1; transform:scale(1.15); }
+  100% { opacity:0; transform:scale(1); }
+}
 </style>
 </head>
 
@@ -50,25 +70,33 @@ var currentUser = null;
 var projects = [];
 var currentIndex = 0;
 
-// 🔥 NOUVEAU
 var feedSeed = Date.now().toString();
 var feedLimit = 20;
 var feedOffset = 0;
 
 async function init() {
   currentUser = await requireAuth();
-  if (!currentUser) return;
 
-  renderNav("feed.html");
-  loadSidebarProfile();
+  if (!currentUser) {
+    window.location.href = "login.html";
+    return;
+  }
+
+  if (typeof renderNav === "function") {
+    renderNav("feed.html");
+  }
+
+  if (typeof loadSidebarProfile === "function") {
+    loadSidebarProfile();
+  }
 
   await loadFeed();
 }
 
 async function loadFeed() {
   try {
+    document.getElementById("feed-container").innerHTML = '<div class="spinner"></div>';
 
-    // 🔥 APPEL RPC SUPABASE
     var feedResult = await db.rpc("get_feed_projects", {
       p_user_id: currentUser.id,
       p_limit: feedLimit,
@@ -78,7 +106,9 @@ async function loadFeed() {
 
     if (feedResult.error) throw feedResult.error;
 
-    var ids = (feedResult.data || []).map(p => p.id);
+    var ids = (feedResult.data || []).map(function(p) {
+      return p.id;
+    });
 
     if (ids.length === 0) {
       projects = [];
@@ -86,66 +116,135 @@ async function loadFeed() {
       return;
     }
 
-    // 🔥 récupère les détails
     var result = await db.from("projects")
       .select("*, profiles(username, avatar_url), project_photos(*), poll_options(*)")
       .in("id", ids);
 
     if (result.error) throw result.error;
 
-    // 🔥 garder ordre RPC
-    projects = ids.map(id => result.data.find(p => p.id === id)).filter(p => p);
+    projects = ids.map(function(id) {
+      return result.data.find(function(p) {
+        return p.id === id;
+      });
+    }).filter(function(p) {
+      return p;
+    });
 
     currentIndex = 0;
     showCurrentProject();
 
   } catch (e) {
-    console.error(e);
+    console.error("Erreur loadFeed :", e);
+    document.getElementById("feed-container").innerHTML =
+      '<div class="card" style="padding:30px;text-align:center;color:#ef5350;">Erreur chargement feed</div>';
   }
 }
 
 function showCurrentProject() {
+  clearVoteOverlay();
 
   if (currentIndex >= projects.length) {
-    document.getElementById("feed-container").innerHTML = "🎉 Plus de projets";
+    document.getElementById("feed-container").innerHTML =
+      '<div class="card" style="padding:50px;text-align:center;">🎉 Plus de projets</div>';
     return;
   }
 
   var p = projects[currentIndex];
-
   var photo = (p.project_photos || [])[0];
 
-  document.getElementById("feed-container").innerHTML = `
-    <div class="card project-card" id="current-project">
-      <h3>${p.title || ""}</h3>
-      ${photo ? `<img src="${photo.url}" style="width:100%">` : ""}
+  document.getElementById("feed-container").innerHTML =
+    '<div class="card project-card" id="current-project">' +
+      '<div style="padding:16px 18px;">' +
+        '<h3 style="margin:0;font-size:18px;font-weight:900;">' + escapeHtml(p.title || "") + '</h3>' +
+        (p.description ? '<p style="color:#777;font-size:14px;margin-top:6px;">' + escapeHtml(p.description) + '</p>' : '') +
+      '</div>' +
 
-      <div class="vote-buttons">
-        <button class="vote-btn like" onclick="votePhoto('${p.id}',3)">❤️</button>
-        <button class="vote-btn bof" onclick="votePhoto('${p.id}',2)">😐</button>
-        <button class="vote-btn dislike" onclick="votePhoto('${p.id}',1)">👎</button>
-      </div>
-    </div>
-  `;
+      (photo
+        ? '<div style="background:#000;display:flex;align-items:center;justify-content:center;">' +
+            '<img src="' + escapeHtml(photo.url) + '" style="width:100%;max-height:520px;object-fit:contain;display:block;" alt="Photo">' +
+          '</div>'
+        : '<div style="padding:40px;text-align:center;color:#666;">Photo introuvable</div>') +
+
+      '<div class="vote-buttons">' +
+        '<button class="vote-btn like" onclick="votePhoto(\'' + escapeHtml(p.id) + '\',3)">❤️<span class="label">J’aime</span></button>' +
+        '<button class="vote-btn bof" onclick="votePhoto(\'' + escapeHtml(p.id) + '\',2)">😐<span class="label">Bof</span></button>' +
+        '<button class="vote-btn dislike" onclick="votePhoto(\'' + escapeHtml(p.id) + '\',1)">👎<span class="label">J’aime pas</span></button>' +
+      '</div>' +
+    '</div>';
 }
 
 async function votePhoto(projectId, rating) {
+  try {
+    disableVoteButtons();
 
-  await db.from("photo_votes").insert({
-    user_id: currentUser.id,
-    project_id: projectId,
-    rating: rating
+    var result = await db.from("photo_votes").insert({
+      user_id: currentUser.id,
+      project_id: projectId,
+      rating: rating
+    });
+
+    if (result.error) throw result.error;
+
+    await db.rpc("add_vote_credits", {
+      p_user_id: currentUser.id
+    });
+
+    var emoji = rating === 3 ? "❤️" : rating === 2 ? "😐" : "👎";
+
+    showVoteOverlay(emoji);
+
+    setTimeout(function() {
+      nextProject();
+    }, 450);
+
+  } catch (error) {
+    console.error("Erreur vote photo :", error);
+    enableVoteButtons();
+    alert("Erreur vote : " + error.message);
+  }
+}
+
+function showVoteOverlay(emoji) {
+  clearVoteOverlay();
+
+  var card = document.getElementById("current-project");
+  if (!card) return;
+
+  var overlay = document.createElement("div");
+  overlay.className = "voted-overlay";
+  overlay.textContent = emoji;
+
+  card.appendChild(overlay);
+}
+
+function clearVoteOverlay() {
+  document.querySelectorAll(".voted-overlay").forEach(function(el) {
+    el.remove();
   });
+}
 
-  await db.rpc("add_vote_credits", { p_user_id: currentUser.id });
+function disableVoteButtons() {
+  document.querySelectorAll(".vote-btn").forEach(function(btn) {
+    btn.disabled = true;
+    btn.blur();
+    btn.style.pointerEvents = "none";
+    btn.style.opacity = "0.5";
+  });
+}
 
-  nextProject();
+function enableVoteButtons() {
+  document.querySelectorAll(".vote-btn").forEach(function(btn) {
+    btn.disabled = false;
+    btn.style.pointerEvents = "";
+    btn.style.opacity = "1";
+  });
 }
 
 function nextProject() {
+  clearVoteOverlay();
+
   currentIndex++;
 
-  // 🔥 pagination automatique
   if (currentIndex >= projects.length) {
     feedOffset += feedLimit;
     loadFeed();
@@ -153,6 +252,17 @@ function nextProject() {
   }
 
   showCurrentProject();
+}
+
+function escapeHtml(value) {
+  if (value === null || value === undefined) return "";
+
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 init();
