@@ -130,7 +130,7 @@ async function init() {
 
 async function loadProjects() {
   var result = await db.from('projects')
-    .select('*, project_photos(id, url, side)')
+    .select('*, project_photos(id, url, side), poll_options(id, text, position)')
     .eq('owner_id', currentUser.id)
     .order('created_at', { ascending: false });
 
@@ -153,8 +153,10 @@ async function loadProjects() {
   var ids = list.map(function(p) { return p.id; });
   var pvResult = await db.from('photo_votes').select('project_id, rating, voter_gender').in('project_id', ids);
   var dvResult = await db.from('duel_votes').select('project_id, chosen_side, voter_gender').in('project_id', ids);
+  var pollvResult = await db.from('poll_votes').select('project_id, option_id, voter_gender').in('project_id', ids);
   var photoVotes = pvResult.data || [];
   var duelVotes = dvResult.data || [];
+  var pollVotes = pollvResult.data || [];
 
   function pct(val, total) { return total > 0 ? Math.round(val / total * 100) : 0; }
 
@@ -165,9 +167,11 @@ async function loadProjects() {
     // Photo principale — compatibilité side: single, left, A, null
     var firstPhoto = photos.find(function(ph) { return ph.side === 'single' || ph.side === 'left' || ph.side === 'A'; }) || photos[0];
 
+    var isPoll = p.type === 'poll';
     var pv = photoVotes.filter(function(v) { return v.project_id === p.id; });
     var dv = duelVotes.filter(function(v) { return v.project_id === p.id; });
-    var totalVotes = isDuel ? dv.length : pv.length;
+    var pollv = pollVotes.filter(function(v) { return v.project_id === p.id; });
+    var totalVotes = isPoll ? pollv.length : isDuel ? dv.length : pv.length;
 
     // ✅ Valeurs correctes : 1=j'aime, 2=bof, 3=j'aime pas
     var likes    = pv.filter(function(v) { return v.rating === 1; }).length;
@@ -230,7 +234,7 @@ async function loadProjects() {
       '<div style="padding:18px;">' +
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">' +
       '<div style="font-weight:900;font-size:17px;">' + (p.title || 'Sans titre') + '</div>' +
-      '<span class="badge badge-pink">' + (isDuel ? '⚖️ Duel' : '📸 Photo') + '</span>' +
+      '<span class="badge badge-pink">' + (isPoll ? '📊 Sondage' : isDuel ? '⚖️ Duel' : '📸 Photo') + '</span>' +
       '</div>' +
       '<div style="font-size:13px;color:#555;margin-bottom:4px;">' + new Date(p.created_at).toLocaleDateString('fr-FR') + ' · 🗳️ ' + totalVotes + ' vote' + (totalVotes !== 1 ? 's' : '') + '</div>' +
       statsHtml +
