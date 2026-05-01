@@ -14,11 +14,10 @@
 .vote-btn.bof:hover { border-color:#FF9800; background:rgba(255,152,0,0.1); color:#FF9800; }
 .vote-btn.dislike:hover { border-color:#ef5350; background:rgba(244,67,54,0.1); color:#ef5350; }
 .duel-photo-btn { flex:1; padding:0; border:none; background:transparent; cursor:pointer; position:relative; overflow:hidden; }
-.duel-photo-btn:hover .duel-overlay { opacity:1; }
 .duel-overlay { position:absolute; inset:0; background:rgba(233,30,140,0.35); display:flex; align-items:center; justify-content:center; font-size:36px; font-weight:900; color:white; opacity:0; transition:opacity 0.15s; }
+.duel-photo-btn:hover .duel-overlay { opacity:1; }
 .project-card { margin-bottom:24px; position:relative; }
 .voted-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.65); display:flex; align-items:center; justify-content:center; font-size:64px; z-index:10; border-radius:22px; pointer-events:none; }
-.poll-vote-btn:hover { border-color:#E91E8C !important; background:rgba(233,30,140,0.1) !important; color:#E91E8C !important; }
 </style>
 </head>
 
@@ -28,7 +27,7 @@
   <div class="sidebar-logo">BeauOuPas</div>
   <nav id="sidebar-nav"></nav>
   <div class="sidebar-footer">
-    <a href="projects-new.html" class="btn btn-primary btn-full" style="margin-bottom:14px;text-decoration:none;">➕ Nouveau projet</a>
+    <a href="projects-new.html" class="btn btn-primary btn-full">➕ Nouveau projet</a>
     <div id="sidebar-user"></div>
   </div>
 </aside>
@@ -37,11 +36,7 @@
 
 <main class="main-content">
   <div style="max-width:600px;margin:0 auto;">
-    <div style="margin-bottom:24px;">
-      <h1 style="font-size:28px;font-weight:900;">📸 Feed</h1>
-      <p style="color:#666;margin-top:6px;font-size:14px;">Vote sur les projets de la communauté</p>
-    </div>
-
+    <h1>📸 Feed</h1>
     <div id="feed-container"><div class="spinner"></div></div>
   </div>
 </main>
@@ -52,483 +47,112 @@
 
 <script>
 var currentUser = null;
-var currentProfile = null;
 var projects = [];
 var currentIndex = 0;
 
+// 🔥 NOUVEAU
+var feedSeed = Date.now().toString();
+var feedLimit = 20;
+var feedOffset = 0;
+
 async function init() {
-  try {
-    currentUser = await requireAuth();
+  currentUser = await requireAuth();
+  if (!currentUser) return;
 
-    if (!currentUser) {
-      window.location.href = "login.html";
-      return;
-    }
+  renderNav("feed.html");
+  loadSidebarProfile();
 
-    currentProfile = await getProfile(currentUser.id);
-
-    if (!currentProfile || !currentProfile.username || !currentProfile.gender || !currentProfile.birth_date) {
-      window.location.href = "complete-profile.html";
-      return;
-    }
-
-    if (typeof renderNav === "function") {
-      renderNav("feed.html");
-    }
-
-    if (typeof loadSidebarProfile === "function") {
-      loadSidebarProfile();
-    }
-
-    await loadFeed();
-
-  } catch (error) {
-    showError("Erreur init feed", error);
-  }
+  await loadFeed();
 }
 
 async function loadFeed() {
   try {
-    document.getElementById("feed-container").innerHTML = '<div class="spinner"></div>';
 
+    // 🔥 APPEL RPC SUPABASE
+    var feedResult = await db.rpc("get_feed_projects", {
+      p_user_id: currentUser.id,
+      p_limit: feedLimit,
+      p_offset: feedOffset,
+      p_seed: feedSeed
+    });
+
+    if (feedResult.error) throw feedResult.error;
+
+    var ids = (feedResult.data || []).map(p => p.id);
+
+    if (ids.length === 0) {
+      projects = [];
+      showCurrentProject();
+      return;
+    }
+
+    // 🔥 récupère les détails
     var result = await db.from("projects")
-      .select("*, profiles(username, avatar_url), project_photos(id, url, side), poll_options(id, text, position)")
-      .eq("status", "approved")
-      .eq("is_open", true)
-      .neq("owner_id", currentUser.id)
-      .order("created_at", { ascending: false })
-      .limit(50);
+      .select("*, profiles(username, avatar_url), project_photos(*), poll_options(*)")
+      .in("id", ids);
 
     if (result.error) throw result.error;
 
-    var allProjects = result.data || [];
-    var allIds = allProjects.map(function(p) { return p.id; });
-    var votedIds = new Set();
-
-    if (allIds.length > 0) {
-      var pv = await db.from("photo_votes")
-        .select("project_id")
-        .eq("user_id", currentUser.id)
-        .in("project_id", allIds);
-
-      if (!pv.error) {
-        (pv.data || []).forEach(function(v) {
-          votedIds.add(v.project_id);
-        });
-      }
-
-      var dv = await db.from("duel_votes")
-        .select("project_id")
-        .eq("user_id", currentUser.id)
-        .in("project_id", allIds);
-
-      if (!dv.error) {
-        (dv.data || []).forEach(function(v) {
-          votedIds.add(v.project_id);
-        });
-      }
-
-      var pollv = await db.from("poll_votes")
-        .select("project_id")
-        .eq("user_id", currentUser.id)
-        .in("project_id", allIds);
-
-      if (!pollv.error) {
-        (pollv.data || []).forEach(function(v) {
-          votedIds.add(v.project_id);
-        });
-      }
-    }
-
-    var userAge = currentProfile && currentProfile.birth_date ? getAge(currentProfile.birth_date) : null;
-    var userGender = currentProfile ? currentProfile.gender : null;
-
-    projects = allProjects.filter(function(p) {
-      if (votedIds.has(p.id)) return false;
-      if (p.gender_filter && p.gender_filter !== "both" && p.gender_filter !== userGender) return false;
-
-      if (userAge !== null) {
-        if (p.min_age && userAge < p.min_age) return false;
-        if (p.max_age && userAge > p.max_age) return false;
-      }
-
-      return true;
-    });
+    // 🔥 garder ordre RPC
+    projects = ids.map(id => result.data.find(p => p.id === id)).filter(p => p);
 
     currentIndex = 0;
     showCurrentProject();
 
-  } catch (error) {
-    showError("Erreur loadFeed", error);
+  } catch (e) {
+    console.error(e);
   }
 }
 
 function showCurrentProject() {
+
   if (currentIndex >= projects.length) {
-    document.getElementById("feed-container").innerHTML =
-      '<div class="card" style="text-align:center;padding:60px;">' +
-        '<div style="font-size:56px;margin-bottom:16px;">🎉</div>' +
-        '<h3 style="font-size:20px;margin-bottom:10px;">Tout voté !</h3>' +
-        '<p style="color:#666;">Tu as voté sur tous les projets disponibles.<br>Reviens plus tard !</p>' +
-      '</div>';
+    document.getElementById("feed-container").innerHTML = "🎉 Plus de projets";
     return;
   }
 
   var p = projects[currentIndex];
-  var photos = (p.project_photos || []).slice();
-  var isDuel = p.type === "duel";
-  var isPoll = p.type === "poll";
-  var username = p.profiles && p.profiles.username ? p.profiles.username : "?";
-  var avatarUrl = p.profiles && p.profiles.avatar_url ? p.profiles.avatar_url : null;
-  var remaining = projects.length - currentIndex;
 
-  var safeProjectId = escapeHtml(p.id);
+  var photo = (p.project_photos || [])[0];
 
-  var avatarHtml = avatarUrl
-    ? '<img src="' + escapeHtml(avatarUrl) + '" style="width:100%;height:100%;object-fit:cover;" alt="">'
-    : '<span style="font-size:16px;font-weight:900;">' + escapeHtml((username[0] || "?").toUpperCase()) + '</span>';
+  document.getElementById("feed-container").innerHTML = `
+    <div class="card project-card" id="current-project">
+      <h3>${p.title || ""}</h3>
+      ${photo ? `<img src="${photo.url}" style="width:100%">` : ""}
 
-  var photosHtml = "";
-  var buttonsHtml = "";
-
-  if (isPoll) {
-    photosHtml = "";
-    buttonsHtml = renderPollButtons(p);
-
-  } else if (isDuel) {
-    var photoL = photos.find(function(ph) {
-      return ph.side === "left" || ph.side === "A";
-    }) || photos[0];
-
-    var photoR = photos.find(function(ph) {
-      return ph.side === "right" || ph.side === "B";
-    }) || photos[1];
-
-    if (photoL && photoR) {
-      photosHtml =
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;background:#000;">' +
-
-          '<button class="duel-photo-btn" onclick="voteDuel(\'' + safeProjectId + '\', \'left\')">' +
-            '<img src="' + escapeHtml(photoL.url) + '" style="width:100%;aspect-ratio:1;object-fit:contain;display:block;background:#000;" alt="Photo A">' +
-            '<div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.65);border-radius:8px;padding:4px 12px;font-size:14px;font-weight:900;color:#E91E8C;">A</div>' +
-            '<div class="duel-overlay">✅ A</div>' +
-          '</button>' +
-
-          '<button class="duel-photo-btn" onclick="voteDuel(\'' + safeProjectId + '\', \'right\')">' +
-            '<img src="' + escapeHtml(photoR.url) + '" style="width:100%;aspect-ratio:1;object-fit:contain;display:block;background:#000;" alt="Photo B">' +
-            '<div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.65);border-radius:8px;padding:4px 12px;font-size:14px;font-weight:900;color:#E91E8C;">B</div>' +
-            '<div class="duel-overlay">✅ B</div>' +
-          '</button>' +
-
-        '</div>';
-
-      buttonsHtml =
-        '<div style="padding:12px 18px;text-align:center;">' +
-          '<p style="color:#888;font-size:13px;">👆 Clique sur A ou B pour voter</p>' +
-        '</div>';
-
-    } else {
-      photosHtml = '<div style="padding:30px;text-align:center;color:#ef5350;">Photos du duel introuvables</div>';
-    }
-
-  } else {
-    var photo = photos.find(function(ph) {
-      return ph.side === "single";
-    }) || photos[0];
-
-    if (photo) {
-      photosHtml =
-        '<div style="background:#000;display:flex;align-items:center;justify-content:center;max-height:500px;overflow:hidden;">' +
-          '<img src="' + escapeHtml(photo.url) + '" style="width:100%;max-height:500px;object-fit:contain;display:block;" alt="Photo">' +
-        '</div>';
-
-      buttonsHtml =
-        '<div class="vote-buttons">' +
-          '<button class="vote-btn like" onclick="votePhoto(\'' + safeProjectId + '\', 3)">❤️<span class="label">J\'aime</span></button>' +
-          '<button class="vote-btn bof" onclick="votePhoto(\'' + safeProjectId + '\', 2)">😐<span class="label">Bof</span></button>' +
-          '<button class="vote-btn dislike" onclick="votePhoto(\'' + safeProjectId + '\', 1)">👎<span class="label">J\'aime pas</span></button>' +
-        '</div>';
-
-    } else {
-      photosHtml = '<div style="padding:30px;text-align:center;color:#ef5350;">Photo introuvable</div>';
-    }
-  }
-
-  var typeLabel = isPoll ? "📊 Sondage" : isDuel ? "⚖️ Duel" : "📸 Vote";
-
-  var html =
-    '<div class="card project-card" id="current-project">' +
-
-      '<div style="display:flex;align-items:center;gap:12px;padding:14px 18px;">' +
-        '<div class="avatar" style="width:40px;height:40px;">' + avatarHtml + '</div>' +
-        '<div style="flex:1;">' +
-          '<div style="font-weight:800;font-size:14px;">@' + escapeHtml(username) + '</div>' +
-          '<div style="font-size:12px;color:#555;">' + new Date(p.created_at).toLocaleDateString("fr-FR") + '</div>' +
-        '</div>' +
-        '<span class="badge badge-pink">' + typeLabel + '</span>' +
-        '<span style="font-size:12px;color:#444;margin-left:8px;">' + remaining + ' restant' + (remaining > 1 ? "s" : "") + '</span>' +
-      '</div>' +
-
-      (p.title
-        ? '<div style="padding:0 18px 12px;font-weight:700;font-size:16px;">' + escapeHtml(p.title) + '</div>'
-        : '') +
-
-      (p.description
-        ? '<div style="padding:0 18px 12px;font-size:14px;color:#777;">' + escapeHtml(p.description) + '</div>'
-        : '') +
-
-      photosHtml +
-      buttonsHtml +
-
-      '<div style="padding:8px 18px 14px;text-align:center;">' +
-        '<button onclick="skipProject()" style="background:none;border:none;color:#444;cursor:pointer;font-size:13px;padding:8px 16px;">Passer →</button>' +
-      '</div>' +
-
-    '</div>';
-
-  document.getElementById("feed-container").innerHTML = html;
+      <div class="vote-buttons">
+        <button class="vote-btn like" onclick="votePhoto('${p.id}',3)">❤️</button>
+        <button class="vote-btn bof" onclick="votePhoto('${p.id}',2)">😐</button>
+        <button class="vote-btn dislike" onclick="votePhoto('${p.id}',1)">👎</button>
+      </div>
+    </div>
+  `;
 }
 
-function renderPollButtons(project) {
-  var options = (project.poll_options || []).slice().sort(function(a, b) {
-    return (a.position || 0) - (b.position || 0);
+async function votePhoto(projectId, rating) {
+
+  await db.from("photo_votes").insert({
+    user_id: currentUser.id,
+    project_id: projectId,
+    rating: rating
   });
 
-  if (options.length === 0) {
-    return '<div style="padding:16px;text-align:center;color:#555;">Aucune option pour ce sondage</div>';
-  }
+  await db.rpc("add_vote_credits", { p_user_id: currentUser.id });
 
-  var safeProjectId = escapeHtml(project.id);
-
-  return '<div style="display:flex;flex-direction:column;gap:8px;padding:16px 18px;">' +
-    options.map(function(opt) {
-      var safeOptionId = escapeHtml(opt.id);
-
-      return '' +
-        '<button class="poll-vote-btn" onclick="votePoll(\'' + safeProjectId + '\', \'' + safeOptionId + '\')" ' +
-          'style="padding:14px 18px;border-radius:12px;border:2px solid #292929;background:transparent;color:#EEEEEE;font-size:15px;cursor:pointer;text-align:left;transition:all 0.15s;font-family:Arial;">' +
-          escapeHtml(opt.text) +
-        '</button>';
-    }).join("") +
-  '</div>';
-}
-
-async function deductOwnerCredits(ownerId) {
-  try {
-    await db.rpc("deduct_vote_received_credits", {
-      p_owner_id: ownerId
-    });
-  } catch (e) {
-    console.error("deductOwnerCredits:", e);
-  }
-}
-
-async function votePoll(projectId, optionId) {
-  try {
-    var ownerIdToDeduct = null;
-
-    var proj = projects.find(function(p) {
-      return p.id === projectId;
-    });
-
-    if (proj) {
-      ownerIdToDeduct = proj.owner_id;
-    }
-
-    var btns = document.querySelectorAll(".poll-vote-btn");
-    btns.forEach(function(btn) {
-      btn.disabled = true;
-      btn.style.opacity = "0.5";
-    });
-
-    var result = await db.from("poll_votes").insert({
-      user_id: currentUser.id,
-      project_id: projectId,
-      option_id: optionId,
-      voter_gender: currentProfile ? currentProfile.gender : null,
-      voter_age: currentProfile && currentProfile.birth_date ? getAge(currentProfile.birth_date) : null
-    });
-
-    if (result.error) throw result.error;
-
-    if (ownerIdToDeduct) {
-      await deductOwnerCredits(ownerIdToDeduct);
-    }
-// Après if (ownerIdToDeduct) { await deductOwnerCredits(ownerIdToDeduct); }
-await db.rpc("add_vote_credits", { p_user_id: currentUser.id });
-    showVotedOverlay("📊");
-
-    setTimeout(function() {
-      nextProject();
-    }, 700);
-
-  } catch (error) {
-    console.error("Erreur vote sondage:", error);
-
-    document.querySelectorAll(".poll-vote-btn").forEach(function(btn) {
-      btn.disabled = false;
-      btn.style.opacity = "1";
-    });
-
-    alert("Erreur vote sondage : " + error.message);
-  }
-}
-
-async function votePhoto(projectId, ratingValue) {
-  try {
-    var ownerIdToDeduct = null;
-
-    var proj = projects.find(function(p) {
-      return p.id === projectId;
-    });
-
-    if (proj) {
-      ownerIdToDeduct = proj.owner_id;
-    }
-
-    var buttons = document.querySelectorAll(".vote-btn");
-    buttons.forEach(function(btn) {
-      btn.disabled = true;
-      btn.style.opacity = "0.4";
-    });
-
-    var result = await db.from("photo_votes").insert({
-      user_id: currentUser.id,
-      project_id: projectId,
-      rating: ratingValue,
-      voter_gender: currentProfile ? currentProfile.gender : null,
-      voter_age: currentProfile && currentProfile.birth_date ? getAge(currentProfile.birth_date) : null
-    });
-
-    if (result.error) throw result.error;
-
-    if (ownerIdToDeduct) {
-      await deductOwnerCredits(ownerIdToDeduct);
-    }
-// Après if (ownerIdToDeduct) { await deductOwnerCredits(ownerIdToDeduct); }
-await db.rpc("add_vote_credits", { p_user_id: currentUser.id });
-    var emoji = ratingValue === 3 ? "❤️" : ratingValue === 2 ? "😐" : "👎";
-
-    showVotedOverlay(emoji);
-
-    setTimeout(function() {
-      nextProject();
-    }, 700);
-
-  } catch (error) {
-    console.error("Erreur vote photo:", error);
-
-    document.querySelectorAll(".vote-btn").forEach(function(btn) {
-      btn.disabled = false;
-      btn.style.opacity = "1";
-    });
-
-    alert("Erreur vote photo : " + error.message);
-  }
-}
-
-async function voteDuel(projectId, chosenSide) {
-  try {
-    var ownerIdToDeduct = null;
-
-    var proj = projects.find(function(p) {
-      return p.id === projectId;
-    });
-
-    if (proj) {
-      ownerIdToDeduct = proj.owner_id;
-    }
-
-    var buttons = document.querySelectorAll(".duel-photo-btn");
-    buttons.forEach(function(btn) {
-      btn.disabled = true;
-    });
-
-    var result = await db.from("duel_votes").insert({
-      user_id: currentUser.id,
-      project_id: projectId,
-      chosen_side: chosenSide,
-      voter_gender: currentProfile ? currentProfile.gender : null,
-      voter_age: currentProfile && currentProfile.birth_date ? getAge(currentProfile.birth_date) : null
-    });
-
-    if (result.error) throw result.error;
-
-    if (ownerIdToDeduct) {
-      await deductOwnerCredits(ownerIdToDeduct);
-    }
-// Après if (ownerIdToDeduct) { await deductOwnerCredits(ownerIdToDeduct); }
-await db.rpc("add_vote_credits", { p_user_id: currentUser.id });
-    showVotedOverlay("✅");
-
-    setTimeout(function() {
-      nextProject();
-    }, 700);
-
-  } catch (error) {
-    console.error("Erreur vote duel:", error);
-
-    document.querySelectorAll(".duel-photo-btn").forEach(function(btn) {
-      btn.disabled = false;
-    });
-
-    alert("Erreur vote duel : " + error.message);
-  }
-}
-
-function showVotedOverlay(emoji) {
-  var card = document.getElementById("current-project");
-
-  if (!card) return;
-
-  var overlay = document.createElement("div");
-  overlay.className = "voted-overlay";
-  overlay.textContent = emoji;
-
-  card.appendChild(overlay);
+  nextProject();
 }
 
 function nextProject() {
   currentIndex++;
-  showCurrentProject();
-}
 
-function skipProject() {
-  currentIndex++;
-  showCurrentProject();
-}
-
-function getAge(birthDate) {
-  var today = new Date();
-  var birth = new Date(birthDate);
-  var age = today.getFullYear() - birth.getFullYear();
-
-  if (today < new Date(today.getFullYear(), birth.getMonth(), birth.getDate())) {
-    age--;
+  // 🔥 pagination automatique
+  if (currentIndex >= projects.length) {
+    feedOffset += feedLimit;
+    loadFeed();
+    return;
   }
 
-  return age;
-}
-
-function showError(title, error) {
-  console.error(title, error);
-
-  document.getElementById("feed-container").innerHTML =
-    '<div class="card" style="text-align:center;padding:40px;">' +
-      '<h3 style="color:#ef5350;margin-bottom:12px;">' + escapeHtml(title) + '</h3>' +
-      '<p style="color:#999;font-size:14px;">' + escapeHtml(error && error.message ? error.message : String(error)) + '</p>' +
-    '</div>';
-}
-
-function escapeHtml(value) {
-  if (value === null || value === undefined) return "";
-
-  return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+  showCurrentProject();
 }
 
 init();
