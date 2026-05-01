@@ -250,9 +250,9 @@ function showCurrentProject() {
 
       buttonsHtml =
         '<div class="vote-buttons">' +
-          '<button class="vote-btn like" onclick="votePhoto(\'' + p.id + '\', 1)">❤️<span class="label">J\'aime</span></button>' +
+          '<button class="vote-btn like" onclick="votePhoto(\'' + p.id + '\', 3)">❤️<span class="label">J\'aime</span></button>' +
           '<button class="vote-btn bof" onclick="votePhoto(\'' + p.id + '\', 2)">😐<span class="label">Bof</span></button>' +
-          '<button class="vote-btn dislike" onclick="votePhoto(\'' + p.id + '\', 3)">👎<span class="label">J\'aime pas</span></button>' +
+          '<button class="vote-btn dislike" onclick="votePhoto(\'' + p.id + '\', 1)">👎<span class="label">J\'aime pas</span></button>' +
         '</div>';
     } else {
       photosHtml =
@@ -361,7 +361,7 @@ async function votePhoto(projectId, ratingValue) {
 
     if (result.error) throw result.error;
 
-    var emoji = ratingValue === 1 ? "❤️" : ratingValue === 2 ? "😐" : "👎";
+    var emoji = ratingValue === 3 ? "❤️" : ratingValue === 2 ? "😐" : "👎";
     showVotedOverlay(emoji);
     setTimeout(function() { nextProject(); }, 700);
 
