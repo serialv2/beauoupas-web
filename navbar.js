@@ -17,19 +17,33 @@ function renderNav(activePage) {
     return '<a href="' + href + '" style="' + style + '"><span style="font-size:18px;">' + p.icon + '</span>' + p.label + '</a>';
   }).join('');
 
-  // Bottom nav mobile — avec barre crédits en haut
+  // Bottom nav mobile — plus grande, mieux espacée
   var bottomHtml =
-    '<div style="display:flex;align-items:center;justify-content:center;padding:5px 0 4px;border-bottom:1px solid #1A1A1A;background:#0A0A0A;">' +
-      '<span id="credits-display-mobile" style="font-size:12px;color:#E91E8C;font-weight:800;">💰 ... crédits</span>' +
+    // Barre crédits
+    '<div style="display:flex;align-items:center;justify-content:center;padding:6px 0 5px;border-bottom:1px solid #1A1A1A;background:#0A0A0A;">' +
+      '<span id="credits-display-mobile" style="font-size:13px;color:#E91E8C;font-weight:800;">💰 ... crédits</span>' +
     '</div>' +
-    '<div style="display:flex;">' +
+    // Icônes nav
+    '<div style="display:flex;align-items:stretch;">' +
     pages.map(function(p) {
       var isActive = p.href === activePage;
-      var style = 'flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0;color:' +
-        (isActive ? '#E91E8C' : '#555') +
-        ';text-decoration:none;font-size:10px;font-weight:' + (isActive ? '800' : '400') + ';';
+      var color = isActive ? '#E91E8C' : '#666';
+      var fontWeight = isActive ? '800' : '400';
+      var bg = isActive ? 'rgba(233,30,140,0.08)' : 'transparent';
       var href = isActive ? 'javascript:void(0)' : p.href;
-      return '<a href="' + href + '" style="' + style + '"><span style="font-size:22px;">' + p.icon + '</span>' + p.label + '</a>';
+      return '<a href="' + href + '" style="' +
+        'flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;' +
+        'gap:4px;padding:10px 4px 12px;' +
+        'color:' + color + ';' +
+        'text-decoration:none;' +
+        'font-size:11px;' +
+        'font-weight:' + fontWeight + ';' +
+        'background:' + bg + ';' +
+        'border-top:' + (isActive ? '2px solid #E91E8C' : '2px solid transparent') + ';' +
+        '">' +
+        '<span style="font-size:26px;line-height:1;">' + p.icon + '</span>' +
+        '<span>' + p.label + '</span>' +
+        '</a>';
     }).join('') +
     '</div>';
 
@@ -51,7 +65,6 @@ async function loadSidebarProfile() {
 function updateSidebarCredits(profile) {
   var credits = profile.credits || 0;
 
-  // Avatar
   var avatarHtml = profile.avatar_url
     ? '<img src="' + profile.avatar_url + '" alt="">'
     : '<span style="font-size:15px;font-weight:900;">' + (profile.username ? profile.username[0].toUpperCase() : '?') + '</span>';
@@ -87,11 +100,9 @@ function startCreditsRealtime(userId) {
         if (!payload.new || payload.new.credits === undefined) return;
         var credits = payload.new.credits;
 
-        // Sidebar desktop
         var el = document.getElementById('credits-display');
         if (el) el.textContent = '💰 ' + credits + ' crédits';
 
-        // Bottom nav mobile
         var mobileEl = document.getElementById('credits-display-mobile');
         if (mobileEl) mobileEl.textContent = '💰 ' + credits + ' crédits';
       })
