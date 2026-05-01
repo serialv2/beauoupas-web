@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BeauOuPas — Nouveau projet</title>
 <link rel="stylesheet" href="style.css">
+
 <style>
 .photo-slot {
   border:2px dashed #292929; border-radius:12px; background:#111;
@@ -28,17 +29,23 @@
 .type-btn.inactive { border:1px solid #292929; background:transparent; color:#888; font-weight:400; }
 </style>
 </head>
+
 <body>
+
 <aside class="sidebar">
   <div class="sidebar-logo">BeauOuPas</div>
   <nav id="sidebar-nav"></nav>
-  <div class="sidebar-footer"><div id="sidebar-user"></div></div>
+  <div class="sidebar-footer">
+    <div id="sidebar-user"></div>
+  </div>
 </aside>
+
 <nav class="bottom-nav" id="bottom-nav"></nav>
 
 <main class="main-content">
   <div style="max-width:560px;margin:0 auto;">
     <button onclick="history.back()" style="background:none;border:none;color:#888;cursor:pointer;font-size:14px;margin-bottom:10px;">← Retour</button>
+
     <h1 style="font-size:22px;font-weight:900;margin-bottom:16px;">➕ Nouveau projet</h1>
 
     <div class="card" style="padding:20px;">
@@ -47,29 +54,25 @@
 
       <div style="display:flex;flex-direction:column;gap:14px;">
 
-        <!-- Type -->
         <div>
           <label class="input-label" style="font-size:12px;">Type de projet</label>
           <div style="display:flex;gap:6px;margin-top:4px;">
             <button id="btn-photo" class="type-btn active" onclick="setType('photo')">📸 Photo</button>
-            <button id="btn-duel"  class="type-btn inactive" onclick="setType('duel')">⚖️ Duel</button>
-            <button id="btn-poll"  class="type-btn inactive" onclick="setType('poll')">📊 Sondage</button>
+            <button id="btn-duel" class="type-btn inactive" onclick="setType('duel')">⚖️ Duel</button>
+            <button id="btn-poll" class="type-btn inactive" onclick="setType('poll')">📊 Sondage</button>
           </div>
         </div>
 
-        <!-- Titre -->
         <div>
           <label class="input-label" style="font-size:12px;">Titre *</label>
           <input class="input" id="title" placeholder="Comment je suis ?" style="padding:10px 14px;font-size:14px;">
         </div>
 
-        <!-- Description -->
         <div>
           <label class="input-label" style="font-size:12px;">Description <span style="color:#444;">(optionnel)</span></label>
           <textarea class="input" id="description" placeholder="Contexte..." rows="2" style="resize:none;padding:10px 14px;font-size:14px;"></textarea>
         </div>
 
-        <!-- Section photos (photo + duel) -->
         <div id="photos-section">
           <label class="input-label" id="photos-label" style="font-size:12px;">Photo</label>
           <div id="photos-grid" style="display:grid;grid-template-columns:1fr;gap:10px;margin-top:6px;">
@@ -81,10 +84,10 @@
           </div>
         </div>
 
-        <!-- Section sondage -->
         <div id="poll-section" style="display:none;">
           <label class="input-label" style="font-size:12px;">Options du sondage <span style="color:#666;">(2 minimum, 6 maximum)</span></label>
           <div id="poll-options" style="margin-top:8px;"></div>
+
           <button onclick="addPollOption()" style="background:none;border:1px dashed #292929;border-radius:10px;color:#888;padding:10px;width:100%;cursor:pointer;font-size:13px;margin-top:4px;transition:all 0.15s;"
             onmouseover="this.style.borderColor='#E91E8C';this.style.color='#E91E8C'"
             onmouseout="this.style.borderColor='#292929';this.style.color='#888'">
@@ -92,17 +95,17 @@
           </button>
         </div>
 
-        <!-- Filtre genre + montrer à -->
         <div id="filter-section">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div>
               <label class="input-label" style="font-size:12px;">Montrer à</label>
               <div style="display:flex;gap:4px;margin-top:4px;">
-                <button id="gf-all"    class="type-btn active"   onclick="setGenderFilter('all')"    style="font-size:11px;">👥</button>
-                <button id="gf-male"   class="type-btn inactive" onclick="setGenderFilter('male')"   style="font-size:11px;">👨</button>
+                <button id="gf-all" class="type-btn active" onclick="setGenderFilter('all')" style="font-size:11px;">👥</button>
+                <button id="gf-male" class="type-btn inactive" onclick="setGenderFilter('male')" style="font-size:11px;">👨</button>
                 <button id="gf-female" class="type-btn inactive" onclick="setGenderFilter('female')" style="font-size:11px;">👩</button>
               </div>
             </div>
+
             <div>
               <label class="input-label" style="font-size:12px;">Âge : <span id="age-display" style="color:#E91E8C;font-weight:800;">18–99</span></label>
               <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;">
@@ -125,6 +128,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 <script src="navbar.js"></script>
+
 <script>
 var currentUser = null;
 var projectType = 'photo';
@@ -134,14 +138,29 @@ var pollOptionCount = 0;
 
 async function init() {
   currentUser = await requireAuth();
-  if (!currentUser) return;
-  var profile = await getProfile(currentUser.id);
-  if (!profile || !profile.username || !profile.gender || !profile.birth_date) {
-    window.location.href = 'complete-profile.html'; return;
+
+  if (!currentUser) {
+    window.location.href = 'login.html';
+    return;
   }
-  renderNav('projects.html');
-  loadSidebarProfile();
-  addPollOption(); addPollOption();
+
+  var profile = await getProfile(currentUser.id);
+
+  if (!profile || !profile.username || !profile.gender || !profile.birth_date) {
+    window.location.href = 'complete-profile.html';
+    return;
+  }
+
+  if (typeof renderNav === 'function') {
+    renderNav('projects.html');
+  }
+
+  if (typeof loadSidebarProfile === 'function') {
+    loadSidebarProfile();
+  }
+
+  addPollOption();
+  addPollOption();
 }
 
 function setType(type) {
@@ -177,6 +196,7 @@ function setType(type) {
         '<button class="slot-remove" onclick="removePhoto(\'single\',event)">✕</button>' +
         '<input type="file" id="file-single" accept="image/*" style="display:none;" onchange="handleFile(this,\'single\')">' +
       '</div>';
+
   } else if (type === 'duel') {
     document.getElementById('photos-label').textContent = 'Photos du duel';
     document.getElementById('photos-grid').style.gridTemplateColumns = '1fr 1fr';
@@ -201,59 +221,115 @@ function setType(type) {
 function addPollOption() {
   var options = document.getElementById('poll-options');
   var count = options.children.length;
+
   if (count >= 6) return;
+
   pollOptionCount++;
+
   var idx = pollOptionCount;
   var div = document.createElement('div');
+
   div.className = 'poll-option';
   div.id = 'poll-opt-' + idx;
+
   div.innerHTML =
-    '<input class="input" placeholder="Option ' + (count+1) + '..." style="padding:10px 14px;font-size:14px;" id="opt-text-' + idx + '">' +
+    '<input class="input" placeholder="Option ' + (count + 1) + '..." style="padding:10px 14px;font-size:14px;" id="opt-text-' + idx + '">' +
     '<button onclick="removePollOption(' + idx + ')" title="Supprimer">✕</button>';
+
   options.appendChild(div);
 }
 
 function removePollOption(idx) {
   var options = document.getElementById('poll-options');
-  if (options.children.length <= 2) { alert('Il faut au moins 2 options.'); return; }
+
+  if (options.children.length <= 2) {
+    alert('Il faut au moins 2 options.');
+    return;
+  }
+
   var el = document.getElementById('poll-opt-' + idx);
-  if (el) el.remove();
+
+  if (el) {
+    el.remove();
+  }
 }
 
 function getPollOptions() {
   var options = document.getElementById('poll-options');
   var texts = [];
+
   for (var i = 0; i < options.children.length; i++) {
     var input = options.children[i].querySelector('input');
-    if (input && input.value.trim()) texts.push(input.value.trim());
+
+    if (input && input.value.trim()) {
+      texts.push(input.value.trim());
+    }
   }
+
   return texts;
 }
 
-function triggerFile(id) { var el = document.getElementById(id); if (el) el.click(); }
+function triggerFile(id) {
+  var el = document.getElementById(id);
+
+  if (el) {
+    el.click();
+  }
+}
 
 function handleFile(input, slot) {
-  var file = input.files[0]; if (!file) return;
+  var file = input.files[0];
+
+  if (!file) return;
+
   photoFiles[slot] = file;
+
   var url = URL.createObjectURL(file);
-  var slotEl = document.getElementById('slot-' + slot); if (!slotEl) return;
+  var slotEl = document.getElementById('slot-' + slot);
+
+  if (!slotEl) return;
+
   slotEl.classList.add('filled');
-  var oldImg = slotEl.querySelector('img'); if (oldImg) oldImg.remove();
-  var img = document.createElement('img'); img.src = url;
+
+  var oldImg = slotEl.querySelector('img');
+
+  if (oldImg) {
+    oldImg.remove();
+  }
+
+  var img = document.createElement('img');
+  img.src = url;
+
   slotEl.insertBefore(img, slotEl.firstChild);
 }
 
 function removePhoto(slot, event) {
   event.stopPropagation();
+
   photoFiles[slot] = null;
-  var slotEl = document.getElementById('slot-' + slot); if (!slotEl) return;
+
+  var slotEl = document.getElementById('slot-' + slot);
+
+  if (!slotEl) return;
+
   slotEl.classList.remove('filled');
-  var img = slotEl.querySelector('img'); if (img) img.remove();
-  var input = slotEl.querySelector('input[type="file"]'); if (input) input.value = '';
+
+  var img = slotEl.querySelector('img');
+
+  if (img) {
+    img.remove();
+  }
+
+  var input = slotEl.querySelector('input[type="file"]');
+
+  if (input) {
+    input.value = '';
+  }
 }
 
 function setGenderFilter(gf) {
   genderFilter = gf;
+
   ['all','male','female'].forEach(function(k) {
     document.getElementById('gf-' + k).className = 'type-btn ' + (k === gf ? 'active' : 'inactive');
     document.getElementById('gf-' + k).style.fontSize = '11px';
@@ -263,15 +339,25 @@ function setGenderFilter(gf) {
 function updateAgeDisplay() {
   var min = parseInt(document.getElementById('age-min').value);
   var max = parseInt(document.getElementById('age-max').value);
-  if (min > max) { document.getElementById('age-min').value = max; min = max; }
+
+  if (min > max) {
+    document.getElementById('age-min').value = max;
+    min = max;
+  }
+
   document.getElementById('age-display').textContent = min + '–' + max;
 }
 
 async function uploadPhoto(file, slot) {
   var ext = file.name.split('.').pop() || 'jpg';
   var path = 'display/' + currentUser.id + '/' + Date.now() + '_' + slot + '.' + ext;
+
   var r = await db.storage.from('photos').upload(path, file);
-  if (r.error) throw r.error;
+
+  if (r.error) {
+    throw r.error;
+  }
+
   return db.storage.from('photos').getPublicUrl(path).data.publicUrl;
 }
 
@@ -284,29 +370,62 @@ async function handleSubmit() {
   document.getElementById('error').style.display = 'none';
   document.getElementById('success').style.display = 'none';
 
-  // ── Validations ───────────────────────────────────────────────────
-  if (!title) { showError('error', 'Le titre est obligatoire.'); return; }
-  if (projectType === 'photo' && !photoFiles.single) { showError('error', 'Ajoute une photo.'); return; }
-  if (projectType === 'duel' && (!photoFiles.left || !photoFiles.right)) { showError('error', 'Ajoute les 2 photos (A et B).'); return; }
+  if (!title) {
+    showError('error', 'Le titre est obligatoire.');
+    return;
+  }
+
+  if (projectType === 'photo' && !photoFiles.single) {
+    showError('error', 'Ajoute une photo.');
+    return;
+  }
+
+  if (projectType === 'duel' && (!photoFiles.left || !photoFiles.right)) {
+    showError('error', 'Ajoute les 2 photos (A et B).');
+    return;
+  }
+
   if (projectType === 'poll') {
     var opts = getPollOptions();
-    if (opts.length < 2) { showError('error', 'Ajoute au moins 2 options.'); return; }
+
+    if (opts.length < 2) {
+      showError('error', 'Ajoute au moins 2 options.');
+      return;
+    }
   }
 
   setLoading('submitBtn', true, '⏳ Création...');
 
   try {
+    var creditsResult = await db.rpc('spend_project_credits', {
+      p_user_id: currentUser.id
+    });
 
-    // ── 1. Vérifier et déduire les crédits AVANT de créer ────────────
-    var creditsResult = await db.rpc('spend_project_credits', { p_user_id: currentUser.id });
+    console.log('Résultat crédits :', creditsResult);
+
     if (creditsResult.error) {
-      showError('error', '❌ Tu n\'as pas assez de crédits pour créer un projet.');
+      console.error('Erreur RPC crédits :', creditsResult.error);
+      showError('error', 'Erreur lors de la vérification des crédits : ' + creditsResult.error.message);
       setLoading('submitBtn', false, '🚀 Créer le projet');
       return;
     }
 
-    // ── 2. Créer le projet ────────────────────────────────────────────
-    var dbType = projectType === 'duel' ? 'duel' : projectType === 'poll' ? 'poll' : 'photo_vote';
+    if (
+      creditsResult.data === false ||
+      creditsResult.data === 0 ||
+      creditsResult.data === null ||
+      creditsResult.data === 'not_enough_credits'
+    ) {
+      showError('error', '❌ Tu n’as pas assez de crédits pour créer un projet.');
+      setLoading('submitBtn', false, '🚀 Créer le projet');
+      return;
+    }
+
+    var dbType = projectType === 'duel'
+      ? 'duel'
+      : projectType === 'poll'
+        ? 'poll'
+        : 'photo_vote';
 
     var r = await db.from('projects').insert({
       owner_id: currentUser.id,
@@ -320,36 +439,73 @@ async function handleSubmit() {
       max_age: maxAge
     }).select().single();
 
-    if (r.error) throw r.error;
+    if (r.error) {
+      throw r.error;
+    }
+
     var project = r.data;
 
-    // ── 3. Ajouter les photos ou options selon le type ────────────────
     if (projectType === 'photo') {
       var url = await uploadPhoto(photoFiles.single, 'single');
-      var ri = await db.from('project_photos').insert({ project_id: project.id, url: url, side: 'single' });
-      if (ri.error) throw ri.error;
+
+      var ri = await db.from('project_photos').insert({
+        project_id: project.id,
+        url: url,
+        side: 'single'
+      });
+
+      if (ri.error) {
+        throw ri.error;
+      }
 
     } else if (projectType === 'duel') {
       var urlL = await uploadPhoto(photoFiles.left, 'left');
-      var rl = await db.from('project_photos').insert({ project_id: project.id, url: urlL, side: 'left' });
-      if (rl.error) throw rl.error;
+
+      var rl = await db.from('project_photos').insert({
+        project_id: project.id,
+        url: urlL,
+        side: 'left'
+      });
+
+      if (rl.error) {
+        throw rl.error;
+      }
+
       var urlR = await uploadPhoto(photoFiles.right, 'right');
-      var rr = await db.from('project_photos').insert({ project_id: project.id, url: urlR, side: 'right' });
-      if (rr.error) throw rr.error;
+
+      var rr = await db.from('project_photos').insert({
+        project_id: project.id,
+        url: urlR,
+        side: 'right'
+      });
+
+      if (rr.error) {
+        throw rr.error;
+      }
 
     } else if (projectType === 'poll') {
       var pollOpts = getPollOptions();
+
       for (var i = 0; i < pollOpts.length; i++) {
-        var ro = await db.from('poll_options').insert({ project_id: project.id, text: pollOpts[i], position: i });
-        if (ro.error) throw ro.error;
+        var ro = await db.from('poll_options').insert({
+          project_id: project.id,
+          text: pollOpts[i],
+          position: i
+        });
+
+        if (ro.error) {
+          throw ro.error;
+        }
       }
     }
 
-    // ── 4. Succès ─────────────────────────────────────────────────────
     showSuccess('success', '✅ Projet créé !');
-    setTimeout(function() { window.location.href = 'projects.html'; }, 1000);
 
-  } catch(err) {
+    setTimeout(function() {
+      window.location.href = 'projects.html';
+    }, 1000);
+
+  } catch (err) {
     console.error(err);
     showError('error', err.message || 'Erreur lors de la création.');
     setLoading('submitBtn', false, '🚀 Créer le projet');
@@ -358,5 +514,6 @@ async function handleSubmit() {
 
 init();
 </script>
+
 </body>
 </html>
