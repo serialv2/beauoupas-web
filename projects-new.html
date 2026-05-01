@@ -298,6 +298,17 @@ async function handleSubmit() {
   setLoading('submitBtn', true, '⏳ Création...');
 
   try {
+    // ── Vérifier les crédits AVANT de créer ──────────────────────────
+var creditsResult = await db.rpc("spend_project_credits", { p_user_id: currentUser.id });
+
+if (creditsResult.error) {
+    showError('error', '❌ Crédits insuffisants pour créer un projet.');
+    setLoading('submitBtn', false, '🚀 Créer le projet');
+    return; // ← on stoppe ici, rien n'est créé
+}
+
+// ── Créer le projet seulement si les crédits ont été déduits ──────
+var r = await db.from('projects').insert({ ... });
     var dbType = projectType === 'duel' ? 'duel' : projectType === 'poll' ? 'poll' : 'photo_vote';
 
     var r = await db.from('projects').insert({
@@ -315,6 +326,9 @@ async function handleSubmit() {
     if (r.error) throw r.error;
     var project = r.data;
 
+
+// ← AJOUTER ICI
+await db.rpc("spend_project_credits", { p_user_id: currentUser.id });
     if (projectType === 'photo') {
       var url = await uploadPhoto(photoFiles.single, 'single');
       var ri = await db.from('project_photos').insert({ project_id: project.id, url: url, side: 'single' });
