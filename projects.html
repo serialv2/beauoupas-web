@@ -120,9 +120,9 @@ async function loadProjects() {
     var pollv = pollVotes.filter(function(v) { return v.project_id === p.id; });
     var totalVotes = isPoll ? pollv.length : isDuel ? dv.length : pv.length;
 
-    var likes    = pv.filter(function(v) { return v.rating === 1; }).length;
+    var likes    = pv.filter(function(v) { return v.rating === 3; }).length;
     var bofs     = pv.filter(function(v) { return v.rating === 2; }).length;
-    var dislikes = pv.filter(function(v) { return v.rating === 3; }).length;
+    var dislikes = pv.filter(function(v) { return v.rating === 1; }).length;
     var votesLeft  = dv.filter(function(v) { return v.chosen_side === 'left' || v.chosen_side === 'A'; }).length;
     var votesRight = dv.filter(function(v) { return v.chosen_side === 'right' || v.chosen_side === 'B'; }).length;
 
