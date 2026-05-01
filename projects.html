@@ -380,27 +380,12 @@ async function deleteProject(id) {
   try {
     console.log("Suppression du projet :", id);
 
-    var r1 = await db.from("photo_votes").delete().eq("project_id", id);
-    if (r1.error) throw r1.error;
-
-    var r2 = await db.from("duel_votes").delete().eq("project_id", id);
-    if (r2.error) throw r2.error;
-
-    var r3 = await db.from("poll_votes").delete().eq("project_id", id);
-    if (r3.error) throw r3.error;
-
-    var r4 = await db.from("poll_options").delete().eq("project_id", id);
-    if (r4.error) throw r4.error;
-
-    var r5 = await db.from("project_photos").delete().eq("project_id", id);
-    if (r5.error) throw r5.error;
-
-    var r6 = await db.from("projects")
+    var r = await db.from("projects")
       .delete()
       .eq("id", id)
       .eq("owner_id", currentUser.id);
 
-    if (r6.error) throw r6.error;
+    if (r.error) throw r.error;
 
     alert("Projet supprimé avec succès.");
     await loadProjects();
