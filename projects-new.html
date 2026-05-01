@@ -7,39 +7,25 @@
 <link rel="stylesheet" href="style.css">
 <style>
 .photo-slot {
-  border: 2px dashed #292929;
-  border-radius: 12px;
-  background: #111;
-  aspect-ratio: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: border-color 0.15s;
-  overflow: hidden;
-  position: relative;
-  max-height: 160px;
+  border:2px dashed #292929; border-radius:12px; background:#111;
+  aspect-ratio:1; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; cursor:pointer;
+  transition:border-color 0.15s; overflow:hidden; position:relative; max-height:160px;
 }
-.photo-slot:hover { border-color: #E91E8C; }
+.photo-slot:hover { border-color:#E91E8C; }
 .photo-slot img { width:100%; height:100%; object-fit:cover; position:absolute; inset:0; }
-.photo-slot .slot-label {
-  position:absolute; top:6px; left:6px;
-  background:rgba(0,0,0,0.7); border-radius:6px;
-  padding:3px 8px; font-weight:900; color:#E91E8C; font-size:13px; z-index:2;
-}
-.photo-slot .slot-remove {
-  position:absolute; top:6px; right:6px;
-  background:rgba(0,0,0,0.7); border:none; border-radius:50%;
-  width:24px; height:24px; color:white; font-size:12px;
-  cursor:pointer; z-index:2; display:none;
-  align-items:center; justify-content:center;
-}
+.photo-slot .slot-label { position:absolute; top:6px; left:6px; background:rgba(0,0,0,0.7); border-radius:6px; padding:3px 8px; font-weight:900; color:#E91E8C; font-size:13px; z-index:2; }
+.photo-slot .slot-remove { position:absolute; top:6px; right:6px; background:rgba(0,0,0,0.7); border:none; border-radius:50%; width:24px; height:24px; color:white; font-size:12px; cursor:pointer; z-index:2; display:none; align-items:center; justify-content:center; }
 .photo-slot.filled .slot-remove { display:flex; }
 .photo-slot .slot-placeholder { color:#444; text-align:center; font-size:12px; }
 .photo-slot .slot-placeholder span { font-size:26px; display:block; margin-bottom:6px; }
-.form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-.age-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.poll-option { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
+.poll-option input { flex:1; }
+.poll-option button { background:none; border:1px solid #292929; border-radius:8px; color:#555; width:32px; height:32px; cursor:pointer; font-size:16px; flex-shrink:0; transition:all 0.15s; }
+.poll-option button:hover { border-color:#ef5350; color:#ef5350; }
+.type-btn { flex:1; padding:10px 6px; border-radius:10px; cursor:pointer; font-size:12px; font-family:Arial; transition:all 0.15s; }
+.type-btn.active { border:2px solid #E91E8C; background:rgba(233,30,140,0.1); color:#E91E8C; font-weight:800; }
+.type-btn.inactive { border:1px solid #292929; background:transparent; color:#888; font-weight:400; }
 </style>
 </head>
 <body>
@@ -61,37 +47,13 @@
 
       <div style="display:flex;flex-direction:column;gap:14px;">
 
-        <!-- Type + Titre sur la même ligne -->
-        <div class="form-row">
-          <div>
-            <label class="input-label" style="font-size:12px;">Type</label>
-            <div style="display:flex;gap:6px;margin-top:4px;">
-              <button id="btn-photo" onclick="setType('photo')"
-                style="flex:1;padding:10px 6px;border-radius:10px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;cursor:pointer;font-size:12px;font-family:Arial;">
-                📸 Photo
-              </button>
-              <button id="btn-duel" onclick="setType('duel')"
-                style="flex:1;padding:10px 6px;border-radius:10px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:12px;font-family:Arial;">
-                ⚖️ Duel
-              </button>
-            </div>
-          </div>
-          <div>
-            <label class="input-label" style="font-size:12px;">Montrer à</label>
-            <div style="display:flex;gap:4px;margin-top:4px;">
-              <button id="gf-all" onclick="setGenderFilter('all')"
-                style="flex:1;padding:10px 4px;border-radius:10px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;cursor:pointer;font-size:11px;font-family:Arial;">
-                👥
-              </button>
-              <button id="gf-male" onclick="setGenderFilter('male')"
-                style="flex:1;padding:10px 4px;border-radius:10px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:11px;font-family:Arial;">
-                👨
-              </button>
-              <button id="gf-female" onclick="setGenderFilter('female')"
-                style="flex:1;padding:10px 4px;border-radius:10px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:11px;font-family:Arial;">
-                👩
-              </button>
-            </div>
+        <!-- Type -->
+        <div>
+          <label class="input-label" style="font-size:12px;">Type de projet</label>
+          <div style="display:flex;gap:6px;margin-top:4px;">
+            <button id="btn-photo" class="type-btn active" onclick="setType('photo')">📸 Photo</button>
+            <button id="btn-duel"  class="type-btn inactive" onclick="setType('duel')">⚖️ Duel</button>
+            <button id="btn-poll"  class="type-btn inactive" onclick="setType('poll')">📊 Sondage</button>
           </div>
         </div>
 
@@ -107,8 +69,8 @@
           <textarea class="input" id="description" placeholder="Contexte..." rows="2" style="resize:none;padding:10px 14px;font-size:14px;"></textarea>
         </div>
 
-        <!-- Photos -->
-        <div>
+        <!-- Section photos (photo + duel) -->
+        <div id="photos-section">
           <label class="input-label" id="photos-label" style="font-size:12px;">Photo</label>
           <div id="photos-grid" style="display:grid;grid-template-columns:1fr;gap:10px;margin-top:6px;">
             <div class="photo-slot" id="slot-single" onclick="triggerFile('file-single')">
@@ -119,17 +81,34 @@
           </div>
         </div>
 
-        <!-- Âge min/max sur la même ligne -->
-        <div>
-          <label class="input-label" style="font-size:12px;">Tranche d'âge : <span id="age-display" style="color:#E91E8C;font-weight:800;">18 – 99 ans</span></label>
-          <div class="age-row" style="margin-top:8px;">
+        <!-- Section sondage -->
+        <div id="poll-section" style="display:none;">
+          <label class="input-label" style="font-size:12px;">Options du sondage <span style="color:#666;">(2 minimum, 6 maximum)</span></label>
+          <div id="poll-options" style="margin-top:8px;"></div>
+          <button onclick="addPollOption()" style="background:none;border:1px dashed #292929;border-radius:10px;color:#888;padding:10px;width:100%;cursor:pointer;font-size:13px;margin-top:4px;transition:all 0.15s;"
+            onmouseover="this.style.borderColor='#E91E8C';this.style.color='#E91E8C'"
+            onmouseout="this.style.borderColor='#292929';this.style.color='#888'">
+            ➕ Ajouter une option
+          </button>
+        </div>
+
+        <!-- Filtre genre + montrer à (masqué pour sondage) -->
+        <div id="filter-section">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
             <div>
-              <div style="font-size:11px;color:#666;margin-bottom:4px;">Min</div>
-              <input type="range" id="age-min" min="13" max="99" value="18" style="width:100%;accent-color:#E91E8C;" oninput="updateAgeDisplay()">
+              <label class="input-label" style="font-size:12px;">Montrer à</label>
+              <div style="display:flex;gap:4px;margin-top:4px;">
+                <button id="gf-all"    class="type-btn active"   onclick="setGenderFilter('all')"    style="font-size:11px;">👥</button>
+                <button id="gf-male"   class="type-btn inactive" onclick="setGenderFilter('male')"   style="font-size:11px;">👨</button>
+                <button id="gf-female" class="type-btn inactive" onclick="setGenderFilter('female')" style="font-size:11px;">👩</button>
+              </div>
             </div>
             <div>
-              <div style="font-size:11px;color:#666;margin-bottom:4px;">Max</div>
-              <input type="range" id="age-max" min="13" max="99" value="99" style="width:100%;accent-color:#E91E8C;" oninput="updateAgeDisplay()">
+              <label class="input-label" style="font-size:12px;">Âge : <span id="age-display" style="color:#E91E8C;font-weight:800;">18–99</span></label>
+              <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;">
+                <input type="range" id="age-min" min="18" max="99" value="18" style="width:100%;accent-color:#E91E8C;" oninput="updateAgeDisplay()">
+                <input type="range" id="age-max" min="18" max="99" value="99" style="width:100%;accent-color:#E91E8C;" oninput="updateAgeDisplay()">
+              </div>
             </div>
           </div>
         </div>
@@ -151,26 +130,47 @@ var currentUser = null;
 var projectType = 'photo';
 var genderFilter = 'all';
 var photoFiles = { single: null, left: null, right: null };
+var pollOptionCount = 0;
 
 async function init() {
   currentUser = await requireAuth();
   if (!currentUser) return;
   var profile = await getProfile(currentUser.id);
   if (!profile || !profile.username || !profile.gender || !profile.birth_date) {
-    window.location.href = 'complete-profile.html';
-    return;
+    window.location.href = 'complete-profile.html'; return;
   }
-  renderNav('projects-new.html');
+  renderNav('projects.html');
   loadSidebarProfile();
+  // Initialiser 2 options sondage par défaut
+  addPollOption(); addPollOption();
 }
 
 function setType(type) {
   projectType = type;
   photoFiles = { single: null, left: null, right: null };
 
+  // Boutons
+  ['photo','duel','poll'].forEach(function(t) {
+    var btn = document.getElementById('btn-' + t);
+    btn.className = 'type-btn ' + (t === type ? 'active' : 'inactive');
+  });
+
+  var photosSection = document.getElementById('photos-section');
+  var pollSection = document.getElementById('poll-section');
+
+  if (type === 'poll') {
+    photosSection.style.display = 'none';
+    pollSection.style.display = 'block';
+    document.getElementById('title').placeholder = 'Vous préférez partir en vacances où ?';
+    document.getElementById('description').placeholder = 'Donnez plus de contexte sur votre sondage...';
+  } else {
+    photosSection.style.display = 'block';
+    pollSection.style.display = 'none';
+    document.getElementById('title').placeholder = 'Comment je suis ?';
+    document.getElementById('description').placeholder = 'Contexte...';
+  }
+
   if (type === 'photo') {
-    document.getElementById('btn-photo').style.cssText = 'flex:1;padding:10px 6px;border-radius:10px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;cursor:pointer;font-size:12px;font-family:Arial;';
-    document.getElementById('btn-duel').style.cssText = 'flex:1;padding:10px 6px;border-radius:10px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:12px;font-family:Arial;';
     document.getElementById('photos-label').textContent = 'Photo';
     document.getElementById('photos-grid').style.gridTemplateColumns = '1fr';
     document.getElementById('photos-grid').innerHTML =
@@ -179,73 +179,86 @@ function setType(type) {
         '<button class="slot-remove" onclick="removePhoto(\'single\',event)">✕</button>' +
         '<input type="file" id="file-single" accept="image/*" style="display:none;" onchange="handleFile(this,\'single\')">' +
       '</div>';
-  } else {
-    document.getElementById('btn-duel').style.cssText = 'flex:1;padding:10px 6px;border-radius:10px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;cursor:pointer;font-size:12px;font-family:Arial;';
-    document.getElementById('btn-photo').style.cssText = 'flex:1;padding:10px 6px;border-radius:10px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:12px;font-family:Arial;';
+  } else if (type === 'duel') {
     document.getElementById('photos-label').textContent = 'Photos du duel';
     document.getElementById('photos-grid').style.gridTemplateColumns = '1fr 1fr';
     document.getElementById('photos-grid').innerHTML =
-      '<div>' +
-        '<div style="font-size:11px;color:#888;margin-bottom:4px;font-weight:700;">A — Gauche</div>' +
+      '<div><div style="font-size:11px;color:#888;margin-bottom:4px;font-weight:700;">A — Gauche</div>' +
         '<div class="photo-slot" id="slot-left" onclick="triggerFile(\'file-left\')">' +
           '<div class="slot-placeholder"><span>📁</span>Photo A</div>' +
           '<div class="slot-label">A</div>' +
           '<button class="slot-remove" onclick="removePhoto(\'left\',event)">✕</button>' +
           '<input type="file" id="file-left" accept="image/*" style="display:none;" onchange="handleFile(this,\'left\')">' +
-        '</div>' +
-      '</div>' +
-      '<div>' +
-        '<div style="font-size:11px;color:#888;margin-bottom:4px;font-weight:700;">B — Droite</div>' +
+        '</div></div>' +
+      '<div><div style="font-size:11px;color:#888;margin-bottom:4px;font-weight:700;">B — Droite</div>' +
         '<div class="photo-slot" id="slot-right" onclick="triggerFile(\'file-right\')">' +
           '<div class="slot-placeholder"><span>📁</span>Photo B</div>' +
           '<div class="slot-label">B</div>' +
           '<button class="slot-remove" onclick="removePhoto(\'right\',event)">✕</button>' +
           '<input type="file" id="file-right" accept="image/*" style="display:none;" onchange="handleFile(this,\'right\')">' +
-        '</div>' +
-      '</div>';
+        '</div></div>';
   }
+}
+
+function addPollOption() {
+  var options = document.getElementById('poll-options');
+  var count = options.children.length;
+  if (count >= 6) return;
+  pollOptionCount++;
+  var idx = pollOptionCount;
+  var div = document.createElement('div');
+  div.className = 'poll-option';
+  div.id = 'poll-opt-' + idx;
+  div.innerHTML =
+    '<input class="input" placeholder="Option ' + (count+1) + '..." style="padding:10px 14px;font-size:14px;" id="opt-text-' + idx + '">' +
+    '<button onclick="removePollOption(' + idx + ')" title="Supprimer">✕</button>';
+  options.appendChild(div);
+}
+
+function removePollOption(idx) {
+  var options = document.getElementById('poll-options');
+  if (options.children.length <= 2) { alert('Il faut au moins 2 options.'); return; }
+  var el = document.getElementById('poll-opt-' + idx);
+  if (el) el.remove();
+}
+
+function getPollOptions() {
+  var options = document.getElementById('poll-options');
+  var texts = [];
+  for (var i = 0; i < options.children.length; i++) {
+    var input = options.children[i].querySelector('input');
+    if (input && input.value.trim()) texts.push(input.value.trim());
+  }
+  return texts;
 }
 
 function triggerFile(id) { var el = document.getElementById(id); if (el) el.click(); }
 
 function handleFile(input, slot) {
-  var file = input.files[0];
-  if (!file) return;
+  var file = input.files[0]; if (!file) return;
   photoFiles[slot] = file;
   var url = URL.createObjectURL(file);
-  var slotEl = document.getElementById('slot-' + slot);
-  if (!slotEl) return;
+  var slotEl = document.getElementById('slot-' + slot); if (!slotEl) return;
   slotEl.classList.add('filled');
-  var oldImg = slotEl.querySelector('img');
-  if (oldImg) oldImg.remove();
-  var img = document.createElement('img');
-  img.src = url;
+  var oldImg = slotEl.querySelector('img'); if (oldImg) oldImg.remove();
+  var img = document.createElement('img'); img.src = url;
   slotEl.insertBefore(img, slotEl.firstChild);
 }
 
 function removePhoto(slot, event) {
   event.stopPropagation();
   photoFiles[slot] = null;
-  var slotEl = document.getElementById('slot-' + slot);
-  if (!slotEl) return;
+  var slotEl = document.getElementById('slot-' + slot); if (!slotEl) return;
   slotEl.classList.remove('filled');
-  var img = slotEl.querySelector('img');
-  if (img) img.remove();
-  var input = slotEl.querySelector('input[type="file"]');
-  if (input) input.value = '';
+  var img = slotEl.querySelector('img'); if (img) img.remove();
+  var input = slotEl.querySelector('input[type="file"]'); if (input) input.value = '';
 }
 
 function setGenderFilter(gf) {
   genderFilter = gf;
-  var ids = { all:'gf-all', male:'gf-male', female:'gf-female' };
-  Object.keys(ids).forEach(function(k) {
-    var btn = document.getElementById(ids[k]);
-    if (!btn) return;
-    if (k === gf) {
-      btn.style.cssText = 'flex:1;padding:10px 4px;border-radius:10px;border:2px solid #E91E8C;background:rgba(233,30,140,0.1);color:#E91E8C;font-weight:800;cursor:pointer;font-size:11px;font-family:Arial;';
-    } else {
-      btn.style.cssText = 'flex:1;padding:10px 4px;border-radius:10px;border:1px solid #292929;background:transparent;color:#888;font-weight:400;cursor:pointer;font-size:11px;font-family:Arial;';
-    }
+  ['all','male','female'].forEach(function(k) {
+    document.getElementById('gf-' + k).className = 'type-btn ' + (k === gf ? 'active' : 'inactive') + ' ' + (k === gf ? '' : '');
+    document.getElementById('gf-' + k).style.fontSize = '11px';
   });
 }
 
@@ -253,7 +266,7 @@ function updateAgeDisplay() {
   var min = parseInt(document.getElementById('age-min').value);
   var max = parseInt(document.getElementById('age-max').value);
   if (min > max) { document.getElementById('age-min').value = max; min = max; }
-  document.getElementById('age-display').textContent = min + ' – ' + max + ' ans';
+  document.getElementById('age-display').textContent = min + '–' + max;
 }
 
 async function uploadPhoto(file, slot) {
@@ -274,17 +287,24 @@ async function handleSubmit() {
   document.getElementById('success').style.display = 'none';
 
   if (!title) { showError('error', 'Le titre est obligatoire.'); return; }
+
   if (projectType === 'photo' && !photoFiles.single) { showError('error', 'Ajoute une photo.'); return; }
   if (projectType === 'duel' && (!photoFiles.left || !photoFiles.right)) { showError('error', 'Ajoute les 2 photos (A et B).'); return; }
+  if (projectType === 'poll') {
+    var opts = getPollOptions();
+    if (opts.length < 2) { showError('error', 'Ajoute au moins 2 options.'); return; }
+  }
 
   setLoading('submitBtn', true, '⏳ Création...');
 
   try {
+    var dbType = projectType === 'duel' ? 'duel' : projectType === 'poll' ? 'poll' : 'photo_vote';
+
     var r = await db.from('projects').insert({
       owner_id: currentUser.id,
       title: title,
       description: description,
-      type: projectType === 'duel' ? 'duel' : 'photo_vote',
+      type: dbType,
       status: 'approved',
       is_open: true,
       gender_filter: genderFilter === 'all' ? 'both' : genderFilter,
@@ -299,13 +319,21 @@ async function handleSubmit() {
       var url = await uploadPhoto(photoFiles.single, 'single');
       var ri = await db.from('project_photos').insert({ project_id: project.id, url: url, side: 'single' });
       if (ri.error) throw ri.error;
-    } else {
+
+    } else if (projectType === 'duel') {
       var urlL = await uploadPhoto(photoFiles.left, 'left');
       var rl = await db.from('project_photos').insert({ project_id: project.id, url: urlL, side: 'left' });
       if (rl.error) throw rl.error;
       var urlR = await uploadPhoto(photoFiles.right, 'right');
       var rr = await db.from('project_photos').insert({ project_id: project.id, url: urlR, side: 'right' });
       if (rr.error) throw rr.error;
+
+    } else if (projectType === 'poll') {
+      var pollOpts = getPollOptions();
+      for (var i = 0; i < pollOpts.length; i++) {
+        var ro = await db.from('poll_options').insert({ project_id: project.id, text: pollOpts[i], position: i });
+        if (ro.error) throw ro.error;
+      }
     }
 
     showSuccess('success', '✅ Projet créé !');
