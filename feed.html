@@ -354,7 +354,8 @@ async function votePoll(projectId, optionId) {
     if (ownerIdToDeduct) {
       await deductOwnerCredits(ownerIdToDeduct);
     }
-
+// Après if (ownerIdToDeduct) { await deductOwnerCredits(ownerIdToDeduct); }
+await db.rpc("add_vote_credits", { p_user_id: currentUser.id });
     showVotedOverlay("📊");
 
     setTimeout(function() {
@@ -404,7 +405,8 @@ async function votePhoto(projectId, ratingValue) {
     if (ownerIdToDeduct) {
       await deductOwnerCredits(ownerIdToDeduct);
     }
-
+// Après if (ownerIdToDeduct) { await deductOwnerCredits(ownerIdToDeduct); }
+await db.rpc("add_vote_credits", { p_user_id: currentUser.id });
     var emoji = ratingValue === 3 ? "❤️" : ratingValue === 2 ? "😐" : "👎";
 
     showVotedOverlay(emoji);
@@ -455,7 +457,8 @@ async function voteDuel(projectId, chosenSide) {
     if (ownerIdToDeduct) {
       await deductOwnerCredits(ownerIdToDeduct);
     }
-
+// Après if (ownerIdToDeduct) { await deductOwnerCredits(ownerIdToDeduct); }
+await db.rpc("add_vote_credits", { p_user_id: currentUser.id });
     showVotedOverlay("✅");
 
     setTimeout(function() {
