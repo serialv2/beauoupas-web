@@ -61,68 +61,97 @@ var realtimeSub = null;
 var chatItems = [];
 
 async function init() {
-  currentUser = await requireAuth();
-  if (!currentUser) return;
-  var profile = await getProfile(currentUser.id);
-  if (!profile || !profile.username || !profile.gender || !profile.birth_date) {
-    window.location.href = 'complete-profile.html';
-    return;
-  }
-  renderNav('chat.html');
-  loadSidebarProfile();
-  await loadChats();
+  try {
+    currentUser = await requireAuth();
+    if (!currentUser) return;
 
-  // Ouvrir automatiquement un chat si paramètre URL
-  var params = new URLSearchParams(window.location.search);
-  var chatId = params.get('chat_id');
-  if (chatId) {
-    var chat = chatItems.find(function(c) { return c.id === chatId; });
-    if (chat) openChat(chat);
+    var profile = await getProfile(currentUser.id);
+    if (!profile || !profile.username || !profile.gender || !profile.birth_date) {
+      window.location.href = 'complete-profile.html';
+      return;
+    }
+
+    renderNav('chat.html');
+    loadSidebarProfile();
+    await loadChats();
+
+    // Ouvrir automatiquement un chat si paramètre URL
+    var params = new URLSearchParams(window.location.search);
+    var chatId = params.get('chat_id');
+    if (chatId) {
+      var chat = chatItems.find(function(c) { return c.id === chatId; });
+      if (chat) {
+        openChat(chat);
+      } else {
+        // Chat pas encore dans la liste — le créer ou le charger
+        await openChatById(chatId);
+      }
+    }
+  } catch(error) {
+    console.error('Init error:', error);
   }
 }
 
 async function loadChats() {
-  var result = await db.from('chats').select('*')
-    .or('user1_id.eq.' + currentUser.id + ',user2_id.eq.' + currentUser.id)
-    .order('last_message_at', { ascending: false });
+  try {
+    var result = await db.from('chats')
+      .select('*')
+      .or('user1_id.eq.' + currentUser.id + ',user2_id.eq.' + currentUser.id)
+      .order('last_message_at', { ascending: false });
 
-  if (!result.data || result.data.length === 0) {
+    if (result.error) throw result.error;
+
+    if (!result.data || result.data.length === 0) {
+      document.getElementById('chat-list').innerHTML =
+        '<div class="card" style="text-align:center;padding:30px;">' +
+        '<div style="font-size:36px;margin-bottom:8px;">💬</div>' +
+        '<p style="color:#666;font-size:14px;">Aucune conversation.<br>Clique sur un ami pour lui écrire !</p>' +
+        '</div>';
+      return;
+    }
+
+    chatItems = [];
+    for (var i = 0; i < result.data.length; i++) {
+      var c = result.data[i];
+      var otherId = c.user1_id === currentUser.id ? c.user2_id : c.user1_id;
+      var pr = await db.from('profiles').select('username, avatar_url').eq('id', otherId).single();
+      if (pr.data) {
+        chatItems.push({
+          id: c.id,
+          other_id: otherId,
+          username: pr.data.username,
+          avatar_url: pr.data.avatar_url,
+          last_message: c.last_message,
+          last_message_at: c.last_message_at,
+          user1_id: c.user1_id,
+          user2_id: c.user2_id
+        });
+      }
+    }
+
+    renderChatList();
+  } catch(error) {
+    console.error('loadChats error:', error);
+    document.getElementById('chat-list').innerHTML =
+      '<div style="padding:20px;color:#ef5350;font-size:13px;">Erreur chargement</div>';
+  }
+}
+
+function renderChatList() {
+  if (chatItems.length === 0) {
     document.getElementById('chat-list').innerHTML =
       '<div class="card" style="text-align:center;padding:30px;">' +
       '<div style="font-size:36px;margin-bottom:8px;">💬</div>' +
-      '<p style="color:#666;font-size:14px;">Aucune conversation.<br>Clique sur un ami pour lui écrire !</p>' +
+      '<p style="color:#666;font-size:14px;">Aucune conversation.</p>' +
       '</div>';
     return;
   }
 
-  chatItems = [];
-  for (var i = 0; i < result.data.length; i++) {
-    var c = result.data[i];
-    var otherId = c.user1_id === currentUser.id ? c.user2_id : c.user1_id;
-    var pr = await db.from('profiles').select('username, avatar_url').eq('id', otherId).single();
-    if (pr.data) {
-      chatItems.push({
-        id: c.id,
-        other_id: otherId,
-        username: pr.data.username,
-        avatar_url: pr.data.avatar_url,
-        last_message: c.last_message,
-        last_message_at: c.last_message_at,
-        user1_id: c.user1_id,
-        user2_id: c.user2_id
-      });
-    }
-  }
-
-  renderChatList();
-}
-
-function renderChatList() {
   document.getElementById('chat-list').innerHTML = chatItems.map(function(c) {
     var isActive = activeChat && activeChat.id === c.id;
     var avatarHtml = c.avatar_url
       ? '<img src="' + c.avatar_url + '" style="width:100%;height:100%;object-fit:cover;" alt="">'
-      : '<span style="font-size:15px;font-weight:900;">' + (c.username[0]||'?').toUpperCase() + '</span>';
+      : '<span style="font-size:15px;font-weight:900;">' + (c.username[0] || '?').toUpperCase() + '</span>';
     return '<div class="chat-item' + (isActive ? ' active' : '') + '" onclick="openChatById(\'' + c.id + '\')">' +
       '<div class="avatar" style="width:40px;height:40px;">' + avatarHtml + '</div>' +
       '<div style="flex:1;overflow:hidden;text-align:left;">' +
@@ -133,9 +162,38 @@ function renderChatList() {
   }).join('');
 }
 
-function openChatById(chatId) {
+async function openChatById(chatId) {
+  // Chercher dans la liste locale d'abord
   var chat = chatItems.find(function(c) { return c.id === chatId; });
-  if (chat) openChat(chat);
+
+  if (!chat) {
+    // Pas trouvé — charger depuis la DB
+    try {
+      var r = await db.from('chats').select('*').eq('id', chatId).single();
+      if (r.error || !r.data) return;
+      var c = r.data;
+      var otherId = c.user1_id === currentUser.id ? c.user2_id : c.user1_id;
+      var pr = await db.from('profiles').select('username, avatar_url').eq('id', otherId).single();
+      if (!pr.data) return;
+      chat = {
+        id: c.id,
+        other_id: otherId,
+        username: pr.data.username,
+        avatar_url: pr.data.avatar_url,
+        last_message: c.last_message,
+        last_message_at: c.last_message_at,
+        user1_id: c.user1_id,
+        user2_id: c.user2_id
+      };
+      chatItems.unshift(chat);
+      renderChatList();
+    } catch(e) {
+      console.error('openChatById error:', e);
+      return;
+    }
+  }
+
+  openChat(chat);
 }
 
 function openChat(chat) {
@@ -146,7 +204,7 @@ function openChat(chat) {
 
   var avatarHtml = chat.avatar_url
     ? '<img src="' + chat.avatar_url + '" style="width:100%;height:100%;object-fit:cover;" alt="">'
-    : '<span style="font-size:15px;font-weight:900;">' + (chat.username[0]||'?').toUpperCase() + '</span>';
+    : '<span style="font-size:15px;font-weight:900;">' + (chat.username[0] || '?').toUpperCase() + '</span>';
 
   document.getElementById('chat-window').innerHTML =
     '<div style="padding:16px 20px;border-bottom:1px solid #1A1A1A;display:flex;align-items:center;gap:12px;flex-shrink:0;">' +
@@ -161,24 +219,39 @@ function openChat(chat) {
 
   loadMessages();
 
-  // Realtime
+  // Realtime nouveaux messages
   realtimeSub = db.channel('chat-' + chat.id)
     .on('postgres_changes', {
-      event: 'INSERT', schema: 'public', table: 'messages',
+      event: 'INSERT',
+      schema: 'public',
+      table: 'messages',
       filter: 'chat_id=eq.' + chat.id
     }, function(payload) {
-      appendMessage(payload.new);
-      scrollToBottom();
+      // Ne pas dupliquer si c'est notre propre message
+      if (payload.new.sender_id !== currentUser.id) {
+        appendMessage(payload.new);
+        scrollToBottom();
+      }
     })
     .subscribe();
 }
 
 async function loadMessages() {
-  var result = await db.from('messages').select('*').eq('chat_id', activeChat.id).order('created_at');
-  var container = document.getElementById('messages');
-  if (!container) return;
-  container.innerHTML = (result.data || []).map(function(m) { return messageHtml(m); }).join('');
-  scrollToBottom();
+  try {
+    var result = await db.from('messages')
+      .select('*')
+      .eq('chat_id', activeChat.id)
+      .order('created_at');
+
+    if (result.error) throw result.error;
+
+    var container = document.getElementById('messages');
+    if (!container) return;
+    container.innerHTML = (result.data || []).map(function(m) { return messageHtml(m); }).join('');
+    scrollToBottom();
+  } catch(error) {
+    console.error('loadMessages error:', error);
+  }
 }
 
 function appendMessage(m) {
@@ -195,32 +268,51 @@ function messageHtml(m) {
 }
 
 function escapeHtml(text) {
-  return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  if (!text) return '';
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
 async function sendMessage() {
-  var input = document.getElementById('msg-input');
-  if (!input) return;
-  var content = input.value.trim();
-  if (!content || !activeChat) return;
-  input.value = '';
+  try {
+    var input = document.getElementById('msg-input');
+    if (!input) return;
+    var content = input.value.trim();
+    if (!content || !activeChat) return;
+    input.value = '';
 
-  await db.from('messages').insert({
-    chat_id: activeChat.id,
-    sender_id: currentUser.id,
-    content: content
-  });
+    var result = await db.from('messages').insert({
+      chat_id: activeChat.id,
+      sender_id: currentUser.id,
+      content: content
+    });
 
-  var now = new Date().toISOString();
-  await db.from('chats').update({
-    last_message: content,
-    last_message_at: now
-  }).eq('id', activeChat.id);
+    if (result.error) throw result.error;
 
-  // Mettre à jour localement
-  var chat = chatItems.find(function(c) { return c.id === activeChat.id; });
-  if (chat) { chat.last_message = content; chat.last_message_at = now; }
-  renderChatList();
+    // Afficher immédiatement notre message
+    appendMessage({
+      chat_id: activeChat.id,
+      sender_id: currentUser.id,
+      content: content,
+      created_at: new Date().toISOString()
+    });
+    scrollToBottom();
+
+    var now = new Date().toISOString();
+    await db.from('chats').update({
+      last_message: content,
+      last_message_at: now
+    }).eq('id', activeChat.id);
+
+    var chat = chatItems.find(function(c) { return c.id === activeChat.id; });
+    if (chat) { chat.last_message = content; chat.last_message_at = now; }
+    renderChatList();
+
+  } catch(error) {
+    console.error('sendMessage error:', error);
+  }
 }
 
 function scrollToBottom() {
