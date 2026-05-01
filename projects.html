@@ -364,7 +364,7 @@ async function loadProjects() {
           statsHtml +
 
           '<div style="margin-top:16px;">' +
-            '<button class="btn btn-ghost btn-sm btn-full" onclick="deleteProject(' + JSON.stringify(p.id) + ')">🗑️ Supprimer</button>' +
+            '<button class="btn btn-ghost btn-sm btn-full" onclick="deleteProject(\'' + escapeHtml(p.id) + '\')">🗑️ Supprimer</button>' +
           '</div>' +
 
         '</div>' +
