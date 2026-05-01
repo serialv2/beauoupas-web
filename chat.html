@@ -7,21 +7,23 @@
 <link rel="stylesheet" href="style.css">
 <style>
 .chat-layout { display:flex; gap:16px; height:calc(100vh - 140px); }
-.chat-list { width:260px; flex-shrink:0; display:flex; flex-direction:column; gap:8px; overflow-y:auto; }
+.chat-list { width:280px; flex-shrink:0; display:flex; flex-direction:column; gap:8px; overflow-y:auto; }
 .chat-item { display:flex; align-items:center; gap:12px; padding:14px; cursor:pointer; border-radius:14px; background:#151515; border:1px solid #292929; transition:border-color 0.15s; }
 .chat-item:hover, .chat-item.active { border-color:#E91E8C; background:rgba(233,30,140,0.05); }
 .chat-window { flex:1; display:flex; flex-direction:column; background:#151515; border:1px solid #292929; border-radius:22px; overflow:hidden; min-height:0; }
 .messages { flex:1; overflow-y:auto; padding:16px 20px; display:flex; flex-direction:column; gap:10px; }
 .msg { display:flex; }
 .msg.mine { justify-content:flex-end; }
-.bubble { max-width:70%; padding:10px 14px; border-radius:14px; font-size:14px; line-height:1.4; word-break:break-word; }
+.bubble { max-width:70%; padding:10px 14px; border-radius:14px; font-size:14px; line-height:1.5; word-break:break-word; }
 .bubble.mine { background:#E91E8C; color:white; border-radius:14px 14px 4px 14px; }
 .bubble.other { background:#222; color:#EEE; border-radius:14px 14px 14px 4px; }
+.msg-time { font-size:10px; color:#555; margin-top:4px; text-align:right; }
 .chat-input { padding:14px 16px; border-top:1px solid #1A1A1A; display:flex; gap:10px; flex-shrink:0; }
+.chat-empty { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#444; }
 @media (max-width:768px) {
   .chat-layout { flex-direction:column; height:auto; }
-  .chat-list { width:100%; max-height:200px; }
-  .chat-window { height:calc(100vh - 400px); min-height:300px; }
+  .chat-list { width:100%; max-height:220px; }
+  .chat-window { height:calc(100vh - 420px); min-height:280px; }
 }
 </style>
 </head>
@@ -37,12 +39,12 @@
 <nav class="bottom-nav" id="bottom-nav"></nav>
 
 <main class="main-content">
-  <div style="max-width:900px;margin:0 auto;">
+  <div style="max-width:960px;margin:0 auto;">
     <h1 style="font-size:28px;font-weight:900;margin-bottom:20px;">💬 Chat</h1>
     <div class="chat-layout">
       <div class="chat-list" id="chat-list"><div class="spinner"></div></div>
       <div class="chat-window" id="chat-window">
-        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#444;">
+        <div class="chat-empty">
           <div style="font-size:48px;margin-bottom:12px;">💬</div>
           <p>Sélectionne une conversation</p>
         </div>
@@ -75,65 +77,78 @@ async function init() {
     loadSidebarProfile();
     await loadChats();
 
-    // Ouvrir automatiquement un chat si paramètre URL
+    // Ouvrir automatiquement si ?chat_id=
     var params = new URLSearchParams(window.location.search);
     var chatId = params.get('chat_id');
     if (chatId) {
-      var chat = chatItems.find(function(c) { return c.id === chatId; });
-      if (chat) {
-        openChat(chat);
-      } else {
-        // Chat pas encore dans la liste — le créer ou le charger
-        await openChatById(chatId);
-      }
+      await openChatById(chatId);
     }
-  } catch(error) {
-    console.error('Init error:', error);
+  } catch(e) {
+    console.error('Init error:', e);
   }
 }
 
 async function loadChats() {
   try {
+    // Récupérer tous les chats de l'utilisateur
     var result = await db.from('chats')
       .select('*')
-      .or('user1_id.eq.' + currentUser.id + ',user2_id.eq.' + currentUser.id)
-      .order('last_message_at', { ascending: false });
+      .or('user1_id.eq.' + currentUser.id + ',user2_id.eq.' + currentUser.id);
 
     if (result.error) throw result.error;
 
-    if (!result.data || result.data.length === 0) {
+    var chats = result.data || [];
+
+    if (chats.length === 0) {
       document.getElementById('chat-list').innerHTML =
         '<div class="card" style="text-align:center;padding:30px;">' +
         '<div style="font-size:36px;margin-bottom:8px;">💬</div>' +
-        '<p style="color:#666;font-size:14px;">Aucune conversation.<br>Clique sur un ami pour lui écrire !</p>' +
+        '<p style="color:#666;font-size:14px;">Aucune conversation.<br>Va sur le profil d\'un ami pour lui écrire !</p>' +
         '</div>';
       return;
     }
 
     chatItems = [];
-    for (var i = 0; i < result.data.length; i++) {
-      var c = result.data[i];
+
+    for (var i = 0; i < chats.length; i++) {
+      var c = chats[i];
       var otherId = c.user1_id === currentUser.id ? c.user2_id : c.user1_id;
-      var pr = await db.from('profiles').select('username, avatar_url').eq('id', otherId).single();
-      if (pr.data) {
-        chatItems.push({
-          id: c.id,
-          other_id: otherId,
-          username: pr.data.username,
-          avatar_url: pr.data.avatar_url,
-          last_message: c.last_message,
-          last_message_at: c.last_message_at,
-          user1_id: c.user1_id,
-          user2_id: c.user2_id
-        });
-      }
+
+      // Récupérer le profil de l'autre
+      var pr = await db.from('profiles').select('id, username, avatar_url').eq('id', otherId).single();
+      if (!pr.data) continue;
+
+      // Récupérer le dernier message depuis la table messages (comme Maui)
+      var lastMsgResult = await db.from('messages')
+        .select('content, created_at, sender_id')
+        .eq('chat_id', c.id)
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      var lastMsg = (lastMsgResult.data && lastMsgResult.data.length > 0) ? lastMsgResult.data[0] : null;
+
+      chatItems.push({
+        id: c.id,
+        other_id: otherId,
+        username: pr.data.username,
+        avatar_url: pr.data.avatar_url,
+        last_message: lastMsg ? lastMsg.content : 'Dites bonjour ! 👋',
+        last_message_at: lastMsg ? lastMsg.created_at : c.created_at,
+        is_blocked: c.is_blocked || false
+      });
     }
 
+    // Trier par dernier message
+    chatItems.sort(function(a, b) {
+      return new Date(b.last_message_at) - new Date(a.last_message_at);
+    });
+
     renderChatList();
-  } catch(error) {
-    console.error('loadChats error:', error);
+
+  } catch(e) {
+    console.error('loadChats error:', e);
     document.getElementById('chat-list').innerHTML =
-      '<div style="padding:20px;color:#ef5350;font-size:13px;">Erreur chargement</div>';
+      '<div style="padding:20px;color:#ef5350;font-size:13px;">Erreur : ' + (e.message || e) + '</div>';
   }
 }
 
@@ -152,38 +167,42 @@ function renderChatList() {
     var avatarHtml = c.avatar_url
       ? '<img src="' + c.avatar_url + '" style="width:100%;height:100%;object-fit:cover;" alt="">'
       : '<span style="font-size:15px;font-weight:900;">' + (c.username[0] || '?').toUpperCase() + '</span>';
+    var timeLabel = c.last_message_at ? new Date(c.last_message_at).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }) : '';
+    var blockedBadge = c.is_blocked ? '<span style="font-size:10px;color:#ef5350;">🚫</span>' : '';
+
     return '<div class="chat-item' + (isActive ? ' active' : '') + '" onclick="openChatById(\'' + c.id + '\')">' +
-      '<div class="avatar" style="width:40px;height:40px;">' + avatarHtml + '</div>' +
-      '<div style="flex:1;overflow:hidden;text-align:left;">' +
-        '<div style="font-weight:800;font-size:14px;">@' + c.username + '</div>' +
-        '<div style="font-size:12px;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (c.last_message || '...') + '</div>' +
+      '<div class="avatar" style="width:42px;height:42px;">' + avatarHtml + '</div>' +
+      '<div style="flex:1;overflow:hidden;min-width:0;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+          '<div style="font-weight:800;font-size:14px;">@' + escHtml(c.username) + '</div>' +
+          '<div style="font-size:11px;color:#555;">' + timeLabel + blockedBadge + '</div>' +
+        '</div>' +
+        '<div style="font-size:12px;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;">' + escHtml(c.last_message) + '</div>' +
       '</div>' +
       '</div>';
   }).join('');
 }
 
 async function openChatById(chatId) {
-  // Chercher dans la liste locale d'abord
   var chat = chatItems.find(function(c) { return c.id === chatId; });
 
   if (!chat) {
-    // Pas trouvé — charger depuis la DB
+    // Charger depuis la DB si pas encore dans la liste
     try {
       var r = await db.from('chats').select('*').eq('id', chatId).single();
       if (r.error || !r.data) return;
       var c = r.data;
       var otherId = c.user1_id === currentUser.id ? c.user2_id : c.user1_id;
-      var pr = await db.from('profiles').select('username, avatar_url').eq('id', otherId).single();
+      var pr = await db.from('profiles').select('id, username, avatar_url').eq('id', otherId).single();
       if (!pr.data) return;
       chat = {
         id: c.id,
         other_id: otherId,
         username: pr.data.username,
         avatar_url: pr.data.avatar_url,
-        last_message: c.last_message,
-        last_message_at: c.last_message_at,
-        user1_id: c.user1_id,
-        user2_id: c.user2_id
+        last_message: 'Dites bonjour ! 👋',
+        last_message_at: c.created_at,
+        is_blocked: c.is_blocked || false
       };
       chatItems.unshift(chat);
       renderChatList();
@@ -206,20 +225,31 @@ function openChat(chat) {
     ? '<img src="' + chat.avatar_url + '" style="width:100%;height:100%;object-fit:cover;" alt="">'
     : '<span style="font-size:15px;font-weight:900;">' + (chat.username[0] || '?').toUpperCase() + '</span>';
 
+  var blockedBanner = chat.is_blocked
+    ? '<div style="padding:10px 16px;background:rgba(244,67,54,0.1);border-bottom:1px solid rgba(244,67,54,0.2);text-align:center;font-size:13px;color:#ef5350;">🚫 Cette conversation est bloquée</div>'
+    : '';
+
   document.getElementById('chat-window').innerHTML =
-    '<div style="padding:16px 20px;border-bottom:1px solid #1A1A1A;display:flex;align-items:center;gap:12px;flex-shrink:0;">' +
-      '<div class="avatar" style="width:36px;height:36px;">' + avatarHtml + '</div>' +
-      '<span style="font-weight:800;font-size:15px;">@' + chat.username + '</span>' +
+    '<div style="padding:14px 20px;border-bottom:1px solid #1A1A1A;display:flex;align-items:center;gap:12px;flex-shrink:0;">' +
+      '<div class="avatar" style="width:38px;height:38px;">' + avatarHtml + '</div>' +
+      '<div style="flex:1;">' +
+        '<div style="font-weight:800;font-size:15px;">@' + escHtml(chat.username) + '</div>' +
+      '</div>' +
     '</div>' +
+    blockedBanner +
     '<div class="messages" id="messages"></div>' +
-    '<div class="chat-input">' +
-      '<input class="input" id="msg-input" placeholder="Votre message..." onkeydown="if(event.key===\'Enter\') sendMessage()" style="flex:1;">' +
-      '<button class="btn btn-primary btn-sm" onclick="sendMessage()">Envoyer</button>' +
-    '</div>';
+    (!chat.is_blocked ?
+      '<div class="chat-input">' +
+        '<input class="input" id="msg-input" placeholder="Votre message..." ' +
+          'onkeydown="if(event.key===\'Enter\' && !event.shiftKey) { event.preventDefault(); sendMessage(); }" ' +
+          'style="flex:1;">' +
+        '<button class="btn btn-primary btn-sm" onclick="sendMessage()">Envoyer</button>' +
+      '</div>'
+    : '');
 
   loadMessages();
 
-  // Realtime nouveaux messages
+  // Realtime — nouveaux messages
   realtimeSub = db.channel('chat-' + chat.id)
     .on('postgres_changes', {
       event: 'INSERT',
@@ -227,10 +257,12 @@ function openChat(chat) {
       table: 'messages',
       filter: 'chat_id=eq.' + chat.id
     }, function(payload) {
-      // Ne pas dupliquer si c'est notre propre message
-      if (payload.new.sender_id !== currentUser.id) {
+      // Afficher seulement les messages des autres
+      if (payload.new && payload.new.sender_id !== currentUser.id) {
         appendMessage(payload.new);
         scrollToBottom();
+        // Mettre à jour le dernier message dans la liste
+        updateChatLastMessage(chat.id, payload.new.content, payload.new.created_at);
       }
     })
     .subscribe();
@@ -241,38 +273,63 @@ async function loadMessages() {
     var result = await db.from('messages')
       .select('*')
       .eq('chat_id', activeChat.id)
-      .order('created_at');
+      .order('created_at', { ascending: true });
 
     if (result.error) throw result.error;
 
     var container = document.getElementById('messages');
     if (!container) return;
-    container.innerHTML = (result.data || []).map(function(m) { return messageHtml(m); }).join('');
+
+    var msgs = result.data || [];
+    if (msgs.length === 0) {
+      container.innerHTML = '<div style="text-align:center;color:#444;padding:40px;font-size:14px;">Aucun message.<br>Soyez le premier à écrire !</div>';
+      return;
+    }
+
+    container.innerHTML = msgs.map(function(m) { return messageHtml(m); }).join('');
     scrollToBottom();
-  } catch(error) {
-    console.error('loadMessages error:', error);
+
+    // Marquer comme lu
+    await db.from('messages')
+      .update({ is_read: true })
+      .eq('chat_id', activeChat.id)
+      .neq('sender_id', currentUser.id)
+      .eq('is_read', false);
+
+  } catch(e) {
+    console.error('loadMessages error:', e);
   }
+}
+
+function messageHtml(m) {
+  var isMine = m.sender_id === currentUser.id;
+  var time = m.created_at ? new Date(m.created_at).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }) : '';
+  return '<div class="msg' + (isMine ? ' mine' : '') + '">' +
+    '<div>' +
+      '<div class="bubble ' + (isMine ? 'mine' : 'other') + '">' + escHtml(m.content) + '</div>' +
+      '<div class="msg-time">' + time + '</div>' +
+    '</div>' +
+    '</div>';
 }
 
 function appendMessage(m) {
   var container = document.getElementById('messages');
   if (!container) return;
+  // Retirer le message "aucun message" si présent
+  if (container.querySelector('div[style*="Aucun message"]')) container.innerHTML = '';
   container.insertAdjacentHTML('beforeend', messageHtml(m));
 }
 
-function messageHtml(m) {
-  var isMine = m.sender_id === currentUser.id;
-  return '<div class="msg' + (isMine ? ' mine' : '') + '">' +
-    '<div class="bubble ' + (isMine ? 'mine' : 'other') + '">' + escapeHtml(m.content) + '</div>' +
-    '</div>';
-}
-
-function escapeHtml(text) {
-  if (!text) return '';
-  return String(text)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+function updateChatLastMessage(chatId, content, time) {
+  var chat = chatItems.find(function(c) { return c.id === chatId; });
+  if (chat) {
+    chat.last_message = content;
+    chat.last_message_at = time;
+    chatItems.sort(function(a, b) {
+      return new Date(b.last_message_at) - new Date(a.last_message_at);
+    });
+    renderChatList();
+  }
 }
 
 async function sendMessage() {
@@ -281,43 +338,59 @@ async function sendMessage() {
     if (!input) return;
     var content = input.value.trim();
     if (!content || !activeChat) return;
-    input.value = '';
+    if (activeChat.is_blocked) return;
 
+    input.value = '';
+    input.disabled = true;
+
+    // Afficher immédiatement
+    var tempMsg = {
+      id: 'temp-' + Date.now(),
+      chat_id: activeChat.id,
+      sender_id: currentUser.id,
+      content: content,
+      created_at: new Date().toISOString()
+    };
+    appendMessage(tempMsg);
+    scrollToBottom();
+
+    // Insérer en DB
     var result = await db.from('messages').insert({
       chat_id: activeChat.id,
       sender_id: currentUser.id,
       content: content
     });
 
+    input.disabled = false;
+    input.focus();
+
     if (result.error) throw result.error;
 
-    // Afficher immédiatement notre message
-    appendMessage({
-      chat_id: activeChat.id,
-      sender_id: currentUser.id,
-      content: content,
-      created_at: new Date().toISOString()
-    });
-    scrollToBottom();
-
-    var now = new Date().toISOString();
+    // Mettre à jour last_message dans chats
     await db.from('chats').update({
       last_message: content,
-      last_message_at: now
+      last_message_at: new Date().toISOString()
     }).eq('id', activeChat.id);
 
-    var chat = chatItems.find(function(c) { return c.id === activeChat.id; });
-    if (chat) { chat.last_message = content; chat.last_message_at = now; }
-    renderChatList();
+    updateChatLastMessage(activeChat.id, content, new Date().toISOString());
 
-  } catch(error) {
-    console.error('sendMessage error:', error);
+  } catch(e) {
+    console.error('sendMessage error:', e);
+    var input2 = document.getElementById('msg-input');
+    if (input2) { input2.disabled = false; }
   }
 }
 
 function scrollToBottom() {
-  var m = document.getElementById('messages');
-  if (m) m.scrollTop = m.scrollHeight;
+  setTimeout(function() {
+    var m = document.getElementById('messages');
+    if (m) m.scrollTop = m.scrollHeight;
+  }, 50);
+}
+
+function escHtml(v) {
+  if (!v) return '';
+  return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 init();
