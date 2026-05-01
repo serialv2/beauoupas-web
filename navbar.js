@@ -7,6 +7,7 @@ function renderNav(activePage) {
     { href: 'profile.html',  icon: '👤', label: 'Profil' },
   ];
 
+  // Sidebar desktop
   var sidebarHtml = pages.map(function(p) {
     var isActive = p.href === activePage;
     var style = isActive
@@ -16,12 +17,21 @@ function renderNav(activePage) {
     return '<a href="' + href + '" style="' + style + '"><span style="font-size:18px;">' + p.icon + '</span>' + p.label + '</a>';
   }).join('');
 
-  var bottomHtml = pages.map(function(p) {
-    var isActive = p.href === activePage;
-    var style = 'flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 0;color:' + (isActive ? '#E91E8C' : '#555') + ';text-decoration:none;font-size:10px;font-weight:' + (isActive ? '800' : '400') + ';';
-    var href = isActive ? 'javascript:void(0)' : p.href;
-    return '<a href="' + href + '" style="' + style + '"><span style="font-size:22px;">' + p.icon + '</span>' + p.label + '</a>';
-  }).join('');
+  // Bottom nav mobile — avec barre crédits en haut
+  var bottomHtml =
+    '<div style="display:flex;align-items:center;justify-content:center;padding:5px 0 4px;border-bottom:1px solid #1A1A1A;background:#0A0A0A;">' +
+      '<span id="credits-display-mobile" style="font-size:12px;color:#E91E8C;font-weight:800;">💰 ... crédits</span>' +
+    '</div>' +
+    '<div style="display:flex;">' +
+    pages.map(function(p) {
+      var isActive = p.href === activePage;
+      var style = 'flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 0;color:' +
+        (isActive ? '#E91E8C' : '#555') +
+        ';text-decoration:none;font-size:10px;font-weight:' + (isActive ? '800' : '400') + ';';
+      var href = isActive ? 'javascript:void(0)' : p.href;
+      return '<a href="' + href + '" style="' + style + '"><span style="font-size:22px;">' + p.icon + '</span>' + p.label + '</a>';
+    }).join('') +
+    '</div>';
 
   var sidebarEl = document.getElementById('sidebar-nav');
   var bottomEl = document.getElementById('bottom-nav');
@@ -39,22 +49,30 @@ async function loadSidebarProfile() {
 }
 
 function updateSidebarCredits(profile) {
+  var credits = profile.credits || 0;
+
+  // Avatar
   var avatarHtml = profile.avatar_url
     ? '<img src="' + profile.avatar_url + '" alt="">'
     : '<span style="font-size:15px;font-weight:900;">' + (profile.username ? profile.username[0].toUpperCase() : '?') + '</span>';
 
+  // Sidebar desktop
   var el = document.getElementById('sidebar-user');
-  if (!el) return;
+  if (el) {
+    el.innerHTML =
+      '<div class="user-card">' +
+        '<div class="avatar" style="width:36px;height:36px;">' + avatarHtml + '</div>' +
+        '<div style="flex:1;overflow:hidden;">' +
+          '<div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">@' + profile.username + '</div>' +
+          '<div id="credits-display" style="font-size:12px;color:#E91E8C;font-weight:800;margin-top:2px;">💰 ' + credits + ' crédits</div>' +
+        '</div>' +
+        '<button onclick="handleSignOut()" style="background:none;border:none;color:#555;cursor:pointer;font-size:16px;padding:4px;" title="Déconnexion">↩</button>' +
+      '</div>';
+  }
 
-  el.innerHTML =
-    '<div class="user-card">' +
-      '<div class="avatar" style="width:36px;height:36px;">' + avatarHtml + '</div>' +
-      '<div style="flex:1;overflow:hidden;">' +
-        '<div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">@' + profile.username + '</div>' +
-        '<div id="credits-display" style="font-size:12px;color:#E91E8C;font-weight:800;margin-top:2px;">💰 ' + (profile.credits || 0) + ' crédits</div>' +
-      '</div>' +
-      '<button onclick="handleSignOut()" style="background:none;border:none;color:#555;cursor:pointer;font-size:16px;padding:4px;" title="Déconnexion">↩</button>' +
-    '</div>';
+  // Bottom nav mobile
+  var mobileEl = document.getElementById('credits-display-mobile');
+  if (mobileEl) mobileEl.textContent = '💰 ' + credits + ' crédits';
 }
 
 function startCreditsRealtime(userId) {
@@ -66,10 +84,16 @@ function startCreditsRealtime(userId) {
         table: 'profiles',
         filter: 'id=eq.' + userId
       }, function(payload) {
+        if (!payload.new || payload.new.credits === undefined) return;
+        var credits = payload.new.credits;
+
+        // Sidebar desktop
         var el = document.getElementById('credits-display');
-        if (el && payload.new && payload.new.credits !== undefined) {
-          el.textContent = '💰 ' + payload.new.credits + ' crédits';
-        }
+        if (el) el.textContent = '💰 ' + credits + ' crédits';
+
+        // Bottom nav mobile
+        var mobileEl = document.getElementById('credits-display-mobile');
+        if (mobileEl) mobileEl.textContent = '💰 ' + credits + ' crédits';
       })
       .subscribe();
   } catch(e) {
