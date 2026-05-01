@@ -405,7 +405,11 @@ async function voteDuel(projectId, chosenSide) {
     });
   }
 }
-
+async function deductOwnerCredits(ownerId) {
+  try {
+    await db.rpc('deduct_vote_received_credits', { p_owner_id: ownerId });
+  } catch(e) { console.error('deductOwnerCredits:', e); }
+}
 function showVotedOverlay(emoji) {
   var card = document.getElementById("current-project");
   if (!card) return;
