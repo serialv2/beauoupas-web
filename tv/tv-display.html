@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeauOuPas TV</title>
+<link rel="stylesheet" href="css/tv.css">
+</head>
+<body>
+
+<div class="tv-container">
+
+  <!-- ÉCRAN 1 : Salle d'attente -->
+  <div id="screen-lobby" class="tv-screen tv-lobby"></div>
+
+  <!-- ÉCRAN 2 : Vote en cours -->
+  <div id="screen-vote" class="tv-screen tv-vote"></div>
+
+  <!-- ÉCRAN 3 : Transition (2,5s) -->
+  <div id="screen-transition" class="tv-screen tv-transition"></div>
+
+  <!-- ÉCRAN 4 : Big reveal final -->
+  <div id="screen-reveal" class="tv-screen tv-reveal"></div>
+
+  <!-- Écran d'erreur -->
+  <div id="screen-error" class="tv-screen tv-error"></div>
+
+  <!-- Écran de chargement initial -->
+  <div id="screen-loading" class="tv-screen tv-loading active">
+    <div class="tv-loading-spinner"></div>
+  </div>
+
+  <!-- Overlay pause (par-dessus tout, quand l'animateur a mis en pause) -->
+  <div class="tv-pause-overlay" id="pause-overlay">
+    <div class="tv-pause-icon">⏸️</div>
+    <div class="tv-pause-title">En pause</div>
+    <div class="tv-pause-subtitle">L'animateur a mis la session en pause</div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/tv-config.js"></script>
+<script src="js/tv-realtime.js"></script>
+<script src="js/tv-app.js"></script>
+<script>
+  // Démarrer la TV au chargement
+  window.addEventListener('DOMContentLoaded', function() {
+    window.TVApp.start();
+  });
+</script>
+
+</body>
+</html>
