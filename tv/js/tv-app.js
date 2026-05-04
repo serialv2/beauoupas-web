@@ -9,9 +9,8 @@
 //   REVEAL      : big reveal final (slideshow)
 //   ERROR       : erreur (code invalide, série désactivée, etc.)
 //
-// La TV est en mode "lecture seule" : elle observe ce qui se passe en
-// DB (via Realtime) et adapte son affichage. Aucune action utilisateur
-// n'est possible sur la TV elle-même.
+// La TV PILOTE l'avancement (appelle tv_advance_to_next quand le
+// timer arrive à 0). Les téléphones suivent via Realtime.
 //
 // ═══════════════════════════════════════════════════════════════════
 
@@ -23,17 +22,19 @@ window.TVApp = (function() {
 
   var state = {
     accessCode: null,
-    series: null,           // ligne de la table series
-    projects: [],           // séries_projects + jointure projects + photos
-    profiles: {},           // {profileId: profile} pour les avatars
-    voteCounts: {},         // {seriesProjectId: count} pour le compteur live
-    selfies: [],            // selfies pour le big reveal
+    series: null,
+    projects: [],
+    profiles: {},
+    voteCounts: {},
+    selfies: [],
     participantsCount: 0,
     countdownInterval: null,
     transitionTimeout: null,
     revealStep: 0,
     revealTimeout: null
   };
+
+  var _isAdvancing = false;
 
   // ─────────────────────────────────────────────────────────────────
   // Démarrage : appelé au chargement de tv-display.html
@@ -51,7 +52,6 @@ window.TVApp = (function() {
     state.accessCode = code.toUpperCase();
 
     try {
-      // 1. Charger la série via le code
       var sb = window.supabase.createClient(
         window.TV_CONFIG.SUPABASE_URL,
         window.TV_CONFIG.SUPABASE_ANON_KEY
@@ -76,16 +76,11 @@ window.TVApp = (function() {
         return;
       }
 
-      // 2. Charger les projets de la série (avec photos + auteur)
       await loadProjects();
-
-      // 3. Charger les participants existants (pour le compteur)
       await loadParticipantsCount();
 
-      // 4. Démarrer les subscriptions Realtime
       window.TVRealtime.start(state.series.id);
 
-      // 5. Afficher l'écran approprié selon le statut
       renderCurrentScreen();
 
     } catch (err) {
@@ -111,7 +106,6 @@ window.TVApp = (function() {
 
     state.projects = res.data || [];
 
-    // Charger les profils des auteurs (pour afficher éventuellement)
     var ownerIds = state.projects
       .map(function(sp) { return sp.projects && sp.projects.owner_id; })
       .filter(function(id) { return id; });
@@ -129,7 +123,6 @@ window.TVApp = (function() {
       }
     }
 
-    // Initialiser les compteurs de votes pour chaque projet
     var votesRes = await sb
       .from('series_votes')
       .select('series_project_id')
@@ -143,23 +136,50 @@ window.TVApp = (function() {
   }
 
   // ─────────────────────────────────────────────────────────────────
-  // Compteur de participants (selfies différents = participants)
+  // ⚡ FIX 1 : Compter les participants depuis series_participants
   // ─────────────────────────────────────────────────────────────────
 
   async function loadParticipantsCount() {
     var sb = window.TVRealtime.getClient();
 
-    // Le nombre de "participants" est calculé par le nombre de votants distincts
-    // (basé sur series_votes) — c'est plus fiable que de compter les selfies
     var res = await sb
-      .from('series_votes')
-      .select('voter_id')
+      .from('series_participants')
+      .select('user_id', { count: 'exact', head: true })
       .eq('series_id', state.series.id);
 
-    if (res.data) {
-      var uniqueVoters = {};
-      res.data.forEach(function(v) { uniqueVoters[v.voter_id] = true; });
-      state.participantsCount = Object.keys(uniqueVoters).length;
+    if (res.count !== null && res.count !== undefined) {
+      state.participantsCount = res.count;
+    }
+    console.log('[TVApp] Participants count loaded:', state.participantsCount);
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // ⚡ FIX 2 : La TV appelle tv_advance_to_next quand le timer expire
+  // ─────────────────────────────────────────────────────────────────
+
+  async function advanceToNextProject() {
+    if (_isAdvancing) {
+      console.log('[TVApp] advanceToNext déjà en cours, skip');
+      return;
+    }
+    _isAdvancing = true;
+
+    try {
+      var sb = window.TVRealtime.getClient();
+      console.log('[TVApp] Appel RPC tv_advance_to_next');
+      var res = await sb.rpc('tv_advance_to_next', {
+        p_series_id: state.series.id
+      });
+      if (res.error) {
+        console.error('[TVApp] tv_advance_to_next error:', res.error);
+      } else {
+        console.log('[TVApp] tv_advance_to_next OK:', res.data);
+      }
+    } catch (err) {
+      console.error('[TVApp] advanceToNext exception:', err);
+    } finally {
+      // Reset après 3s pour éviter les double-appels rapprochés
+      setTimeout(function() { _isAdvancing = false; }, 3000);
     }
   }
 
@@ -171,7 +191,6 @@ window.TVApp = (function() {
     var s = state.series;
     if (!s) return;
 
-    // Pause overlay
     if (s.tv_paused) {
       showPauseOverlay();
     } else {
@@ -188,7 +207,7 @@ window.TVApp = (function() {
   }
 
   // ─────────────────────────────────────────────────────────────────
-  // Écran 1 : Lobby (salle d'attente)
+  // Écran 1 : Lobby
   // ─────────────────────────────────────────────────────────────────
 
   function renderLobby() {
@@ -215,8 +234,6 @@ window.TVApp = (function() {
 
     document.getElementById('screen-lobby').innerHTML = html;
 
-    // Générer le QR code (vers l'URL de l'app — à préciser plus tard)
-    // Pour l'instant on affiche un placeholder
     var qrEl = document.getElementById('lobby-qr');
     if (qrEl) {
       qrEl.innerHTML = '<div style="font-size: 11px; color: #888; padding: 8px; text-align: center;">QR Code<br>(à venir)</div>';
@@ -267,7 +284,6 @@ window.TVApp = (function() {
 
     document.getElementById('screen-vote').innerHTML = html;
 
-    // Démarrer le countdown synchronisé via started_at
     startCountdown(sp);
   }
 
@@ -313,7 +329,6 @@ window.TVApp = (function() {
       '</div>';
     }
 
-    // Photo simple
     var photo = photos.find(function(ph) { return ph.side === 'single'; }) || photos[0];
     if (!photo) {
       return '<div class="tv-vote-photos"><div style="color: #ef5350;">Photo introuvable</div></div>';
@@ -343,7 +358,6 @@ window.TVApp = (function() {
     var duration = window.TV_CONFIG.VOTE_DURATION_SECONDS * 1000;
 
     function tick() {
-      // Si en pause, on gèle l'affichage
       if (state.series && state.series.tv_paused) return;
 
       var elapsed = Date.now() - startedAt;
@@ -360,10 +374,9 @@ window.TVApp = (function() {
       }
 
       if (remaining <= 0) {
-        // Le timer est arrivé à 0 — on attend que la série passe au suivant
-        // (c'est l'animateur ou le RPC tv_advance_to_next qui le fait)
         stopCountdown();
-        // On bascule en mode "transition" en attendant
+        // ⚡ FIX : la TV pilote l'avancement
+        advanceToNextProject();
         renderTransition();
       }
     }
@@ -380,7 +393,7 @@ window.TVApp = (function() {
   }
 
   // ─────────────────────────────────────────────────────────────────
-  // Écran 3 : Transition (2,5s)
+  // Écran 3 : Transition
   // ─────────────────────────────────────────────────────────────────
 
   function renderTransition() {
@@ -393,7 +406,6 @@ window.TVApp = (function() {
 
     document.getElementById('screen-transition').innerHTML = html;
 
-    // Animations séquencées
     setTimeout(function() {
       var el = document.getElementById('trans-icon');
       if (el) el.classList.add('show');
@@ -409,15 +421,12 @@ window.TVApp = (function() {
   }
 
   // ─────────────────────────────────────────────────────────────────
-  // Écran 4 : Big reveal (slideshow + selfies)
+  // Écran 4 : Big reveal
   // ─────────────────────────────────────────────────────────────────
 
   async function renderReveal() {
     setActiveScreen('reveal');
-
-    // Charger les selfies pour le wall final
     await loadSelfies();
-
     state.revealStep = 0;
     showNextRevealStep();
   }
@@ -435,20 +444,17 @@ window.TVApp = (function() {
   }
 
   function showNextRevealStep() {
-    var totalSteps = state.projects.length + 1; // N projets + 1 final
+    var totalSteps = state.projects.length + 1;
 
     if (state.revealStep >= totalSteps) {
-      // Boucle au début après la fin (au cas où la TV reste allumée)
       state.revealStep = 0;
     }
 
     if (state.revealStep < state.projects.length) {
-      // Afficher un projet
       showRevealProject(state.revealStep);
       state.revealStep++;
       state.revealTimeout = setTimeout(showNextRevealStep, window.TV_CONFIG.REVEAL_PROJECT_DURATION_MS);
     } else {
-      // Afficher le grand gagnant + selfies
       showRevealFinal();
       state.revealStep++;
       state.revealTimeout = setTimeout(showNextRevealStep, window.TV_CONFIG.REVEAL_WINNER_DURATION_MS);
@@ -461,7 +467,6 @@ window.TVApp = (function() {
 
     var p = sp.projects;
     var totalProjects = state.projects.length;
-
     var voteCount = state.voteCounts[sp.id] || 0;
 
     var photoHtml = '';
@@ -491,10 +496,8 @@ window.TVApp = (function() {
   }
 
   function showRevealFinal() {
-    // Stats segmentées (pour l'instant, juste un placeholder — sera enrichi)
     var selfiesCount = state.selfies.length;
 
-    // Choisir la classe de taille selon le nombre de selfies
     var sizeClass = 'size-small';
     if (selfiesCount > 30 && selfiesCount <= 100) sizeClass = 'size-medium';
     else if (selfiesCount > 100) sizeClass = 'size-large';
@@ -547,7 +550,7 @@ window.TVApp = (function() {
   }
 
   // ─────────────────────────────────────────────────────────────────
-  // Active un écran (cache les autres)
+  // Écrans
   // ─────────────────────────────────────────────────────────────────
 
   function setActiveScreen(name) {
@@ -562,41 +565,37 @@ window.TVApp = (function() {
   }
 
   // ─────────────────────────────────────────────────────────────────
-  // Réception des events Realtime (depuis tv-realtime.js)
+  // Réception des events Realtime
   // ─────────────────────────────────────────────────────────────────
 
   function onRealtimeEvent(type, payload) {
     if (type === 'series') {
-      // Detecter changement de status, current_project_index, tv_paused
       var prev = state.series;
       state.series = payload;
 
-      // Pause / reprise
       if (prev.tv_paused !== payload.tv_paused) {
         if (payload.tv_paused) showPauseOverlay();
         else hidePauseOverlay();
       }
 
-      // Désactivation du mode TV
       if (!payload.tv_active) {
         showError('Mode TV désactivé', 'L\'animateur a quitté le mode TV.');
         return;
       }
 
-      // Changement de status (preparing → active → finished)
       if (prev.status !== payload.status ||
           prev.current_project_index !== payload.current_project_index) {
+        // ⚡ Reset le flag d'avancement quand on change de projet
+        _isAdvancing = false;
         renderCurrentScreen();
       }
     }
     else if (type === 'series_project') {
-      // Mettre à jour le projet correspondant dans state.projects
       var found = state.projects.find(function(sp) { return sp.id === payload.id; });
       if (found) {
         found.started_at = payload.started_at;
         found.is_revealed = payload.is_revealed;
       }
-      // Si le projet courant vient d'avoir son started_at mis à jour, on le rerend
       if (state.series.status === 'active') {
         var sIdx = state.series.current_project_index || 0;
         if (state.projects[sIdx] && state.projects[sIdx].id === payload.id) {
@@ -605,14 +604,28 @@ window.TVApp = (function() {
       }
     }
     else if (type === 'vote') {
-      // Incrémenter le compteur du projet
       var spId = payload.series_project_id;
       state.voteCounts[spId] = (state.voteCounts[spId] || 0) + 1;
-      // Mettre à jour le compteur "X / Y" si on est sur l'écran vote
       updateVoteCounter();
     }
     else if (type === 'selfie') {
       state.selfies.push(payload);
+    }
+    // ⚡ FIX 3 : nouveau participant rejoint → mettre à jour le compteur en live
+    else if (type === 'participant') {
+      state.participantsCount++;
+      console.log('[TVApp] Nouveau participant, total =', state.participantsCount);
+
+      // Mettre à jour l'écran lobby si on y est
+      var elLobby = document.getElementById('lobby-participants');
+      if (elLobby) {
+        elLobby.textContent = state.participantsCount + ' participant' +
+          (state.participantsCount > 1 ? 's' : '') + ' connecté' +
+          (state.participantsCount > 1 ? 's' : '');
+      }
+
+      // Mettre à jour le compteur "X / Y ont voté" si on est sur l'écran vote
+      updateVoteCounter();
     }
   }
 
