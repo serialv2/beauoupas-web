@@ -797,8 +797,74 @@ html, body {
   font-style: italic;
 }
 
-/* ─── PHASE 2 : Stats par genre / par âge ───────────────────────── */
+/* ═════════════════════════════════════════════════════════════════
+   PHASE 2 : Stats par genre / par âge — VERSION REFONDUE
+   Couleurs vives + nombre + pourcentage à l'intérieur des barres
+   Légende COMMUNE en haut avec compteurs totaux
+   ═════════════════════════════════════════════════════════════════ */
 
+/* Légende globale au-dessus des graphes (COMMUNE genre + âge) */
+.tv-reveal-stats-legend {
+  display: flex;
+  gap: 2vw;
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 90%;
+  max-width: 1600px;
+  margin-bottom: 0.5vh;
+}
+
+.tv-reveal-stats-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6vw;
+  font-size: 1.3vw;
+  color: white;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.8vh 1.5vw;
+  border-radius: 100px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tv-reveal-stats-legend-item .legend-emoji {
+  font-size: 1.4vw;
+}
+
+.tv-reveal-stats-legend-item .legend-label {
+  color: #DDDDDD;
+}
+
+.tv-reveal-stats-legend-item .legend-count {
+  color: white;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+}
+
+.tv-reveal-stats-legend-item .legend-percent {
+  color: #888888;
+  font-size: 1.1vw;
+}
+
+.tv-reveal-stats-legend-dot {
+  width: 1.1vw;
+  height: 1.1vw;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Couleurs des points de légende — couleurs vives */
+.tv-reveal-stats-legend-dot.val-like     { background: #4CAF50; }
+.tv-reveal-stats-legend-dot.val-meh      { background: #FFC107; }
+.tv-reveal-stats-legend-dot.val-dislike  { background: #F44336; }
+.tv-reveal-stats-legend-dot.val-A        { background: #E91E8C; }
+.tv-reveal-stats-legend-dot.val-B        { background: #00BCD4; }
+.tv-reveal-stats-legend-dot.val-poll-1   { background: #4CAF50; }
+.tv-reveal-stats-legend-dot.val-poll-2   { background: #FFC107; }
+.tv-reveal-stats-legend-dot.val-poll-3   { background: #E91E8C; }
+.tv-reveal-stats-legend-dot.val-poll-4   { background: #00BCD4; }
+.tv-reveal-stats-legend-dot.val-poll-5   { background: #9C27B0; }
+
+/* Grille des 2 blocs (genre / âge) */
 .tv-reveal-stats-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -813,7 +879,7 @@ html, body {
   padding: 2vh 2vw;
   display: flex;
   flex-direction: column;
-  gap: 1.2vh;
+  gap: 1.5vh;
 }
 
 .tv-reveal-stats-block-title {
@@ -828,7 +894,7 @@ html, body {
 .tv-reveal-stats-row {
   display: flex;
   flex-direction: column;
-  gap: 0.4vh;
+  gap: 0.5vh;
 }
 
 .tv-reveal-stats-row-head {
@@ -848,57 +914,51 @@ html, body {
   font-family: 'Courier New', monospace;
 }
 
-/* Mini-barres empilées colorées par option (like/meh/dislike ou A/B) */
+/* Barre empilée — hauteur augmentée pour pouvoir afficher du contenu dedans */
 .tv-reveal-stats-bar {
   display: flex;
-  height: 1.4vh;
+  height: 3.4vh;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 100px;
   overflow: hidden;
 }
 
+/* Chaque segment : flexbox pour centrer le contenu (nombre + %) */
 .tv-reveal-stats-bar-segment {
   height: 100%;
-  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* Couleurs par valeur de vote (cohérence sur toute la page) */
-.tv-reveal-stats-bar-segment.val-like     { background: #E91E8C; }
-.tv-reveal-stats-bar-segment.val-meh      { background: #888888; }
-.tv-reveal-stats-bar-segment.val-dislike  { background: #455A64; }
-.tv-reveal-stats-bar-segment.val-A        { background: #E91E8C; }
-.tv-reveal-stats-bar-segment.val-B        { background: #2196F3; }
-.tv-reveal-stats-bar-segment.val-poll     { background: #E91E8C; }
-
-/* Légende des couleurs (sous les graphiques) */
-.tv-reveal-stats-legend {
   display: flex;
-  gap: 1.5vw;
-  justify-content: center;
-  margin-top: 0.6vh;
-  flex-wrap: wrap;
-}
-
-.tv-reveal-stats-legend-item {
-  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.5vw;
-  font-size: 0.95vw;
-  color: #BBBBBB;
+  justify-content: center;
+  line-height: 1;
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
 }
 
-.tv-reveal-stats-legend-dot {
-  width: 0.8vw;
-  height: 0.8vw;
-  border-radius: 50%;
+/* Contenu du segment : 2 lignes (nombre gros + % petit) */
+.tv-reveal-stats-bar-segment .seg-count {
+  font-size: 1.3vw;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
 }
 
-.tv-reveal-stats-legend-dot.val-like     { background: #E91E8C; }
-.tv-reveal-stats-legend-dot.val-meh      { background: #888888; }
-.tv-reveal-stats-legend-dot.val-dislike  { background: #455A64; }
-.tv-reveal-stats-legend-dot.val-A        { background: #E91E8C; }
-.tv-reveal-stats-legend-dot.val-B        { background: #2196F3; }
-.tv-reveal-stats-legend-dot.val-poll     { background: #E91E8C; }
+.tv-reveal-stats-bar-segment .seg-percent {
+  font-size: 0.85vw;
+  opacity: 0.85;
+  font-weight: 500;
+}
+
+/* Couleurs vives + couleur de texte foncée pour contraster sur les fonds clairs */
+.tv-reveal-stats-bar-segment.val-like     { background: #4CAF50; color: #0a3d12; }
+.tv-reveal-stats-bar-segment.val-meh      { background: #FFC107; color: #5a4500; }
+.tv-reveal-stats-bar-segment.val-dislike  { background: #F44336; color: #ffffff; }
+.tv-reveal-stats-bar-segment.val-A        { background: #E91E8C; color: #4a0c2c; }
+.tv-reveal-stats-bar-segment.val-B        { background: #00BCD4; color: #00343b; }
+.tv-reveal-stats-bar-segment.val-poll-1   { background: #4CAF50; color: #0a3d12; }
+.tv-reveal-stats-bar-segment.val-poll-2   { background: #FFC107; color: #5a4500; }
+.tv-reveal-stats-bar-segment.val-poll-3   { background: #E91E8C; color: #4a0c2c; }
+.tv-reveal-stats-bar-segment.val-poll-4   { background: #00BCD4; color: #00343b; }
+.tv-reveal-stats-bar-segment.val-poll-5   { background: #9C27B0; color: #ffffff; }
 
 /* ─── Bouton "Arrêter" en bas à droite ──────────────────────────── */
 .tv-reveal-stop-btn {
