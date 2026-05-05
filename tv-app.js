@@ -37,8 +37,8 @@ window.TVApp = (function() {
     countdownInterval: null,
     transitionTimeout: null,
     // ─── Performance ───────────────────────────────────────────────
-    preloadedUrls: {},       // URLs déjà préchargées : { url: true }
-    lastRenderedProjectId: null, // Pour éviter de rerender 2 fois le même projet
+    preloadedUrls: {},
+    lastRenderedProjectId: null,
     // ─── État de la page résultats ─────────────────────────────────
     resultsData: null,
     revealProjectIdx: 0,
@@ -55,8 +55,8 @@ window.TVApp = (function() {
     like:    { emoji: '❤️', label: 'J\'aime',     cssVal: 'val-like' },
     meh:     { emoji: '😐', label: 'Bof',         cssVal: 'val-meh' },
     dislike: { emoji: '👎', label: 'J\'aime pas', cssVal: 'val-dislike' },
-    A:       { emoji: '🅰️', label: 'A',          cssVal: 'val-A' },
-    B:       { emoji: '🅱️', label: 'B',          cssVal: 'val-B' }
+    A:       { emoji: '🅰️', label: 'Choix A',    cssVal: 'val-A' },
+    B:       { emoji: '🅱️', label: 'Choix B',    cssVal: 'val-B' }
   };
 
   var OPTION_ORDER_PHOTO = ['like', 'meh', 'dislike'];
@@ -81,8 +81,13 @@ window.TVApp = (function() {
   var GENDER_ORDER = ['male', 'female', 'other', 'prefer_not_to_say', 'unknown'];
 
   // Combien d'images on précharge à l'avance (fenêtre glissante)
-  var PRELOAD_INITIAL = 5;   // au lobby : 5 premiers projets
-  var PRELOAD_AHEAD = 3;     // pendant le vote : +3 projets en avance
+  var PRELOAD_INITIAL = 5;
+  var PRELOAD_AHEAD = 3;
+
+  // Seuil minimal (en %) pour qu'un segment de barre affiche son contenu (nombre + %).
+  // En dessous, le contenu serait illisible/débordant — on cache.
+  var SEG_MIN_PCT_FOR_FULL_TEXT = 18;   // au-dessus : nombre + %
+  var SEG_MIN_PCT_FOR_NUMBER_ONLY = 8;  // au-dessus : nombre seul ; en dessous : rien
 
   // ─────────────────────────────────────────────────────────────────
   // Démarrage
@@ -129,7 +134,6 @@ window.TVApp = (function() {
 
       window.TVRealtime.start(state.series.id);
 
-      // ⚡ PERF : précharge les premières images dès le lobby (en arrière-plan)
       preloadProjectImages(0, PRELOAD_INITIAL);
 
       renderCurrentScreen();
@@ -142,12 +146,6 @@ window.TVApp = (function() {
 
   // ─────────────────────────────────────────────────────────────────
   // Pré-chargement intelligent des images
-  // ─────────────────────────────────────────────────────────────────
-  //
-  // On précharge dans une fenêtre glissante : à chaque changement de
-  // projet, on précharge les N suivants. Ça étale la charge réseau
-  // sur toute la durée de la série au lieu de tout télécharger d'un coup.
-  //
   // ─────────────────────────────────────────────────────────────────
 
   function preloadProjectImages(startIdx, count) {
@@ -166,15 +164,10 @@ window.TVApp = (function() {
 
   function preloadOneImage(url) {
     if (!url) return;
-    if (state.preloadedUrls[url]) return; // déjà préchargée
+    if (state.preloadedUrls[url]) return;
     state.preloadedUrls[url] = true;
-
-    // Création d'un <img> hors-DOM : le navigateur télécharge l'image
-    // et la met dans son cache HTTP. Quand on l'affichera plus tard
-    // avec un vrai <img src="...">, ce sera instantané.
     var img = new Image();
     img.src = url;
-    // Asynchrone, on ne fait rien du résultat
   }
 
   // ─────────────────────────────────────────────────────────────────
@@ -333,10 +326,6 @@ window.TVApp = (function() {
 
   // ─────────────────────────────────────────────────────────────────
   // Écran 2 : Vote en cours
-  //
-  // ⚡ Optimisation : on ne refait l'innerHTML QUE si on a vraiment
-  // changé de projet. Pour les autres updates (started_at d'un même
-  // projet, votes qui arrivent), on met à jour les éléments ciblés.
   // ─────────────────────────────────────────────────────────────────
 
   function renderVote() {
@@ -350,8 +339,6 @@ window.TVApp = (function() {
       return;
     }
 
-    // ⚡ PERF : si on est déjà sur ce projet, on rafraîchit juste le countdown
-    // (pas de rerender complet du DOM)
     if (state.lastRenderedProjectId === sp.id) {
       console.log('[TVApp] renderVote skipped (même projet, restart countdown)');
       startCountdown(sp);
@@ -387,9 +374,6 @@ window.TVApp = (function() {
         '</div>' +
       '</div>';
 
-    // ⚡ PERF : avant de remplacer le DOM, on libère la mémoire des
-    // anciennes images en vidant leur src. Ça aide les TV à faible RAM
-    // à libérer plus vite la mémoire vidéo.
     var oldImgs = document.querySelectorAll('#screen-vote img');
     oldImgs.forEach(function(img) { img.src = ''; });
 
@@ -397,7 +381,6 @@ window.TVApp = (function() {
 
     startCountdown(sp);
 
-    // ⚡ PERF : précharge les 3 prochains projets en arrière-plan
     preloadProjectImages(sIdx + 1, PRELOAD_AHEAD);
   }
 
@@ -595,33 +578,19 @@ window.TVApp = (function() {
 
   // ─────────────────────────────────────────────────────────────────
   // Avancement dans la boucle de reveal.
-  //
-  // Comportement selon series.show_stats :
-  // - show_stats = true (défaut) :
-  //     raw (20s) → stats (20s) → projet suivant (raw 20s) → ...
-  // - show_stats = false :
-  //     raw (20s) → projet suivant (raw 20s) → ...
-  //     (la phase "stats" est totalement sautée)
-  //
-  // Si une seule série n'a aucun projet (cas limite), on ne fait rien.
+  // - show_stats = true  : raw (20s) → stats (20s) → projet suivant
+  // - show_stats = false : raw (20s) → projet suivant (saut de stats)
   // ─────────────────────────────────────────────────────────────────
 
   function showNextRevealStep() {
     if (!state.resultsData || !state.resultsData.projects) return;
     if (state.resultsData.projects.length === 0) return;
 
-    // ⚡ Lecture du flag show_stats. Si non défini en BDD (cas legacy
-    // peu probable car on a mis NOT NULL DEFAULT TRUE), on traite
-    // comme true pour préserver le comportement historique.
     var showStats = (state.series && state.series.show_stats !== false);
 
     if (state.revealPhase === 'raw' && showStats) {
-      // Cas standard : on enchaîne sur la phase stats du même projet.
       state.revealPhase = 'stats';
     } else {
-      // Cas où on saute la phase stats (showStats = false), OU
-      // cas standard où on vient de finir la phase stats : on passe
-      // au projet suivant en repartant sur la phase 'raw'.
       state.revealProjectIdx++;
       if (state.revealProjectIdx >= state.resultsData.projects.length) {
         state.revealProjectIdx = 0;
@@ -644,7 +613,6 @@ window.TVApp = (function() {
       html = renderRevealStats(project);
     }
 
-    // ⚡ PERF : libère mémoire vidéo des images précédentes
     var oldImgs = document.querySelectorAll('#screen-reveal img');
     oldImgs.forEach(function(img) { img.src = ''; });
 
@@ -684,6 +652,11 @@ window.TVApp = (function() {
     return wrapRevealStage(headerHtml, bodyHtml + totalHtml);
   }
 
+  // ─────────────────────────────────────────────────────────────────
+  // PHASE 2 : Stats par genre / par âge — REFONTE COMPLÈTE
+  // Légende COMMUNE en haut + barres avec nombre + % à l'intérieur
+  // ─────────────────────────────────────────────────────────────────
+
   function renderRevealStats(project) {
     var headerHtml = renderRevealHeader(project, 'Statistiques');
 
@@ -691,15 +664,20 @@ window.TVApp = (function() {
     if (project.total_votes === 0) {
       bodyHtml = '<div class="tv-reveal-empty">Pas encore de votes pour ce projet</div>';
     } else {
-      bodyHtml =
+      // 1) Légende commune en HAUT (avec compteurs totaux + % global)
+      var legendHtml = renderStatsLegend(project);
+
+      // 2) Grille des 2 blocs (genre + âge) en dessous
+      var gridHtml =
         '<div class="tv-reveal-stats-grid">' +
           renderStatsBlock('Par genre', project, GENDER_ORDER, GENDER_LABELS, project.by_gender) +
           renderStatsBlock('Par âge', project,
             AGE_BUCKETS.map(function(b) { return b.key; }),
             AGE_BUCKETS.reduce(function(acc, b) { acc[b.key] = b.label; return acc; }, {}),
             project.by_age) +
-        '</div>' +
-        renderStatsLegend(project);
+        '</div>';
+
+      bodyHtml = legendHtml + gridHtml;
     }
 
     return wrapRevealStage(headerHtml, bodyHtml);
@@ -836,6 +814,12 @@ window.TVApp = (function() {
     return maxCount > 0 ? winningKey : null;
   }
 
+  // ─────────────────────────────────────────────────────────────────
+  // Bloc de stats (par genre OU par âge) — REFONTE
+  // Affiche nombre + % à l'intérieur de chaque segment quand il est
+  // suffisamment large (sinon nombre seul, sinon rien).
+  // ─────────────────────────────────────────────────────────────────
+
   function renderStatsBlock(title, project, keys, labels, dataObj) {
     dataObj = dataObj || {};
     var optionKeys = getRelevantOptionKeys(project);
@@ -861,9 +845,26 @@ window.TVApp = (function() {
 
       var segmentsHtml = optionKeys.map(function(ok) {
         var c = inner[ok] || 0;
+        if (c === 0) return ''; // segment vide → on ne le rend pas du tout
         var pct = rowTotal > 0 ? (c / rowTotal) * 100 : 0;
-        var cssVal = getCssValForOption(ok, project.type);
-        return '<div class="tv-reveal-stats-bar-segment ' + cssVal + '" style="width: ' + pct + '%;"></div>';
+        var pctRounded = Math.round(pct);
+        var cssVal = getCssValForOption(ok, project);
+
+        // Détermine quel contenu afficher selon la largeur du segment
+        var segContent = '';
+        if (pct >= SEG_MIN_PCT_FOR_FULL_TEXT) {
+          // Segment large : nombre + pourcentage
+          segContent =
+            '<span class="seg-count">' + c + '</span>' +
+            '<span class="seg-percent">' + pctRounded + '%</span>';
+        } else if (pct >= SEG_MIN_PCT_FOR_NUMBER_ONLY) {
+          // Segment moyen : nombre seul
+          segContent = '<span class="seg-count">' + c + '</span>';
+        }
+        // En dessous du seuil minimum : segment vide visuellement (juste la couleur)
+
+        return '<div class="tv-reveal-stats-bar-segment ' + cssVal +
+          '" style="width: ' + pct + '%;">' + segContent + '</div>';
       }).join('');
 
       return '<div class="tv-reveal-stats-row">' +
@@ -881,16 +882,39 @@ window.TVApp = (function() {
     '</div>';
   }
 
+  // ─────────────────────────────────────────────────────────────────
+  // Légende — REFONTE COMPLÈTE
+  // Affiche : [icône couleur] [emoji] [label] · X votes · Y%
+  // Le total et le % sont calculés depuis project.votes (totaux globaux)
+  // Tous les items sont affichés (même ceux à 0) pour préserver la
+  // cohérence visuelle entre projets.
+  // ─────────────────────────────────────────────────────────────────
+
   function renderStatsLegend(project) {
     var optionKeys = getRelevantOptionKeys(project);
+    var votes = project.votes || {};
+    var total = project.total_votes || 0;
+
     var itemsHtml = optionKeys.map(function(ok) {
       var label = getLabelForOption(ok, project);
-      var cssVal = getCssValForOption(ok, project.type);
+      var emoji = getEmojiForOption(ok, project);
+      var cssVal = getCssValForOption(ok, project);
+      var count = votes[ok] || 0;
+      var pct = total > 0 ? Math.round((count / total) * 100) : 0;
+
+      var emojiHtml = emoji
+        ? '<span class="legend-emoji">' + emoji + '</span>'
+        : '';
+
       return '<div class="tv-reveal-stats-legend-item">' +
         '<span class="tv-reveal-stats-legend-dot ' + cssVal + '"></span>' +
-        '<span>' + escapeHtml(label) + '</span>' +
+        emojiHtml +
+        '<span class="legend-label">' + escapeHtml(label) + '</span>' +
+        '<span class="legend-count">· ' + count + ' vote' + (count > 1 ? 's' : '') + '</span>' +
+        '<span class="legend-percent">· ' + pct + '%</span>' +
       '</div>';
     }).join('');
+
     return '<div class="tv-reveal-stats-legend">' + itemsHtml + '</div>';
   }
 
@@ -903,10 +927,21 @@ window.TVApp = (function() {
     return [];
   }
 
-  function getCssValForOption(optionKey, projectType) {
-    if (projectType === 'poll') return 'val-poll';
+  // ─── Couleurs CSS par option ─────────────────────────────────────
+  // Pour les polls : on assigne val-poll-1 à val-poll-5 selon l'ordre
+  // des options dans le tableau poll_options (trié par position).
+  function getCssValForOption(optionKey, project) {
+    if (project.type === 'poll') {
+      var options = (project.poll_options || []).slice().sort(function(a, b) {
+        return (a.position || 0) - (b.position || 0);
+      });
+      var idx = options.findIndex(function(o) { return o.id === optionKey; });
+      if (idx < 0) return 'val-poll-1'; // fallback
+      // 5 couleurs disponibles, on cycle si plus d'options (improbable mais safe)
+      return 'val-poll-' + ((idx % 5) + 1);
+    }
     if (OPTION_META[optionKey]) return OPTION_META[optionKey].cssVal;
-    return 'val-poll';
+    return 'val-poll-1';
   }
 
   function getLabelForOption(optionKey, project) {
@@ -915,6 +950,11 @@ window.TVApp = (function() {
       return opt ? opt.text : '?';
     }
     return (OPTION_META[optionKey] && OPTION_META[optionKey].label) || optionKey;
+  }
+
+  function getEmojiForOption(optionKey, project) {
+    if (project.type === 'poll') return ''; // pas d'emoji pour les polls
+    return (OPTION_META[optionKey] && OPTION_META[optionKey].emoji) || '';
   }
 
   // ═════════════════════════════════════════════════════════════════
@@ -1050,12 +1090,6 @@ window.TVApp = (function() {
 
   // ─────────────────────────────────────────────────────────────────
   // Réception des events Realtime
-  //
-  // ⚡ Optimisations :
-  // - On ne rerend l'écran que si l'INDEX de projet a changé
-  // - Pour les updates "started_at d'un même projet", on relance juste
-  //   le countdown sans toucher au DOM.
-  // - Pour les votes, on met juste à jour le compteur.
   // ─────────────────────────────────────────────────────────────────
 
   function onRealtimeEvent(type, payload) {
@@ -1074,7 +1108,6 @@ window.TVApp = (function() {
         return;
       }
 
-      // ⚡ PERF : on ne rerend que si quelque chose de visible a changé
       var statusChanged = (prev.status !== payload.status);
       var indexChanged = (prev.current_project_index !== payload.current_project_index);
 
@@ -1082,26 +1115,20 @@ window.TVApp = (function() {
         _isAdvancing = false;
         renderCurrentScreen();
       }
-      // Sinon : update silencieux du state (pause toggles, autres champs).
     }
     else if (type === 'series_project') {
-      // Update du started_at / is_revealed d'un projet
       var found = state.projects.find(function(sp) { return sp.id === payload.id; });
       if (found) {
         found.started_at = payload.started_at;
         found.is_revealed = payload.is_revealed;
       }
 
-      // ⚡ PERF : si c'est le projet courant qui a un nouveau started_at,
-      // on relance JUSTE le countdown — pas de rerender DOM !
       if (state.series && state.series.status === 'active') {
         var sIdx = state.series.current_project_index || 0;
         if (state.projects[sIdx] && state.projects[sIdx].id === payload.id) {
           if (state.lastRenderedProjectId === payload.id) {
-            // Même projet déjà rendu → on relance juste le countdown
             startCountdown(state.projects[sIdx]);
           } else {
-            // Nouveau projet → rerender complet
             renderVote();
           }
         }
