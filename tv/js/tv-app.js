@@ -6,7 +6,7 @@
 //   LOBBY       : salle d'attente (avant que l'animateur démarre)
 //   VOTE        : projet en cours, countdown actif
 //   TRANSITION  : 2,5s entre 2 projets
-//   REVEAL      : big reveal final (slideshow)
+//   REVEAL      : page résultats détaillée (boucle infinie phase1/phase2)
 //   ERROR       : erreur (code invalide, série désactivée, etc.)
 //
 // La TV PILOTE l'avancement (appelle tv_advance_to_next quand le
@@ -30,11 +30,49 @@ window.TVApp = (function() {
     participantsCount: 0,
     countdownInterval: null,
     transitionTimeout: null,
-    revealStep: 0,
-    revealTimeout: null
+    // ─── État de la page résultats ─────────────────────────────────
+    resultsData: null,         // JSON renvoyé par get_series_results
+    revealProjectIdx: 0,       // Index du projet actuellement affiché
+    revealPhase: 'raw',        // 'raw' ou 'stats'
+    revealTimeout: null,       // Timeout pour passer à la phase suivante
+    revealRefreshInterval: null, // Refresh des données toutes les 30s
+    polaroidsTimeout: null     // Timeout pour spawner les polaroids
   };
 
   var _isAdvancing = false;
+
+  // Labels & emojis des options de vote (cohérent avec l'app MAUI)
+  var OPTION_META = {
+    like:    { emoji: '❤️', label: 'J\'aime',     cssVal: 'val-like' },
+    meh:     { emoji: '😐', label: 'Bof',         cssVal: 'val-meh' },
+    dislike: { emoji: '👎', label: 'J\'aime pas', cssVal: 'val-dislike' },
+    A:       { emoji: '🅰️', label: 'A',          cssVal: 'val-A' },
+    B:       { emoji: '🅱️', label: 'B',          cssVal: 'val-B' }
+  };
+
+  // Ordre d'affichage des options pour photo_vote / duel
+  var OPTION_ORDER_PHOTO = ['like', 'meh', 'dislike'];
+  var OPTION_ORDER_DUEL  = ['A', 'B'];
+
+  // Labels & ordre des tranches d'âge (correspond à get_series_results.sql)
+  var AGE_BUCKETS = [
+    { key: 'under_18', label: '< 18 ans' },
+    { key: '18_25',    label: '18-25 ans' },
+    { key: '26_35',    label: '26-35 ans' },
+    { key: '36_50',    label: '36-50 ans' },
+    { key: 'over_50',  label: '> 50 ans' },
+    { key: 'unknown',  label: 'Non renseigné' }
+  ];
+
+  // Labels des genres
+  var GENDER_LABELS = {
+    male:               'Hommes',
+    female:             'Femmes',
+    other:              'Autre',
+    prefer_not_to_say:  'Non précisé',
+    unknown:            'Non renseigné'
+  };
+  var GENDER_ORDER = ['male', 'female', 'other', 'prefer_not_to_say', 'unknown'];
 
   // ─────────────────────────────────────────────────────────────────
   // Démarrage : appelé au chargement de tv-display.html
@@ -198,8 +236,10 @@ window.TVApp = (function() {
     }
 
     if (s.status === 'preparing') {
+      stopRevealLoop();
       renderLobby();
     } else if (s.status === 'active') {
+      stopRevealLoop();
       renderVote();
     } else if (s.status === 'finished') {
       renderReveal();
@@ -420,106 +460,487 @@ window.TVApp = (function() {
     }, 900);
   }
 
-  // ─────────────────────────────────────────────────────────────────
-  // Écran 4 : Big reveal
-  // ─────────────────────────────────────────────────────────────────
+  // ═════════════════════════════════════════════════════════════════
+  // Écran 4 : RÉSULTATS DÉTAILLÉS (boucle infinie)
+  //
+  // Pour chaque projet, on enchaîne 2 phases de 20s chacune :
+  //   - Phase 'raw'   : photo + nb votes par option + polaroids
+  //   - Phase 'stats' : répartition par genre + tranche d'âge
+  // Quand on a fini tous les projets, on revient au premier.
+  // L'animateur arrête en cliquant sur le bouton "Arrêter".
+  // ═════════════════════════════════════════════════════════════════
 
   async function renderReveal() {
     setActiveScreen('reveal');
-    await loadSelfies();
-    state.revealStep = 0;
-    showNextRevealStep();
+
+    // Affiche un spinner pendant le chargement des données
+    document.getElementById('screen-reveal').innerHTML =
+      '<div style="margin: auto;"><div class="tv-loading-spinner"></div></div>';
+
+    // Charge les résultats détaillés via la fonction RPC
+    var ok = await loadResultsData();
+    if (!ok) return;
+
+    // Démarre la boucle au premier projet, phase 'raw'
+    state.revealProjectIdx = 0;
+    state.revealPhase = 'raw';
+    showRevealCurrent();
+
+    // Refresh des données toutes les 30s pour récupérer d'éventuels
+    // nouveaux selfies si le bug d'enregistrement est corrigé en MAUI
+    if (state.revealRefreshInterval) clearInterval(state.revealRefreshInterval);
+    state.revealRefreshInterval = setInterval(function() {
+      loadResultsData(true); // silent refresh
+    }, 30000);
   }
 
-  async function loadSelfies() {
-    var sb = window.TVRealtime.getClient();
-    var res = await sb
-      .from('series_selfies')
-      .select('*')
-      .eq('series_id', state.series.id);
-
-    if (res.data) {
-      state.selfies = res.data;
+  // ─── Charge le JSON de résultats via RPC ─────────────────────────
+  async function loadResultsData(silent) {
+    try {
+      var sb = window.TVRealtime.getClient();
+      var res = await sb.rpc('get_series_results', {
+        p_series_id: state.series.id
+      });
+      if (res.error) throw res.error;
+      state.resultsData = res.data;
+      console.log('[TVApp] Résultats chargés :',
+        state.resultsData && state.resultsData.projects
+          ? state.resultsData.projects.length + ' projets'
+          : 'vide');
+      return true;
+    } catch (err) {
+      console.error('[TVApp] loadResultsData error:', err);
+      if (!silent) {
+        showError('Erreur de chargement des résultats', err.message || String(err));
+      }
+      return false;
     }
   }
 
+  // ─── Stoppe tous les timers liés à la page résultats ─────────────
+  function stopRevealLoop() {
+    if (state.revealTimeout) {
+      clearTimeout(state.revealTimeout);
+      state.revealTimeout = null;
+    }
+    if (state.revealRefreshInterval) {
+      clearInterval(state.revealRefreshInterval);
+      state.revealRefreshInterval = null;
+    }
+    if (state.polaroidsTimeout) {
+      clearTimeout(state.polaroidsTimeout);
+      state.polaroidsTimeout = null;
+    }
+  }
+
+  // ─── Avance vers la prochaine phase de la boucle ─────────────────
   function showNextRevealStep() {
-    var totalSteps = state.projects.length + 1;
-
-    if (state.revealStep >= totalSteps) {
-      state.revealStep = 0;
-    }
-
-    if (state.revealStep < state.projects.length) {
-      showRevealProject(state.revealStep);
-      state.revealStep++;
-      state.revealTimeout = setTimeout(showNextRevealStep, window.TV_CONFIG.REVEAL_PROJECT_DURATION_MS);
+    if (state.revealPhase === 'raw') {
+      // raw → stats (même projet)
+      state.revealPhase = 'stats';
     } else {
-      showRevealFinal();
-      state.revealStep++;
-      state.revealTimeout = setTimeout(showNextRevealStep, window.TV_CONFIG.REVEAL_WINNER_DURATION_MS);
+      // stats → projet suivant, phase raw (boucle si on est à la fin)
+      state.revealProjectIdx++;
+      if (state.revealProjectIdx >= state.resultsData.projects.length) {
+        state.revealProjectIdx = 0;
+      }
+      state.revealPhase = 'raw';
     }
+    showRevealCurrent();
   }
 
-  function showRevealProject(idx) {
-    var sp = state.projects[idx];
-    if (!sp || !sp.projects) return;
+  // ─── Affiche le projet+phase courants ────────────────────────────
+  function showRevealCurrent() {
+    if (!state.resultsData || !state.resultsData.projects) return;
 
-    var p = sp.projects;
-    var totalProjects = state.projects.length;
-    var voteCount = state.voteCounts[sp.id] || 0;
+    var project = state.resultsData.projects[state.revealProjectIdx];
+    if (!project) return;
 
-    var photoHtml = '';
-    var photos = p.project_photos || [];
-    var photo = photos[0];
-    if (photo) {
-      photoHtml = '<div class="tv-reveal-photo"><img src="' + escapeHtml(photo.url) + '" alt=""></div>';
+    var html;
+    if (state.revealPhase === 'raw') {
+      html = renderRevealRaw(project);
+    } else {
+      html = renderRevealStats(project);
     }
-
-    var html =
-      '<div class="tv-reveal-progress">Projet ' + (idx + 1) + ' / ' + totalProjects + '</div>' +
-      '<div class="tv-reveal-content">' +
-        '<div class="tv-reveal-title">' + escapeHtml(p.title || 'Projet sans titre') + '</div>' +
-        '<div class="tv-reveal-photo-container">' +
-          photoHtml +
-        '</div>' +
-        '<div class="tv-reveal-stats">' +
-          '<div class="tv-reveal-stat">' +
-            '<div class="tv-reveal-stat-icon">🗳️</div>' +
-            '<div class="tv-reveal-stat-value">' + voteCount + '</div>' +
-            '<div class="tv-reveal-stat-label">Votes</div>' +
-          '</div>' +
-        '</div>' +
-      '</div>';
 
     document.getElementById('screen-reveal').innerHTML = html;
+
+    // Branche le clic du bouton "Arrêter"
+    var stopBtn = document.getElementById('reveal-stop-btn');
+    if (stopBtn) stopBtn.addEventListener('click', onStopRevealClicked);
+
+    // (Re)démarre l'animation des polaroids
+    spawnPolaroids(project);
+
+    // Programme la transition vers la prochaine phase
+    var duration = (state.revealPhase === 'raw')
+      ? window.TV_CONFIG.RESULTS_RAW_DURATION_MS
+      : window.TV_CONFIG.RESULTS_STATS_DURATION_MS;
+
+    if (state.revealTimeout) clearTimeout(state.revealTimeout);
+    state.revealTimeout = setTimeout(showNextRevealStep, duration);
   }
 
-  function showRevealFinal() {
-    var selfiesCount = state.selfies.length;
+  // ─── Phase 1 : photo + votes par option ──────────────────────────
+  function renderRevealRaw(project) {
+    var headerHtml = renderRevealHeader(project, 'Résultats');
 
-    var sizeClass = 'size-small';
-    if (selfiesCount > 30 && selfiesCount <= 100) sizeClass = 'size-medium';
-    else if (selfiesCount > 100) sizeClass = 'size-large';
+    var bodyHtml;
+    if (project.type === 'photo_vote') {
+      bodyHtml = renderPhotoVoteBody(project);
+    } else if (project.type === 'duel') {
+      bodyHtml = renderDuelBody(project);
+    } else if (project.type === 'poll') {
+      bodyHtml = renderPollBody(project);
+    } else {
+      bodyHtml = '<div class="tv-reveal-empty">Type de projet inconnu</div>';
+    }
 
-    var selfiesHtml = state.selfies.map(function(s, i) {
-      var delay = (i * 30) + 'ms';
-      return '<div class="tv-reveal-selfie" style="animation-delay: ' + delay + ';">' +
-        (s.photo_url ? '<img src="' + escapeHtml(s.photo_url) + '" alt="">' : '') +
+    var totalVotes = project.total_votes || 0;
+    var totalHtml = '<div class="tv-reveal-total"><strong>' + totalVotes + '</strong> vote' +
+      (totalVotes > 1 ? 's' : '') + ' au total</div>';
+
+    return wrapRevealStage(headerHtml, bodyHtml + totalHtml);
+  }
+
+  // ─── Phase 2 : stats par genre / par âge ─────────────────────────
+  function renderRevealStats(project) {
+    var headerHtml = renderRevealHeader(project, 'Statistiques');
+
+    var bodyHtml;
+    if (project.total_votes === 0) {
+      bodyHtml = '<div class="tv-reveal-empty">Pas encore de votes pour ce projet</div>';
+    } else {
+      bodyHtml =
+        '<div class="tv-reveal-stats-grid">' +
+          renderStatsBlock('Par genre', project, GENDER_ORDER, GENDER_LABELS, project.by_gender) +
+          renderStatsBlock('Par âge', project,
+            AGE_BUCKETS.map(function(b) { return b.key; }),
+            AGE_BUCKETS.reduce(function(acc, b) { acc[b.key] = b.label; return acc; }, {}),
+            project.by_age) +
+        '</div>' +
+        renderStatsLegend(project);
+    }
+
+    return wrapRevealStage(headerHtml, bodyHtml);
+  }
+
+  // ─── Squelette commun (header + zone polaroids + bouton stop) ────
+  function wrapRevealStage(headerHtml, bodyHtml) {
+    return headerHtml +
+      '<div class="tv-reveal-stage">' +
+        '<div class="tv-reveal-polaroids" id="reveal-polaroids"></div>' +
+        '<div class="tv-reveal-content">' + bodyHtml + '</div>' +
+      '</div>' +
+      '<button class="tv-reveal-stop-btn" id="reveal-stop-btn" title="Arrêter le mode TV">✕ Arrêter</button>';
+  }
+
+  function renderRevealHeader(project, phaseLabel) {
+    var totalProjects = state.resultsData.projects.length;
+    var pos = state.revealProjectIdx + 1;
+    return '<div class="tv-reveal-header">' +
+      '<div class="tv-reveal-progress">Projet ' + pos + ' / ' + totalProjects + '</div>' +
+      '<div class="tv-reveal-title">' + escapeHtml(project.title || 'Sans titre') + '</div>' +
+      (project.description
+        ? '<div class="tv-reveal-description">' + escapeHtml(project.description) + '</div>'
+        : '') +
+      '<div class="tv-reveal-phase-tag">' + escapeHtml(phaseLabel) + '</div>' +
+    '</div>';
+  }
+
+  // ─── Body : photo_vote (1 photo + 3 options ❤️/😐/👎) ────────────
+  function renderPhotoVoteBody(project) {
+    var photos = project.photos || [];
+    var photo = photos.find(function(ph) { return ph.side === 'single'; }) || photos[0];
+
+    // Détermine l'option gagnante
+    var votes = project.votes || {};
+    var winningKey = findWinningKey(votes, OPTION_ORDER_PHOTO);
+
+    var photoHtml = '';
+    if (photo && photo.url) {
+      photoHtml =
+        '<div class="tv-reveal-photos">' +
+          '<div class="tv-reveal-photo">' +
+            '<img src="' + escapeHtml(photo.url) + '" alt="">' +
+          '</div>' +
+        '</div>';
+    }
+
+    var optionsHtml = '<div class="tv-reveal-options">' +
+      OPTION_ORDER_PHOTO.map(function(key) {
+        return renderOptionCard(key, votes[key] || 0, key === winningKey);
+      }).join('') +
+    '</div>';
+
+    return photoHtml + optionsHtml;
+  }
+
+  // ─── Body : duel (2 photos avec leur score) ──────────────────────
+  function renderDuelBody(project) {
+    var photos = project.photos || [];
+    var photoL = photos.find(function(ph) { return ph.side === 'left'; });
+    var photoR = photos.find(function(ph) { return ph.side === 'right'; });
+
+    var votes = project.votes || {};
+    var countA = votes.A || 0;
+    var countB = votes.B || 0;
+    var winningKey = findWinningKey(votes, OPTION_ORDER_DUEL);
+
+    return '<div class="tv-reveal-photos duel">' +
+        renderDuelPhoto(photoL, 'A', countA, winningKey === 'A') +
+        renderDuelPhoto(photoR, 'B', countB, winningKey === 'B') +
+      '</div>';
+  }
+
+  function renderDuelPhoto(photo, letter, count, isWinner) {
+    var src = (photo && photo.url) ? photo.url : '';
+    return '<div class="tv-reveal-photo' + (isWinner ? ' is-winner' : '') + '">' +
+      (src ? '<img src="' + escapeHtml(src) + '" alt="' + letter + '">' : '') +
+      '<div class="tv-reveal-photo-score">' +
+        '<span class="tv-reveal-photo-score-letter">' + letter + '</span>' +
+        count + ' vote' + (count > 1 ? 's' : '') +
+      '</div>' +
+    '</div>';
+  }
+
+  // ─── Body : poll (liste d'options en barres) ─────────────────────
+  function renderPollBody(project) {
+    var options = (project.poll_options || []).slice().sort(function(a, b) {
+      return (a.position || 0) - (b.position || 0);
+    });
+    var votes = project.votes || {};
+    var total = project.total_votes || 0;
+
+    if (options.length === 0) {
+      return '<div class="tv-reveal-empty">Aucune option pour ce sondage</div>';
+    }
+
+    // Trouve l'option gagnante (UUID avec le plus de votes)
+    var winningId = null;
+    var maxCount = 0;
+    options.forEach(function(opt) {
+      var c = votes[opt.id] || 0;
+      if (c > maxCount) { maxCount = c; winningId = opt.id; }
+    });
+    // Ne marque "winner" que s'il y a vraiment des votes
+    if (maxCount === 0) winningId = null;
+
+    var rowsHtml = options.map(function(opt) {
+      var count = votes[opt.id] || 0;
+      var pct = total > 0 ? Math.round((count / total) * 100) : 0;
+      var isWinner = (opt.id === winningId);
+      return '<div class="tv-reveal-poll-row' + (isWinner ? ' is-winner' : '') + '">' +
+        '<div class="tv-reveal-poll-row-head">' +
+          '<span class="tv-reveal-poll-row-text">' + escapeHtml(opt.text) + '</span>' +
+          '<span class="tv-reveal-poll-row-count">' + count + ' (' + pct + '%)</span>' +
+        '</div>' +
+        '<div class="tv-reveal-poll-row-bar">' +
+          '<div class="tv-reveal-poll-row-fill" style="width: ' + pct + '%;"></div>' +
+        '</div>' +
       '</div>';
     }).join('');
 
-    var html =
-      '<div class="tv-reveal-progress">Résultats finaux</div>' +
-      '<div class="tv-reveal-content">' +
-        '<div class="tv-reveal-winner-banner">🎉 Série terminée 🎉</div>' +
-        '<div class="tv-reveal-title">' + escapeHtml(state.series.title || 'Soirée BeauOuPas') + '</div>' +
-        (selfiesCount > 0
-          ? '<div class="tv-reveal-selfies ' + sizeClass + '">' + selfiesHtml + '</div>'
-          : '<div style="color: #888; font-size: 1.4vw;">Aucun selfie cette fois</div>') +
-      '</div>';
+    return '<div class="tv-reveal-poll-list">' + rowsHtml + '</div>';
+  }
 
-    document.getElementById('screen-reveal').innerHTML = html;
+  // ─── Carte option (❤️/😐/👎) ─────────────────────────────────────
+  function renderOptionCard(key, count, isWinner) {
+    var meta = OPTION_META[key] || { emoji: '?', label: key };
+    return '<div class="tv-reveal-option' + (isWinner ? ' is-winner' : '') + '">' +
+      '<div class="tv-reveal-option-emoji">' + meta.emoji + '</div>' +
+      '<div class="tv-reveal-option-count">' + count + '</div>' +
+      '<div class="tv-reveal-option-label">' + escapeHtml(meta.label) + '</div>' +
+    '</div>';
+  }
+
+  // ─── Trouve la clé d'option avec le plus de votes ────────────────
+  function findWinningKey(votes, keys) {
+    var winningKey = null;
+    var maxCount = 0;
+    keys.forEach(function(k) {
+      var c = votes[k] || 0;
+      if (c > maxCount) { maxCount = c; winningKey = k; }
+    });
+    return maxCount > 0 ? winningKey : null;
+  }
+
+  // ─── Bloc statistiques (par genre OU par âge) ────────────────────
+  function renderStatsBlock(title, project, keys, labels, dataObj) {
+    dataObj = dataObj || {};
+    var optionKeys = getRelevantOptionKeys(project);
+
+    // Filtre les clés qui ont au moins un vote
+    var visibleKeys = keys.filter(function(k) {
+      var inner = dataObj[k];
+      if (!inner) return false;
+      // Vérifie qu'il y a au moins un vote sur une des options pertinentes
+      return optionKeys.some(function(ok) { return (inner[ok] || 0) > 0; });
+    });
+
+    if (visibleKeys.length === 0) {
+      return '<div class="tv-reveal-stats-block">' +
+        '<div class="tv-reveal-stats-block-title">' + escapeHtml(title) + '</div>' +
+        '<div class="tv-reveal-empty" style="font-size:1.2vw;">Pas de données</div>' +
+      '</div>';
+    }
+
+    var rowsHtml = visibleKeys.map(function(k) {
+      var inner = dataObj[k] || {};
+      // Total pour cette ligne (somme des votes sur les options pertinentes)
+      var rowTotal = optionKeys.reduce(function(sum, ok) {
+        return sum + (inner[ok] || 0);
+      }, 0);
+
+      // Construit la barre empilée
+      var segmentsHtml = optionKeys.map(function(ok) {
+        var c = inner[ok] || 0;
+        var pct = rowTotal > 0 ? (c / rowTotal) * 100 : 0;
+        var cssVal = getCssValForOption(ok, project.type);
+        return '<div class="tv-reveal-stats-bar-segment ' + cssVal + '" style="width: ' + pct + '%;"></div>';
+      }).join('');
+
+      return '<div class="tv-reveal-stats-row">' +
+        '<div class="tv-reveal-stats-row-head">' +
+          '<span class="tv-reveal-stats-row-label">' + escapeHtml(labels[k] || k) + '</span>' +
+          '<span class="tv-reveal-stats-row-count">' + rowTotal + ' vote' + (rowTotal > 1 ? 's' : '') + '</span>' +
+        '</div>' +
+        '<div class="tv-reveal-stats-bar">' + segmentsHtml + '</div>' +
+      '</div>';
+    }).join('');
+
+    return '<div class="tv-reveal-stats-block">' +
+      '<div class="tv-reveal-stats-block-title">' + escapeHtml(title) + '</div>' +
+      rowsHtml +
+    '</div>';
+  }
+
+  // ─── Légende couleurs sous les graphiques ────────────────────────
+  function renderStatsLegend(project) {
+    var optionKeys = getRelevantOptionKeys(project);
+    var itemsHtml = optionKeys.map(function(ok) {
+      var label = getLabelForOption(ok, project);
+      var cssVal = getCssValForOption(ok, project.type);
+      return '<div class="tv-reveal-stats-legend-item">' +
+        '<span class="tv-reveal-stats-legend-dot ' + cssVal + '"></span>' +
+        '<span>' + escapeHtml(label) + '</span>' +
+      '</div>';
+    }).join('');
+    return '<div class="tv-reveal-stats-legend">' + itemsHtml + '</div>';
+  }
+
+  // ─── Helpers options par type de projet ──────────────────────────
+  function getRelevantOptionKeys(project) {
+    if (project.type === 'photo_vote') return OPTION_ORDER_PHOTO;
+    if (project.type === 'duel')       return OPTION_ORDER_DUEL;
+    if (project.type === 'poll') {
+      // Pour les polls, on prend les UUIDs des options du projet
+      return (project.poll_options || []).map(function(o) { return o.id; });
+    }
+    return [];
+  }
+
+  function getCssValForOption(optionKey, projectType) {
+    if (projectType === 'poll') return 'val-poll';
+    if (OPTION_META[optionKey]) return OPTION_META[optionKey].cssVal;
+    return 'val-poll';
+  }
+
+  function getLabelForOption(optionKey, project) {
+    if (project.type === 'poll') {
+      var opt = (project.poll_options || []).find(function(o) { return o.id === optionKey; });
+      return opt ? opt.text : '?';
+    }
+    return (OPTION_META[optionKey] && OPTION_META[optionKey].label) || optionKey;
+  }
+
+  // ═════════════════════════════════════════════════════════════════
+  // Galerie de polaroids qui défilent en arrière-plan
+  // ═════════════════════════════════════════════════════════════════
+
+  function spawnPolaroids(project) {
+    // Nettoie les anciens polaroids
+    var container = document.getElementById('reveal-polaroids');
+    if (!container) return;
+    container.innerHTML = '';
+    if (state.polaroidsTimeout) clearTimeout(state.polaroidsTimeout);
+
+    var selfies = (project && project.selfies) || [];
+    if (selfies.length === 0) return; // Rien à afficher (cas du bug actuel)
+
+    // On veut max 5 polaroids visibles à l'écran simultanément.
+    // Chaque polaroid traverse l'écran en ~14s. On en spawn un toutes les ~2,8s
+    // pour avoir une cadence régulière.
+    var SPAWN_INTERVAL_MS = 2800;
+    var TRAVERSE_DURATION_MS = 14000;
+    var idx = 0;
+
+    function spawnNext() {
+      if (!document.getElementById('reveal-polaroids')) return; // L'écran a changé
+      var selfie = selfies[idx % selfies.length];
+      idx++;
+      addPolaroid(container, selfie, TRAVERSE_DURATION_MS);
+      state.polaroidsTimeout = setTimeout(spawnNext, SPAWN_INTERVAL_MS);
+    }
+
+    // Spawn initial : 2 polaroids tout de suite (puis cadence régulière)
+    addPolaroid(container, selfies[0], TRAVERSE_DURATION_MS);
+    if (selfies.length > 1) {
+      setTimeout(function() {
+        var c = document.getElementById('reveal-polaroids');
+        if (c) addPolaroid(c, selfies[1 % selfies.length], TRAVERSE_DURATION_MS);
+      }, 1400);
+    }
+    idx = 2;
+    state.polaroidsTimeout = setTimeout(spawnNext, SPAWN_INTERVAL_MS);
+  }
+
+  function addPolaroid(container, selfie, durationMs) {
+    var el = document.createElement('div');
+    el.className = 'tv-polaroid';
+
+    // Position verticale aléatoire entre 10% et 70% de la zone
+    var topPct = 10 + Math.random() * 60;
+    // Rotation aléatoire entre -8° et +8°
+    var rot = (Math.random() * 16 - 8).toFixed(1);
+
+    el.style.top = topPct + '%';
+    el.style.setProperty('--polaroid-rot', rot + 'deg');
+    el.style.animationDuration = durationMs + 'ms';
+
+    var imgHtml = selfie && selfie.photo_url
+      ? '<img src="' + escapeHtml(selfie.photo_url) + '" alt="">'
+      : '<div style="width:100%;aspect-ratio:1;background:#888;"></div>';
+
+    var captionHtml = (selfie && selfie.username)
+      ? '<div class="tv-polaroid-caption">' + escapeHtml(selfie.username) + '</div>'
+      : '';
+
+    el.innerHTML = imgHtml + captionHtml;
+    container.appendChild(el);
+
+    // Auto-retire le polaroid après son animation
+    setTimeout(function() {
+      if (el.parentNode) el.parentNode.removeChild(el);
+    }, durationMs + 200);
+  }
+
+  // ═════════════════════════════════════════════════════════════════
+  // Bouton "Arrêter" → désactive le mode TV
+  // ═════════════════════════════════════════════════════════════════
+
+  async function onStopRevealClicked() {
+    if (!confirm('Arrêter la diffusion des résultats sur la TV ?')) return;
+    try {
+      var sb = window.TVRealtime.getClient();
+      var res = await sb.rpc('tv_deactivate', { p_series_id: state.series.id });
+      if (res.error) throw res.error;
+      console.log('[TVApp] Mode TV désactivé via bouton Arrêter');
+      // Le realtime va recevoir l'UPDATE et basculer sur l'écran d'erreur
+    } catch (err) {
+      console.error('[TVApp] onStopRevealClicked error:', err);
+      alert('Erreur : ' + (err.message || err));
+    }
   }
 
   // ─────────────────────────────────────────────────────────────────
@@ -592,6 +1013,7 @@ window.TVApp = (function() {
       }
 
       if (!payload.tv_active) {
+        stopRevealLoop();
         showError('Mode TV désactivé', 'L\'animateur a quitté le mode TV.');
         return;
       }
@@ -623,6 +1045,11 @@ window.TVApp = (function() {
     }
     else if (type === 'selfie') {
       state.selfies.push(payload);
+      // Si on est en page résultats, déclenche un refresh silencieux
+      // pour que le nouveau selfie apparaisse dans la galerie polaroids
+      if (state.series && state.series.status === 'finished') {
+        loadResultsData(true);
+      }
     }
     // ⚡ Nouveau participant rejoint la salle d'attente
     else if (type === 'participant') {
@@ -631,9 +1058,8 @@ window.TVApp = (function() {
       refreshLobbyParticipantsLabel();
       updateVoteCounter();
     }
-    // ⚡ NOUVEAU : un participant a quitté (Retour Android, "Quitter", "Repréparer")
+    // ⚡ un participant a quitté (Retour Android, "Quitter", "Repréparer")
     else if (type === 'participant_left') {
-      // On garantit qu'on ne descend pas en dessous de 0
       state.participantsCount = Math.max(0, state.participantsCount - 1);
       console.log('[TVApp] Participant parti, total =', state.participantsCount);
       refreshLobbyParticipantsLabel();
