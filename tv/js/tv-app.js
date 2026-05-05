@@ -615,7 +615,23 @@ window.TVApp = (function() {
     else if (type === 'participant') {
       state.participantsCount++;
       console.log('[TVApp] Nouveau participant, total =', state.participantsCount);
+// ⚡ NOUVEAU : participant quitte → mettre à jour le compteur en live
+    else if (type === 'participant_left') {
+      // On garantit qu'on ne descend pas en dessous de 0
+      state.participantsCount = Math.max(0, state.participantsCount - 1);
+      console.log('[TVApp] Participant parti, total =', state.participantsCount);
 
+      // Mettre à jour l'écran lobby
+      var elLobby = document.getElementById('lobby-participants');
+      if (elLobby) {
+        elLobby.textContent = state.participantsCount + ' participant' +
+          (state.participantsCount > 1 ? 's' : '') + ' connecté' +
+          (state.participantsCount > 1 ? 's' : '');
+      }
+
+      // Mettre à jour le compteur "X / Y ont voté" si on est sur l'écran vote
+      updateVoteCounter();
+    }
       // Mettre à jour l'écran lobby si on y est
       var elLobby = document.getElementById('lobby-participants');
       if (elLobby) {
