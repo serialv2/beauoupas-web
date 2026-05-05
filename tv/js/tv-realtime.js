@@ -7,6 +7,7 @@
 // - series_projects : started_at (= démarrage d'un projet)
 // - series_votes : INSERT (= compteur "67/100 ont voté")
 // - series_selfies : INSERT (= big reveal final)
+// - series_participants : INSERT (= nouveau participant en salle d'attente) ⚡ NOUVEAU
 //
 // L'objet exporté est window.TVRealtime.
 // Tous les events sont remontés à window.TVApp.onRealtimeEvent().
@@ -31,6 +32,7 @@ window.TVRealtime = (function() {
 
     console.log('[TVRealtime] Démarrage des subscriptions pour series:', seriesId);
 
+    // ─── series : changements de status, pause, projet courant ───
     var seriesSub = supabaseClient
       .channel('tv-series-' + seriesId)
       .on('postgres_changes', {
@@ -48,6 +50,7 @@ window.TVRealtime = (function() {
         console.log('[TVRealtime] series channel:', status);
       });
 
+    // ─── series_projects : started_at, is_revealed ───
     var projectsSub = supabaseClient
       .channel('tv-projects-' + seriesId)
       .on('postgres_changes', {
@@ -65,6 +68,7 @@ window.TVRealtime = (function() {
         console.log('[TVRealtime] series_projects channel:', status);
       });
 
+    // ─── series_votes : INSERT (compteur "X / Y ont voté") ───
     var votesSub = supabaseClient
       .channel('tv-votes-' + seriesId)
       .on('postgres_changes', {
@@ -82,6 +86,7 @@ window.TVRealtime = (function() {
         console.log('[TVRealtime] series_votes channel:', status);
       });
 
+    // ─── series_selfies : INSERT (big reveal final) ───
     var selfiesSub = supabaseClient
       .channel('tv-selfies-' + seriesId)
       .on('postgres_changes', {
@@ -99,7 +104,27 @@ window.TVRealtime = (function() {
         console.log('[TVRealtime] series_selfies channel:', status);
       });
 
-    subscriptions = [seriesSub, projectsSub, votesSub, selfiesSub];
+    // ⚡ NOUVEAU : ─── series_participants : INSERT (nouveau participant) ───
+    // Permet de mettre à jour en temps réel le compteur "X participants connectés"
+    // sur l'écran lobby quand quelqu'un rejoint la série depuis son téléphone.
+    var participantsSub = supabaseClient
+      .channel('tv-participants-' + seriesId)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'series_participants',
+        filter: 'series_id=eq.' + seriesId
+      }, function(payload) {
+        console.log('[TVRealtime] participant INSERT');
+        if (window.TVApp && window.TVApp.onRealtimeEvent) {
+          window.TVApp.onRealtimeEvent('participant', payload.new);
+        }
+      })
+      .subscribe(function(status) {
+        console.log('[TVRealtime] series_participants channel:', status);
+      });
+
+    subscriptions = [seriesSub, projectsSub, votesSub, selfiesSub, participantsSub];
   }
 
   function stop() {
