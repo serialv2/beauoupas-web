@@ -593,10 +593,35 @@ window.TVApp = (function() {
     }
   }
 
+  // ─────────────────────────────────────────────────────────────────
+  // Avancement dans la boucle de reveal.
+  //
+  // Comportement selon series.show_stats :
+  // - show_stats = true (défaut) :
+  //     raw (20s) → stats (20s) → projet suivant (raw 20s) → ...
+  // - show_stats = false :
+  //     raw (20s) → projet suivant (raw 20s) → ...
+  //     (la phase "stats" est totalement sautée)
+  //
+  // Si une seule série n'a aucun projet (cas limite), on ne fait rien.
+  // ─────────────────────────────────────────────────────────────────
+
   function showNextRevealStep() {
-    if (state.revealPhase === 'raw') {
+    if (!state.resultsData || !state.resultsData.projects) return;
+    if (state.resultsData.projects.length === 0) return;
+
+    // ⚡ Lecture du flag show_stats. Si non défini en BDD (cas legacy
+    // peu probable car on a mis NOT NULL DEFAULT TRUE), on traite
+    // comme true pour préserver le comportement historique.
+    var showStats = (state.series && state.series.show_stats !== false);
+
+    if (state.revealPhase === 'raw' && showStats) {
+      // Cas standard : on enchaîne sur la phase stats du même projet.
       state.revealPhase = 'stats';
     } else {
+      // Cas où on saute la phase stats (showStats = false), OU
+      // cas standard où on vient de finir la phase stats : on passe
+      // au projet suivant en repartant sur la phase 'raw'.
       state.revealProjectIdx++;
       if (state.revealProjectIdx >= state.resultsData.projects.length) {
         state.revealProjectIdx = 0;
