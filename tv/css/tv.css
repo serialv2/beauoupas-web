@@ -464,62 +464,176 @@ html, body {
   opacity: 1;
 }
 
-/* ─────────────────────────────────────────────────────────────────
-   Écran 4 : Big reveal (slideshow + gagnant + selfies)
-   ───────────────────────────────────────────────────────────────── */
+/* ═════════════════════════════════════════════════════════════════
+   Écran 4 : RÉSULTATS (big reveal)
+   ───────────────────────────────────────────────────────────────────
+   Boucle infinie : pour chaque projet, 2 phases de 20s chacune :
+     - Phase 1 (raw)  : votes par option + galerie polaroids
+     - Phase 2 (stats): répartition par genre + tranche d'âge
+   ═════════════════════════════════════════════════════════════════ */
 
 .tv-reveal {
-  padding: 3vh 4vw;
-  gap: 2vh;
+  padding: 2vh 3vw;
+  gap: 1vh;
+  position: relative;
 }
 
-.tv-reveal-progress {
-  font-size: 1.4vw;
-  color: #888888;
-  text-align: center;
-  text-transform: uppercase;
-  letter-spacing: 3px;
+/* En-tête : titre du projet + position dans la série */
+.tv-reveal-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6vh;
   flex-shrink: 0;
 }
 
-.tv-reveal-content {
+.tv-reveal-progress {
+  font-size: 1.2vw;
+  color: #888888;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+}
+
+.tv-reveal-title {
+  font-size: 2.6vw;
+  font-weight: 600;
+  color: white;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.tv-reveal-description {
+  font-size: 1.2vw;
+  color: #BBBBBB;
+  text-align: center;
+}
+
+/* Phase tag (RÉSULTATS / STATISTIQUES) */
+.tv-reveal-phase-tag {
+  display: inline-block;
+  background: rgba(233, 30, 140, 0.18);
+  color: #E91E8C;
+  font-size: 1vw;
+  font-weight: 600;
+  padding: 0.4vh 1.5vw;
+  border-radius: 100px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* Zone principale : contenu + galerie polaroids en arrière-plan */
+.tv-reveal-stage {
   flex: 1;
+  position: relative;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ─── Galerie de polaroids qui défilent ─────────────────────────── */
+/* Couche absolute en arrière-plan, derrière les graphiques. */
+.tv-reveal-polaroids {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.tv-polaroid {
+  position: absolute;
+  background: white;
+  padding: 1vh 1vh 3vh 1vh;
+  box-shadow: 0 1vh 3vh rgba(0, 0, 0, 0.5);
+  width: 14vh;
+  /* Sera ajusté dynamiquement en JS pour position + rotation. */
+  /* Animation de glissement de droite à gauche : */
+  animation: polaroidDrift linear forwards;
+  opacity: 0;
+}
+
+.tv-polaroid.visible {
+  opacity: 1;
+}
+
+.tv-polaroid img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  background: #2A2A3E;
+  display: block;
+}
+
+.tv-polaroid-caption {
+  font-family: 'Caveat', 'Brush Script MT', cursive;
+  font-size: 1.6vh;
+  color: #333;
+  text-align: center;
+  margin-top: 0.5vh;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Animation : glissement de droite vers la gauche, rotation conservée */
+@keyframes polaroidDrift {
+  0%   { transform: translateX(110vw)  rotate(var(--polaroid-rot, 0deg)); opacity: 0; }
+  5%   { opacity: 1; }
+  95%  { opacity: 1; }
+  100% { transform: translateX(-30vw)  rotate(var(--polaroid-rot, 0deg)); opacity: 0; }
+}
+
+/* ─── Contenu principal au-dessus des polaroids ─────────────────── */
+.tv-reveal-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 2vh;
-  min-height: 0;
+  animation: revealFadeIn 0.5s ease-out;
 }
 
-.tv-reveal-title {
-  font-size: 3vw;
-  font-weight: 600;
-  color: white;
-  text-align: center;
-  line-height: 1.2;
-  animation: revealFadeIn 0.6s ease-out;
+@keyframes revealFadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.tv-reveal-photo-container {
+/* ─── PHASE 1 : Photo + options de vote avec compteurs ──────────── */
+
+.tv-reveal-photos {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 2vw;
   width: 100%;
-  height: 50vh;
+  max-height: 45vh;
+}
+
+.tv-reveal-photos.duel {
+  gap: 1vw;
 }
 
 .tv-reveal-photo {
-  height: 100%;
-  max-width: 45%;
+  position: relative;
+  height: 45vh;
+  max-width: 40vw;
   background: #2A2A3E;
   border-radius: 16px;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: revealZoomIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 1vh 4vh rgba(0, 0, 0, 0.4);
+}
+
+.tv-reveal-photo.is-winner {
+  outline: 0.5vh solid #E91E8C;
+  outline-offset: 0;
 }
 
 .tv-reveal-photo img {
@@ -528,158 +642,283 @@ html, body {
   object-fit: contain;
 }
 
-@keyframes revealFadeIn {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+/* Bandeau de score sous la photo (duel) */
+.tv-reveal-photo-score {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 100%);
+  padding: 4vh 1vw 1vh 1vw;
+  text-align: center;
+  font-size: 2.4vw;
+  font-weight: 700;
+  color: white;
 }
 
-@keyframes revealZoomIn {
-  from { opacity: 0; transform: scale(0.8); }
-  to { opacity: 1; transform: scale(1); }
+.tv-reveal-photo-score-letter {
+  display: inline-block;
+  background: rgba(233, 30, 140, 0.85);
+  color: white;
+  font-size: 1.6vw;
+  width: 3vw;
+  height: 3vw;
+  line-height: 3vw;
+  text-align: center;
+  border-radius: 50%;
+  margin-right: 1vw;
 }
 
-.tv-reveal-stats {
+/* Options de vote (photo_vote : like/meh/dislike) */
+.tv-reveal-options {
   display: flex;
-  gap: 4vw;
-  align-items: center;
-  animation: revealFadeIn 0.6s ease-out 0.3s both;
+  gap: 3vw;
+  align-items: stretch;
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 100%;
 }
 
-.tv-reveal-stat {
+.tv-reveal-option {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.6vh;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 1.5vh 2.5vw;
+  min-width: 11vw;
+  transition: transform 0.3s, border-color 0.3s;
 }
 
-.tv-reveal-stat-icon {
+.tv-reveal-option.is-winner {
+  border-color: #E91E8C;
+  background: rgba(233, 30, 140, 0.12);
+  transform: scale(1.06);
+}
+
+.tv-reveal-option-emoji {
   font-size: 4vw;
+  line-height: 1;
 }
 
-.tv-reveal-stat-value {
-  font-size: 2.4vw;
-  font-weight: 600;
-  color: white;
-}
-
-.tv-reveal-stat-label {
-  font-size: 1vw;
-  color: #888888;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-}
-
-/* ─── Big reveal final : le grand gagnant ───────────────────────── */
-
-.tv-reveal-winner-banner {
-  background: linear-gradient(135deg, #E91E8C 0%, #FF4081 100%);
-  padding: 1.5vh 4vw;
-  border-radius: 100px;
-  font-size: 2.4vw;
+.tv-reveal-option-count {
+  font-size: 2.6vw;
   font-weight: 700;
   color: white;
-  letter-spacing: 2px;
+  line-height: 1;
+  font-family: 'Courier New', monospace;
+}
+
+.tv-reveal-option-label {
+  font-size: 1vw;
+  color: #BBBBBB;
   text-transform: uppercase;
-  animation: winnerPulse 2s ease-in-out infinite;
+  letter-spacing: 2px;
 }
 
-@keyframes winnerPulse {
-  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(233, 30, 140, 0.4); }
-  50% { transform: scale(1.03); box-shadow: 0 0 0 30px rgba(233, 30, 140, 0); }
+/* Options de poll : barres horizontales */
+.tv-reveal-poll-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2vh;
+  width: 70%;
+  max-width: 1100px;
 }
 
-/* ─── Wall of selfies (à la fin) ─────────────────────────────────── */
-
-.tv-reveal-selfies {
-  display: grid;
-  gap: 0.8vh;
-  width: 90%;
-  max-width: 1600px;
-  animation: revealFadeIn 0.8s ease-out 0.6s both;
-}
-
-.tv-reveal-selfies.size-small {
-  /* < 30 selfies : grand affichage */
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-}
-
-.tv-reveal-selfies.size-medium {
-  /* 30-100 selfies : moyen */
-  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-}
-
-.tv-reveal-selfies.size-large {
-  /* 100+ selfies : petit, mosaïque dense */
-  grid-template-columns: repeat(auto-fit, minmax(50px, 1fr));
-}
-
-.tv-reveal-selfie {
-  aspect-ratio: 1;
-  border-radius: 8px;
-  background: #2A2A3E;
-  overflow: hidden;
-  position: relative;
-  animation: selfieAppear 0.4s ease-out backwards;
-}
-
-.tv-reveal-selfie img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-@keyframes selfieAppear {
-  from { opacity: 0; transform: scale(0.5); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-/* ─── Stats segmentées ───────────────────────────────────────────── */
-
-.tv-reveal-segments {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2vw;
-  width: 80%;
-  max-width: 1200px;
-  animation: revealFadeIn 0.6s ease-out 0.4s both;
-}
-
-.tv-reveal-segment {
+.tv-reveal-poll-row {
   background: rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
-  padding: 2vh 2vw;
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1.2vh 1.5vw;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6vh;
+  transition: border-color 0.3s, background 0.3s;
 }
 
-.tv-reveal-segment-title {
-  font-size: 1.4vw;
-  color: #888888;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  margin-bottom: 1.5vh;
+.tv-reveal-poll-row.is-winner {
+  border-color: #E91E8C;
+  background: rgba(233, 30, 140, 0.12);
+}
+
+.tv-reveal-poll-row-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1vw;
+}
+
+.tv-reveal-poll-row-text {
+  font-size: 1.5vw;
+  color: white;
+  font-weight: 500;
+}
+
+.tv-reveal-poll-row-count {
+  font-size: 1.5vw;
+  color: #E91E8C;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+  flex-shrink: 0;
+}
+
+.tv-reveal-poll-row-bar {
+  background: rgba(255, 255, 255, 0.08);
+  height: 0.8vh;
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.tv-reveal-poll-row-fill {
+  background: linear-gradient(90deg, #E91E8C 0%, #FF4081 100%);
+  height: 100%;
+  border-radius: 100px;
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Compteur total de votes (footer) */
+.tv-reveal-total {
+  font-size: 1.3vw;
+  color: #BBBBBB;
   text-align: center;
 }
 
-.tv-reveal-segment-rows {
+.tv-reveal-total strong {
+  color: white;
+  font-family: 'Courier New', monospace;
+}
+
+/* État vide (pas de votes) */
+.tv-reveal-empty {
+  font-size: 1.6vw;
+  color: #888888;
+  font-style: italic;
+}
+
+/* ─── PHASE 2 : Stats par genre / par âge ───────────────────────── */
+
+.tv-reveal-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2vw;
+  width: 90%;
+  max-width: 1600px;
+}
+
+.tv-reveal-stats-block {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 2vh 2vw;
   display: flex;
   flex-direction: column;
-  gap: 0.8vh;
+  gap: 1.2vh;
 }
 
-.tv-reveal-segment-row {
+.tv-reveal-stats-block-title {
+  font-size: 1.3vw;
+  color: #888888;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  text-align: center;
+  margin-bottom: 0.5vh;
+}
+
+.tv-reveal-stats-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4vh;
+}
+
+.tv-reveal-stats-row-head {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  font-size: 1.4vw;
+  align-items: baseline;
+  font-size: 1.3vw;
 }
 
-.tv-reveal-segment-row-label {
+.tv-reveal-stats-row-label {
   color: white;
+  font-weight: 500;
 }
 
-.tv-reveal-segment-row-value {
-  color: #E91E8C;
-  font-weight: 600;
+.tv-reveal-stats-row-count {
+  color: #BBBBBB;
   font-family: 'Courier New', monospace;
+}
+
+/* Mini-barres empilées colorées par option (like/meh/dislike ou A/B) */
+.tv-reveal-stats-bar {
+  display: flex;
+  height: 1.4vh;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.tv-reveal-stats-bar-segment {
+  height: 100%;
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Couleurs par valeur de vote (cohérence sur toute la page) */
+.tv-reveal-stats-bar-segment.val-like     { background: #E91E8C; }
+.tv-reveal-stats-bar-segment.val-meh      { background: #888888; }
+.tv-reveal-stats-bar-segment.val-dislike  { background: #455A64; }
+.tv-reveal-stats-bar-segment.val-A        { background: #E91E8C; }
+.tv-reveal-stats-bar-segment.val-B        { background: #2196F3; }
+.tv-reveal-stats-bar-segment.val-poll     { background: #E91E8C; }
+
+/* Légende des couleurs (sous les graphiques) */
+.tv-reveal-stats-legend {
+  display: flex;
+  gap: 1.5vw;
+  justify-content: center;
+  margin-top: 0.6vh;
+  flex-wrap: wrap;
+}
+
+.tv-reveal-stats-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5vw;
+  font-size: 0.95vw;
+  color: #BBBBBB;
+}
+
+.tv-reveal-stats-legend-dot {
+  width: 0.8vw;
+  height: 0.8vw;
+  border-radius: 50%;
+}
+
+.tv-reveal-stats-legend-dot.val-like     { background: #E91E8C; }
+.tv-reveal-stats-legend-dot.val-meh      { background: #888888; }
+.tv-reveal-stats-legend-dot.val-dislike  { background: #455A64; }
+.tv-reveal-stats-legend-dot.val-A        { background: #E91E8C; }
+.tv-reveal-stats-legend-dot.val-B        { background: #2196F3; }
+.tv-reveal-stats-legend-dot.val-poll     { background: #E91E8C; }
+
+/* ─── Bouton "Arrêter" en bas à droite ──────────────────────────── */
+.tv-reveal-stop-btn {
+  position: absolute;
+  bottom: 2vh;
+  right: 2vw;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #BBBBBB;
+  padding: 1vh 2vw;
+  border-radius: 100px;
+  font-size: 1vw;
+  cursor: pointer;
+  z-index: 10;
+  transition: background 0.2s, color 0.2s;
+}
+
+.tv-reveal-stop-btn:hover {
+  background: rgba(244, 67, 54, 0.25);
+  color: #F44336;
 }
 
 /* ─────────────────────────────────────────────────────────────────
