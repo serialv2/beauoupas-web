@@ -7,7 +7,7 @@
 // - series_projects : started_at (= démarrage d'un projet)
 // - series_votes : INSERT (= compteur "67/100 ont voté")
 // - series_selfies : INSERT (= big reveal final)
-// - series_participants : INSERT (= nouveau participant en salle d'attente) ⚡ NOUVEAU
+// - series_participants : INSERT + DELETE (= compteur "X participants")
 //
 // L'objet exporté est window.TVRealtime.
 // Tous les events sont remontés à window.TVApp.onRealtimeEvent().
@@ -104,9 +104,11 @@ window.TVRealtime = (function() {
         console.log('[TVRealtime] series_selfies channel:', status);
       });
 
-    // ⚡ NOUVEAU : ─── series_participants : INSERT (nouveau participant) ───
-    // Permet de mettre à jour en temps réel le compteur "X participants connectés"
-    // sur l'écran lobby quand quelqu'un rejoint la série depuis son téléphone.
+    // ⚡ ─── series_participants : INSERT + DELETE ───
+    // - INSERT : un nouveau participant rejoint la salle d'attente
+    // - DELETE : un participant quitte (Retour Android + "Quitter",
+    //            ou animateur qui désactive le mode TV, ou "Repréparer")
+    // Note : on chaîne 2 .on() sur le même channel pour économiser une connexion.
     var participantsSub = supabaseClient
       .channel('tv-participants-' + seriesId)
       .on('postgres_changes', {
@@ -118,6 +120,17 @@ window.TVRealtime = (function() {
         console.log('[TVRealtime] participant INSERT');
         if (window.TVApp && window.TVApp.onRealtimeEvent) {
           window.TVApp.onRealtimeEvent('participant', payload.new);
+        }
+      })
+      .on('postgres_changes', {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'series_participants',
+        filter: 'series_id=eq.' + seriesId
+      }, function(payload) {
+        console.log('[TVRealtime] participant DELETE');
+        if (window.TVApp && window.TVApp.onRealtimeEvent) {
+          window.TVApp.onRealtimeEvent('participant_left', payload.old);
         }
       })
       .subscribe(function(status) {
