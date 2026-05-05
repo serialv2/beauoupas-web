@@ -136,7 +136,7 @@ window.TVApp = (function() {
   }
 
   // ─────────────────────────────────────────────────────────────────
-  // ⚡ FIX 1 : Compter les participants depuis series_participants
+  // Compter les participants depuis series_participants
   // ─────────────────────────────────────────────────────────────────
 
   async function loadParticipantsCount() {
@@ -154,7 +154,7 @@ window.TVApp = (function() {
   }
 
   // ─────────────────────────────────────────────────────────────────
-  // ⚡ FIX 2 : La TV appelle tv_advance_to_next quand le timer expire
+  // La TV appelle tv_advance_to_next quand le timer expire
   // ─────────────────────────────────────────────────────────────────
 
   async function advanceToNextProject() {
@@ -375,7 +375,7 @@ window.TVApp = (function() {
 
       if (remaining <= 0) {
         stopCountdown();
-        // ⚡ FIX : la TV pilote l'avancement
+        // La TV pilote l'avancement
         advanceToNextProject();
         renderTransition();
       }
@@ -565,6 +565,19 @@ window.TVApp = (function() {
   }
 
   // ─────────────────────────────────────────────────────────────────
+  // Helpers pour mettre à jour l'écran lobby/vote
+  // ─────────────────────────────────────────────────────────────────
+
+  function refreshLobbyParticipantsLabel() {
+    var elLobby = document.getElementById('lobby-participants');
+    if (elLobby) {
+      elLobby.textContent = state.participantsCount + ' participant' +
+        (state.participantsCount > 1 ? 's' : '') + ' connecté' +
+        (state.participantsCount > 1 ? 's' : '');
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────
   // Réception des events Realtime
   // ─────────────────────────────────────────────────────────────────
 
@@ -585,7 +598,7 @@ window.TVApp = (function() {
 
       if (prev.status !== payload.status ||
           prev.current_project_index !== payload.current_project_index) {
-        // ⚡ Reset le flag d'avancement quand on change de projet
+        // Reset le flag d'avancement quand on change de projet
         _isAdvancing = false;
         renderCurrentScreen();
       }
@@ -611,41 +624,25 @@ window.TVApp = (function() {
     else if (type === 'selfie') {
       state.selfies.push(payload);
     }
-    // ⚡ FIX 3 : nouveau participant rejoint → mettre à jour le compteur en live
+    // ⚡ Nouveau participant rejoint la salle d'attente
     else if (type === 'participant') {
       state.participantsCount++;
       console.log('[TVApp] Nouveau participant, total =', state.participantsCount);
-// ⚡ NOUVEAU : participant quitte → mettre à jour le compteur en live
+      refreshLobbyParticipantsLabel();
+      updateVoteCounter();
+    }
+    // ⚡ NOUVEAU : un participant a quitté (Retour Android, "Quitter", "Repréparer")
     else if (type === 'participant_left') {
       // On garantit qu'on ne descend pas en dessous de 0
       state.participantsCount = Math.max(0, state.participantsCount - 1);
       console.log('[TVApp] Participant parti, total =', state.participantsCount);
-
-      // Mettre à jour l'écran lobby
-      var elLobby = document.getElementById('lobby-participants');
-      if (elLobby) {
-        elLobby.textContent = state.participantsCount + ' participant' +
-          (state.participantsCount > 1 ? 's' : '') + ' connecté' +
-          (state.participantsCount > 1 ? 's' : '');
-      }
-
-      // Mettre à jour le compteur "X / Y ont voté" si on est sur l'écran vote
-      updateVoteCounter();
-    }
-      // Mettre à jour l'écran lobby si on y est
-      var elLobby = document.getElementById('lobby-participants');
-      if (elLobby) {
-        elLobby.textContent = state.participantsCount + ' participant' +
-          (state.participantsCount > 1 ? 's' : '') + ' connecté' +
-          (state.participantsCount > 1 ? 's' : '');
-      }
-
-      // Mettre à jour le compteur "X / Y ont voté" si on est sur l'écran vote
+      refreshLobbyParticipantsLabel();
       updateVoteCounter();
     }
   }
 
   function updateVoteCounter() {
+    if (!state.series) return;
     var sIdx = state.series.current_project_index || 0;
     var sp = state.projects[sIdx];
     if (!sp) return;
