@@ -1,0 +1,368 @@
+/* ═════════════════════════════════════════════════════════════════
+   BeauOuPas TV Quizz — Thème KAHOOT
+   ───────────────────────────────────────────────────────────────────
+   Inspiré de Kahoot! :
+   - Fond violet profond
+   - 4 grosses cases couleurs vives : rouge / bleu / jaune / vert
+   - Icônes : triangle / losange / cercle / carré
+   - Typo moderne, ultra-lisible de loin
+   - Ambiance fun, dynamique, jeunesse
+
+   Tout est namespacé sous `body.style-kahoot` pour ne pas leaker
+   sur les autres thèmes.
+   ═════════════════════════════════════════════════════════════════ */
+
+body.style-kahoot {
+  background: #46178F;
+  color: #FFFFFF;
+  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Effet de fond légèrement animé (motifs subtils) */
+body.style-kahoot::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.08) 0%, transparent 35%),
+    radial-gradient(circle at 85% 80%, rgba(255, 196, 0, 0.06) 0%, transparent 40%),
+    radial-gradient(circle at 75% 30%, rgba(0, 188, 212, 0.05) 0%, transparent 40%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+body.style-kahoot .tv-container,
+body.style-kahoot .tv-screen {
+  position: relative;
+  z-index: 1;
+}
+
+/* ═════════════════════════════════════════════════════════════════
+   ÉCRAN INTRO
+   ═════════════════════════════════════════════════════════════════ */
+
+body.style-kahoot .quiz-intro-tag {
+  background: linear-gradient(135deg, #FFC700, #FF9500);
+  color: #1A0033;
+  font-weight: 700;
+  box-shadow: 0 0.6vh 2vh rgba(255, 199, 0, 0.4);
+}
+
+body.style-kahoot .quiz-intro-title {
+  background: linear-gradient(135deg, #FFFFFF 0%, #FFD700 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 1vh 4vh rgba(255, 199, 0, 0.3);
+}
+
+body.style-kahoot .quiz-intro-description {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+body.style-kahoot .quiz-intro-meta-item {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+}
+
+body.style-kahoot .quiz-intro-meta-value {
+  color: #FFC700;
+}
+
+body.style-kahoot .quiz-intro-meta-label {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+body.style-kahoot .quiz-intro-countdown-label {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+body.style-kahoot .quiz-intro-countdown-value {
+  color: #FFC700;
+  text-shadow: 0 0 4vh rgba(255, 199, 0, 0.6);
+  animation: kahootCountdownPulse 1s ease-in-out infinite;
+}
+
+@keyframes kahootCountdownPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+/* ═════════════════════════════════════════════════════════════════
+   ÉCRAN QUESTION
+   ═════════════════════════════════════════════════════════════════ */
+
+body.style-kahoot .quiz-question-progress {
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 600;
+}
+
+body.style-kahoot .quiz-question-countdown {
+  background: rgba(255, 255, 255, 0.15);
+  color: #FFC700;
+  border: 3px solid rgba(255, 199, 0, 0.4);
+}
+
+body.style-kahoot .quiz-question-countdown.urgent {
+  background: rgba(244, 67, 54, 0.3);
+  color: #FFFFFF;
+  border-color: #F44336;
+}
+
+body.style-kahoot .quiz-question-category {
+  background: rgba(255, 199, 0, 0.2);
+  color: #FFC700;
+  border: 2px solid rgba(255, 199, 0, 0.4);
+  font-weight: 700;
+}
+
+body.style-kahoot .quiz-question-text {
+  color: #FFFFFF;
+  text-shadow: 0 0.4vh 1.5vh rgba(0, 0, 0, 0.4);
+}
+
+body.style-kahoot .quiz-question-photo img {
+  border: 4px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 1vh 3vh rgba(0, 0, 0, 0.4);
+}
+
+/* ─── Les 4 cases : rouge, bleu, jaune, vert ─────────────────────
+   Couleurs Kahoot officielles. Chaque option a une couleur fixe
+   selon sa POSITION (1ère = rouge, 2e = bleu, 3e = jaune, 4e = vert).
+   ───────────────────────────────────────────────────────────────── */
+
+body.style-kahoot .quiz-options {
+  gap: 1.5vh 1.5vw;
+}
+
+body.style-kahoot .quiz-option {
+  border-radius: 12px;
+  box-shadow: 0 0.8vh 0 rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s ease;
+  font-weight: 700;
+  color: #FFFFFF;
+  text-shadow: 0 0.2vh 0.6vh rgba(0, 0, 0, 0.3);
+  border: none;
+}
+
+/* Forme géométrique à gauche (à la place de la lettre A/B/C/D) */
+body.style-kahoot .quiz-option .quiz-option-letter {
+  background: rgba(255, 255, 255, 0.25);
+  color: #FFFFFF;
+  font-family: -apple-system, sans-serif;
+  position: relative;
+}
+
+/* Optionnel : on peut superposer un symbole géométrique en CSS pur
+   via le ::before, mais on garde la lettre A/B/C/D pour la lisibilité.
+   On stylise juste le bloc différemment selon la position. */
+
+/* Couleurs Kahoot : 1ère case rouge / 2e bleu / 3e jaune / 4e vert */
+body.style-kahoot .quiz-option:nth-child(1) {
+  background: linear-gradient(135deg, #E21B3C 0%, #C5152F 100%);
+}
+body.style-kahoot .quiz-option:nth-child(2) {
+  background: linear-gradient(135deg, #1368CE 0%, #0F4FA0 100%);
+}
+body.style-kahoot .quiz-option:nth-child(3) {
+  background: linear-gradient(135deg, #D89E00 0%, #B47F00 100%);
+}
+body.style-kahoot .quiz-option:nth-child(4) {
+  background: linear-gradient(135deg, #26890C 0%, #1B6708 100%);
+}
+
+/* Symboles géométriques à la place de A/B/C/D, façon Kahoot.
+   On utilise des unicode pour ne pas dépendre d'icon fonts. */
+body.style-kahoot .quiz-option:nth-child(1) .quiz-option-letter::before {
+  content: '▲'; /* Triangle */
+}
+body.style-kahoot .quiz-option:nth-child(2) .quiz-option-letter::before {
+  content: '◆'; /* Losange */
+}
+body.style-kahoot .quiz-option:nth-child(3) .quiz-option-letter::before {
+  content: '●'; /* Cercle */
+}
+body.style-kahoot .quiz-option:nth-child(4) .quiz-option-letter::before {
+  content: '■'; /* Carré */
+}
+
+body.style-kahoot .quiz-option .quiz-option-letter {
+  font-size: 0; /* On cache la lettre A/B/C/D */
+}
+
+body.style-kahoot .quiz-option .quiz-option-letter::before {
+  font-size: 2.6vw;
+  line-height: 1;
+}
+
+body.style-kahoot .quiz-option-text {
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+/* ─── Compteur de réponses ───────────────────────────────────────── */
+
+body.style-kahoot .quiz-answers-counter {
+  background: rgba(0, 0, 0, 0.25);
+  border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+body.style-kahoot .quiz-answers-counter-text {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+body.style-kahoot .quiz-answers-counter-bar {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+body.style-kahoot .quiz-answers-counter-fill {
+  background: linear-gradient(90deg, #FFC700 0%, #FF9500 100%);
+}
+
+/* ═════════════════════════════════════════════════════════════════
+   ÉCRAN RÉVÉLATION
+   ═════════════════════════════════════════════════════════════════ */
+
+body.style-kahoot .quiz-reveal-tag {
+  background: linear-gradient(135deg, #FFC700, #FF9500);
+  color: #1A0033;
+  box-shadow: 0 0.6vh 2vh rgba(255, 199, 0, 0.4);
+}
+
+/* On garde les couleurs Kahoot (rouge/bleu/jaune/vert) pour les options
+   en mode reveal aussi — c'est cohérent avec la phase question. */
+/* Mais on ajoute un effet visuel distinct pour la bonne réponse. */
+
+body.style-kahoot .quiz-reveal-options .quiz-option.is-correct {
+  outline: 0.6vh solid #FFFFFF;
+  outline-offset: -0.6vh;
+  box-shadow:
+    0 0.8vh 0 rgba(0, 0, 0, 0.25),
+    0 0 4vh rgba(76, 175, 80, 0.6);
+  animation: kahootCorrectPulse 0.6s ease-out;
+}
+
+@keyframes kahootCorrectPulse {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+body.style-kahoot .quiz-reveal-option-icon {
+  color: #FFFFFF;
+  text-shadow: 0 0 1vh rgba(76, 175, 80, 0.8);
+}
+
+body.style-kahoot .quiz-reveal-option-bar {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+body.style-kahoot .quiz-reveal-option-fill {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+body.style-kahoot .quiz-reveal-summary {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ═════════════════════════════════════════════════════════════════
+   ÉCRAN FIN — vainqueur, podium, leaderboard
+   ═════════════════════════════════════════════════════════════════ */
+
+/* ─── Vainqueur seul ─────────────────────────────────────────────── */
+
+body.style-kahoot .quiz-finish-winner-tag {
+  background: linear-gradient(135deg, #FFC700, #FF9500);
+  color: #1A0033;
+  box-shadow: 0 0.8vh 3vh rgba(255, 199, 0, 0.5);
+}
+
+body.style-kahoot .quiz-finish-winner-avatar {
+  border: 0.8vh solid #FFC700;
+  box-shadow:
+    0 0 6vh rgba(255, 199, 0, 0.6),
+    0 1vh 4vh rgba(0, 0, 0, 0.4);
+}
+
+body.style-kahoot .quiz-finish-avatar-placeholder {
+  background: linear-gradient(135deg, #6B2BAB, #46178F);
+  color: #FFC700;
+}
+
+body.style-kahoot .quiz-finish-winner-name {
+  background: linear-gradient(135deg, #FFFFFF 0%, #FFD700 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+body.style-kahoot .quiz-finish-winner-score {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* ─── Podium ─────────────────────────────────────────────────────── */
+
+body.style-kahoot .quiz-finish-podium-title {
+  color: #FFC700;
+  text-shadow: 0 0.5vh 2vh rgba(255, 199, 0, 0.4);
+}
+
+body.style-kahoot .quiz-podium-spot {
+  color: #FFFFFF;
+}
+
+body.style-kahoot .quiz-podium-first {
+  background: linear-gradient(180deg, #FFC700 0%, #FF9500 100%);
+  color: #1A0033;
+  box-shadow: 0 1vh 4vh rgba(255, 199, 0, 0.4);
+}
+
+body.style-kahoot .quiz-podium-second {
+  background: linear-gradient(180deg, #C0C0C0 0%, #909090 100%);
+  color: #1A0033;
+}
+
+body.style-kahoot .quiz-podium-third {
+  background: linear-gradient(180deg, #CD7F32 0%, #8B5A1F 100%);
+  color: #FFFFFF;
+}
+
+body.style-kahoot .quiz-podium-rank {
+  font-weight: 900;
+}
+
+body.style-kahoot .quiz-podium-avatar {
+  border: 0.4vh solid rgba(255, 255, 255, 0.7);
+}
+
+/* ─── Leaderboard ────────────────────────────────────────────────── */
+
+body.style-kahoot .quiz-finish-leaderboard-title {
+  color: #FFC700;
+}
+
+body.style-kahoot .quiz-leaderboard-row {
+  background: rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.05);
+  color: #FFFFFF;
+}
+
+body.style-kahoot .quiz-leaderboard-row.top3 {
+  background: rgba(255, 199, 0, 0.15);
+  border-color: rgba(255, 199, 0, 0.3);
+}
+
+body.style-kahoot .quiz-leaderboard-rank {
+  color: #FFC700;
+}
+
+body.style-kahoot .quiz-leaderboard-score {
+  color: #FFC700;
+}
+
+body.style-kahoot .quiz-finish-avatar-placeholder.small {
+  background: rgba(255, 255, 255, 0.15);
+  color: #FFC700;
+  font-weight: 700;
+}
