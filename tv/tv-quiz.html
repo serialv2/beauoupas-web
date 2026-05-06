@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeauOuPas TV — Quizz</title>
+<!-- CSS commun (lobby, erreur, pause overlay) -->
+<link rel="stylesheet" href="css/tv.css">
+<!-- CSS commun au quizz (structure des phases, layout neutre) -->
+<link rel="stylesheet" href="css/tv-quiz-common.css">
+<!-- Les 4 thèmes visuels : tous chargés, activés via la classe sur <body> -->
+<link rel="stylesheet" href="css/tv-quiz-kahoot.css">
+<link rel="stylesheet" href="css/tv-quiz-millionaire.css">
+<link rel="stylesheet" href="css/tv-quiz-burger.css">
+<link rel="stylesheet" href="css/tv-quiz-weakest.css">
+</head>
+<body>
+<div class="tv-container">
+  <!-- ÉCRAN 1 : Salle d'attente (réutilise le style classique BeauOuPas) -->
+  <div id="screen-lobby" class="tv-screen tv-lobby"></div>
+
+  <!-- ÉCRAN 2 : Intro (avant que le quizz démarre vraiment) -->
+  <div id="screen-intro" class="tv-screen quiz-intro"></div>
+
+  <!-- ÉCRAN 3 : Question en cours -->
+  <div id="screen-question" class="tv-screen quiz-question-screen"></div>
+
+  <!-- ÉCRAN 4 : Révélation (bonne réponse + stats) -->
+  <div id="screen-reveal" class="tv-screen quiz-reveal-screen"></div>
+
+  <!-- ÉCRAN 5 : Fin du quizz (vainqueur → podium → leaderboard) -->
+  <div id="screen-finish" class="tv-screen quiz-finish-screen"></div>
+
+  <!-- Écran d'erreur -->
+  <div id="screen-error" class="tv-screen tv-error"></div>
+
+  <!-- Écran de chargement initial -->
+  <div id="screen-loading" class="tv-screen tv-loading active">
+    <div class="tv-loading-spinner"></div>
+  </div>
+
+  <!-- Overlay pause (par-dessus tout) -->
+  <div class="tv-pause-overlay" id="pause-overlay">
+    <div class="tv-pause-icon">⏸️</div>
+    <div class="tv-pause-title">En pause</div>
+    <div class="tv-pause-subtitle">L'animateur a mis la session en pause</div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/tv-config.js"></script>
+<script src="js/tv-realtime.js"></script>
+<script src="js/tv-quiz-app.js"></script>
+<script>
+  // Démarrer le quizz au chargement
+  window.addEventListener('DOMContentLoaded', function() {
+    window.TVQuizApp.start();
+  });
+</script>
+</body>
+</html>
