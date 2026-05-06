@@ -924,14 +924,25 @@ window.TVQuizApp = (function() {
     else if (type === 'quiz_question') {
       // Une question vient d'avoir son started_at posé (ou mis à jour)
       var found = state.questions.find(function(q) { return q.id === payload.id; });
+      var prevStartedAt = found ? found.started_at : null;
       if (found) {
         found.started_at = payload.started_at;
       }
-      // Si la question concernée est la question courante et qu'on n'est
-      // pas déjà sur l'écran question, on re-route
+
+      // Si l'event concerne la question courante (current_project_index)
+      // ET qu'on vient de poser/changer son started_at, alors il faut re-router :
+      // - cas 1 (sortie d'intro) : on était sur l'écran 'intro', il faut basculer sur 'question'
+      // - cas 2 (transition Q→Q+1) : on était sur 'question' avec Q1 affichée,
+      //   l'index est passé à 1, le started_at de Q2 vient d'être posé → on doit
+      //   afficher Q2 maintenant (renderQuestion va remplacer le contenu de l'écran)
+      // - cas 3 (révélation) : si on est sur 'reveal', on ne re-route pas (le timeout
+      //   de fin de reveal s'occupera de l'avancement)
       var idx = state.series.current_project_index || 0;
-      if (state.questions[idx] && state.questions[idx].id === payload.id) {
-        if (state.currentScreen !== 'question' && state.currentScreen !== 'reveal') {
+      var currentQ = state.questions[idx];
+      var newlyStarted = (!prevStartedAt && payload.started_at);
+      if (currentQ && currentQ.id === payload.id && newlyStarted) {
+        if (state.currentScreen !== 'reveal') {
+          console.log('[TVQuizApp] Question courante a un nouveau started_at, on render');
           renderCurrentScreen();
         }
       }
