@@ -7,13 +7,11 @@
 <link rel="stylesheet" href="css/tv.css">
 </head>
 <body>
-
 <div class="tv-home">
   <div>
     <div class="tv-home-logo">BeauOuPas</div>
     <div class="tv-home-tagline">Mode TV — Soirée interactive</div>
   </div>
-
   <form class="tv-home-input-group" onsubmit="return joinSeries(event)">
     <label class="tv-home-label" for="series-code">Code de la série</label>
     <input
@@ -30,7 +28,6 @@
     <div id="error-message" class="tv-home-error"></div>
   </form>
 </div>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/tv-config.js"></script>
 <script>
@@ -39,37 +36,30 @@
   codeInput.addEventListener('input', function(e) {
     e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
   });
-
   async function joinSeries(event) {
     event.preventDefault();
-
     var code = codeInput.value.trim().toUpperCase();
     var errEl = document.getElementById('error-message');
     var btn = document.getElementById('join-btn');
-
     errEl.textContent = '';
-
     if (code.length !== 6) {
       errEl.textContent = 'Le code doit contenir 6 caractères.';
       return false;
     }
-
     btn.disabled = true;
     btn.textContent = 'Vérification...';
-
     try {
       // Créer un client Supabase léger juste pour vérifier le code
       var sb = window.supabase.createClient(
         window.TV_CONFIG.SUPABASE_URL,
         window.TV_CONFIG.SUPABASE_ANON_KEY
       );
-
+      // ⚡ NOUVEAU : on récupère aussi is_quiz pour router vers la bonne page
       var result = await sb
         .from('series')
-        .select('id, title, tv_active, status')
+        .select('id, title, tv_active, status, is_quiz')
         .eq('access_code', code)
         .maybeSingle();
-
       if (result.error) throw result.error;
       if (!result.data) {
         errEl.textContent = 'Code introuvable. Vérifie qu\'il est correct.';
@@ -77,33 +67,28 @@
         btn.textContent = 'Démarrer la TV';
         return false;
       }
-
       if (!result.data.tv_active) {
         errEl.textContent = 'Le mode TV n\'est pas encore activé pour cette série. L\'animateur doit l\'activer depuis l\'app.';
         btn.disabled = false;
         btn.textContent = 'Démarrer la TV';
         return false;
       }
-
-      // Tout est OK : redirection vers tv-display.html avec le code
-      window.location.href = 'tv-display.html?code=' + encodeURIComponent(code);
-
+      // ⚡ Routage selon le type de série
+      var targetPage = result.data.is_quiz ? 'tv-quiz.html' : 'tv-display.html';
+      window.location.href = targetPage + '?code=' + encodeURIComponent(code);
     } catch (error) {
       console.error('joinSeries error:', error);
       errEl.textContent = 'Erreur : ' + (error.message || error);
       btn.disabled = false;
       btn.textContent = 'Démarrer la TV';
     }
-
     return false;
   }
-
   // Si on arrive avec un ?code= dans l'URL, on pré-remplit
   var params = new URLSearchParams(window.location.search);
   if (params.get('code')) {
     codeInput.value = params.get('code').toUpperCase();
   }
 </script>
-
 </body>
 </html>
