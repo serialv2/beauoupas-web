@@ -766,7 +766,11 @@ window.TVApp = (function() {
   }
 
   // ─── Bloc statistiques (par genre OU par âge) ────────────────────
-  // ─── Bloc statistiques (par genre OU par âge) ────────────────────
+  // ⚡ NOUVEAU : nombre + % affichés DANS chaque segment coloré
+  // Seuils :
+  //   - Segment ≥ 18% : on affiche nombre + pourcentage
+  //   - Segment ≥ 8%  : on affiche juste le nombre
+  //   - Segment < 8%  : vide (trop étroit)
   function renderStatsBlock(title, project, keys, labels, dataObj) {
     dataObj = dataObj || {};
     var optionKeys = getRelevantOptionKeys(project);
@@ -791,11 +795,7 @@ window.TVApp = (function() {
         return sum + (inner[ok] || 0);
       }, 0);
 
-      // ⚡ NOUVEAU : on remplit chaque segment avec nombre + %
-      // Seuils :
-      //   - Segment ≥ 18% : on affiche nombre + pourcentage
-      //   - Segment ≥ 8%  : on affiche juste le nombre
-      //   - Segment < 8%  : vide (trop étroit)
+      // Construit la barre empilée avec contenu dans chaque segment
       var segmentsHtml = optionKeys.map(function(ok) {
         var c = inner[ok] || 0;
         var pct = rowTotal > 0 ? (c / rowTotal) * 100 : 0;
@@ -812,36 +812,6 @@ window.TVApp = (function() {
 
         return '<div class="tv-reveal-stats-bar-segment ' + cssVal + '" ' +
                'style="width: ' + pct + '%;">' + content + '</div>';
-      }).join('');
-
-      return '<div class="tv-reveal-stats-row">' +
-        '<div class="tv-reveal-stats-row-head">' +
-          '<span class="tv-reveal-stats-row-label">' + escapeHtml(labels[k] || k) + '</span>' +
-          '<span class="tv-reveal-stats-row-count">' + rowTotal + ' vote' + (rowTotal > 1 ? 's' : '') + '</span>' +
-        '</div>' +
-        '<div class="tv-reveal-stats-bar">' + segmentsHtml + '</div>' +
-      '</div>';
-    }).join('');
-
-    return '<div class="tv-reveal-stats-block">' +
-      '<div class="tv-reveal-stats-block-title">' + escapeHtml(title) + '</div>' +
-      rowsHtml +
-    '</div>';
-  }
-
-    var rowsHtml = visibleKeys.map(function(k) {
-      var inner = dataObj[k] || {};
-      // Total pour cette ligne (somme des votes sur les options pertinentes)
-      var rowTotal = optionKeys.reduce(function(sum, ok) {
-        return sum + (inner[ok] || 0);
-      }, 0);
-
-      // Construit la barre empilée
-      var segmentsHtml = optionKeys.map(function(ok) {
-        var c = inner[ok] || 0;
-        var pct = rowTotal > 0 ? (c / rowTotal) * 100 : 0;
-        var cssVal = getCssValForOption(ok, project.type);
-        return '<div class="tv-reveal-stats-bar-segment ' + cssVal + '" style="width: ' + pct + '%;"></div>';
       }).join('');
 
       return '<div class="tv-reveal-stats-row">' +
@@ -1019,7 +989,8 @@ window.TVApp = (function() {
   // ─────────────────────────────────────────────────────────────────
 
   function setActiveScreen(name) {
-    var screens = ['lobby', 'vote', 'transition', 'reveal', 'error'];
+    // ⚡ NOUVEAU : 'loading' ajouté pour cacher le spinner initial
+    var screens = ['lobby', 'vote', 'transition', 'reveal', 'error', 'loading'];
     screens.forEach(function(n) {
       var el = document.getElementById('screen-' + n);
       if (el) {
