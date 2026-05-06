@@ -407,10 +407,18 @@ window.TVQuizApp = (function() {
       return;
     }
 
-    var qData = optsRes.data;
-    if (!qData || !qData.id) {
-      console.warn('[TVQuizApp] Pas de question retournée par le RPC');
+    // Format de réponse RPC : { success, question: {...}, vote_duration_seconds, ... }
+    // On extrait l'objet question + on récupère le vote_duration au top-level si présent
+    var rawData = optsRes.data;
+    if (!rawData || !rawData.question) {
+      console.warn('[TVQuizApp] Pas de question retournée par le RPC', rawData);
       return;
+    }
+    var qData = rawData.question;
+    // Si la RPC renvoie le vote_duration_seconds au top-level, on le synchronise
+    // dans state.series pour que le countdown soit cohérent avec ce que voit le joueur
+    if (rawData.vote_duration_seconds && state.series) {
+      state.series.vote_duration_seconds = rawData.vote_duration_seconds;
     }
 
     var totalQuestions = state.questions.length;
@@ -421,9 +429,11 @@ window.TVQuizApp = (function() {
     // Construit les options (max 4)
     var optionsHtml = (qData.options || []).map(function(opt, i) {
       var letter = String.fromCharCode(65 + i); // A, B, C, D
+      // RPC renvoie soit `text` soit `option_text` selon les versions, on supporte les 2
+      var optText = opt.text || opt.option_text || '';
       return '<div class="quiz-option" data-option-idx="' + i + '">' +
         '<div class="quiz-option-letter">' + letter + '</div>' +
-        '<div class="quiz-option-text">' + escapeHtml(opt.option_text) + '</div>' +
+        '<div class="quiz-option-text">' + escapeHtml(optText) + '</div>' +
       '</div>';
     }).join('');
 
@@ -552,11 +562,12 @@ window.TVQuizApp = (function() {
       var classes = 'quiz-reveal-option';
       if (opt.is_correct) classes += ' is-correct';
       else classes += ' is-wrong';
+      var optText = opt.text || opt.option_text || '';
 
       return '<div class="' + classes + '">' +
         '<div class="quiz-reveal-option-main">' +
           '<div class="quiz-option-letter">' + letter + '</div>' +
-          '<div class="quiz-option-text">' + escapeHtml(opt.option_text) + '</div>' +
+          '<div class="quiz-option-text">' + escapeHtml(optText) + '</div>' +
           '<div class="quiz-reveal-option-icon">' + (opt.is_correct ? '✓' : '') + '</div>' +
         '</div>' +
         '<div class="quiz-reveal-option-stats">' +
