@@ -766,6 +766,7 @@ window.TVApp = (function() {
   }
 
   // ─── Bloc statistiques (par genre OU par âge) ────────────────────
+  // ─── Bloc statistiques (par genre OU par âge) ────────────────────
   function renderStatsBlock(title, project, keys, labels, dataObj) {
     dataObj = dataObj || {};
     var optionKeys = getRelevantOptionKeys(project);
@@ -774,7 +775,6 @@ window.TVApp = (function() {
     var visibleKeys = keys.filter(function(k) {
       var inner = dataObj[k];
       if (!inner) return false;
-      // Vérifie qu'il y a au moins un vote sur une des options pertinentes
       return optionKeys.some(function(ok) { return (inner[ok] || 0) > 0; });
     });
 
@@ -784,6 +784,50 @@ window.TVApp = (function() {
         '<div class="tv-reveal-empty" style="font-size:1.2vw;">Pas de données</div>' +
       '</div>';
     }
+
+    var rowsHtml = visibleKeys.map(function(k) {
+      var inner = dataObj[k] || {};
+      var rowTotal = optionKeys.reduce(function(sum, ok) {
+        return sum + (inner[ok] || 0);
+      }, 0);
+
+      // ⚡ NOUVEAU : on remplit chaque segment avec nombre + %
+      // Seuils :
+      //   - Segment ≥ 18% : on affiche nombre + pourcentage
+      //   - Segment ≥ 8%  : on affiche juste le nombre
+      //   - Segment < 8%  : vide (trop étroit)
+      var segmentsHtml = optionKeys.map(function(ok) {
+        var c = inner[ok] || 0;
+        var pct = rowTotal > 0 ? (c / rowTotal) * 100 : 0;
+        var cssVal = getCssValForOption(ok, project.type);
+
+        // Contenu du segment selon sa largeur
+        var content = '';
+        if (pct >= 18) {
+          content = '<span class="seg-count">' + c + '</span>' +
+                    '<span class="seg-percent">' + Math.round(pct) + '%</span>';
+        } else if (pct >= 8) {
+          content = '<span class="seg-count">' + c + '</span>';
+        }
+
+        return '<div class="tv-reveal-stats-bar-segment ' + cssVal + '" ' +
+               'style="width: ' + pct + '%;">' + content + '</div>';
+      }).join('');
+
+      return '<div class="tv-reveal-stats-row">' +
+        '<div class="tv-reveal-stats-row-head">' +
+          '<span class="tv-reveal-stats-row-label">' + escapeHtml(labels[k] || k) + '</span>' +
+          '<span class="tv-reveal-stats-row-count">' + rowTotal + ' vote' + (rowTotal > 1 ? 's' : '') + '</span>' +
+        '</div>' +
+        '<div class="tv-reveal-stats-bar">' + segmentsHtml + '</div>' +
+      '</div>';
+    }).join('');
+
+    return '<div class="tv-reveal-stats-block">' +
+      '<div class="tv-reveal-stats-block-title">' + escapeHtml(title) + '</div>' +
+      rowsHtml +
+    '</div>';
+  }
 
     var rowsHtml = visibleKeys.map(function(k) {
       var inner = dataObj[k] || {};
