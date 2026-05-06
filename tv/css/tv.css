@@ -917,7 +917,7 @@ html, body {
 /* Barre empilée — hauteur augmentée pour pouvoir afficher du contenu dedans */
 .tv-reveal-stats-bar {
   display: flex;
-  height: 3.4vh;
+  height: 5vh;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 100px;
   overflow: hidden;
