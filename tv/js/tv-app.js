@@ -1082,7 +1082,7 @@ window.TVApp = (function() {
     }
   }
 
-  function updateVoteCounter() {
+ function updateVoteCounter() {
     if (!state.series) return;
     var sIdx = state.series.current_project_index || 0;
     var sp = state.projects[sIdx];
@@ -1101,6 +1101,33 @@ window.TVApp = (function() {
     if (elFill) {
       elFill.style.width = percent + '%';
       if (percent >= 100) elFill.classList.add('complete');
+    }
+
+    // ⚡ NOUVEAU : avancement auto si tout le monde a voté
+    // Conditions :
+    //   - On est bien en mode 'active' (vote en cours)
+    //   - Il y a au moins 1 participant (sinon ça n'a pas de sens)
+    //   - Tout le monde a voté (voteCount >= participants)
+    //   - On n'est pas déjà en train d'avancer (anti-double-call)
+    //   - La série n'est pas en pause
+    if (state.series.status === 'active'
+        && state.participantsCount > 0
+        && voteCount >= state.participantsCount
+        && !_isAdvancing
+        && !state.series.tv_paused) {
+
+      console.log('[TVApp] 🎯 Tout le monde a voté ! Auto-avancement dans 2s...');
+
+      // Délai de 2s pour que le dernier votant voie son vote enregistré
+      // et qu'on ait une "respiration" visuelle avant la transition.
+      setTimeout(function() {
+        // Re-vérification au moment du déclenchement (l'état peut avoir changé)
+        if (state.series.status === 'active' && !_isAdvancing && !state.series.tv_paused) {
+          stopCountdown();
+          advanceToNextProject();
+          renderTransition();
+        }
+      }, 2000);
     }
   }
 
