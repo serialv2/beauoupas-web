@@ -546,7 +546,7 @@ html, body {
   background: white;
   padding: 1vh 1vh 3vh 1vh;
   box-shadow: 0 1vh 3vh rgba(0, 0, 0, 0.5);
-  width: 14vh;
+  width: 22vh;
   /* Sera ajusté dynamiquement en JS pour position + rotation. */
   /* Animation de glissement de droite à gauche : */
   animation: polaroidDrift linear forwards;
@@ -567,7 +567,7 @@ html, body {
 
 .tv-polaroid-caption {
   font-family: 'Caveat', 'Brush Script MT', cursive;
-  font-size: 1.6vh;
+  font-size: 2.6vh;
   color: #333;
   text-align: center;
   margin-top: 0.5vh;
