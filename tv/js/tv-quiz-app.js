@@ -7,8 +7,10 @@
 //   INTRO      : phase intro de N secondes au démarrage (status = 'active'
 //                ET premier élément non commencé). Style selon quiz_style.
 //   QUESTION   : question en cours, countdown actif, compteur "X/Y"
-//   REVEAL     : révélation ~3s (bonne réponse en vert + stats)
-//   FINISH     : status = 'finished' → vainqueur seul → podium → classement
+//   REVEAL     : révélation ~3s — on n'indique PLUS la bonne réponse,
+//                on affiche juste les barres de répartition des votes.
+//   FINISH     : status = 'finished' → vainqueur (avec wow effect) →
+//                podium → leaderboard complet → stats globales
 //   ERROR      : code invalide / TV désactivée / etc.
 //
 // La TV PILOTE l'avancement :
@@ -49,7 +51,8 @@ window.TVQuizApp = (function() {
 
     // Données de fin
     finalResults: null,
-    finishStep: null,         // 'winner' | 'podium' | 'leaderboard'
+    detailedStats: null,      // 🆕 Stats détaillées (RPC get_quiz_detailed_stats)
+    finishStep: null,         // 'winner' | 'podium' | 'leaderboard' | 'stats'
     finishStepTimeout: null
   };
 
@@ -57,9 +60,10 @@ window.TVQuizApp = (function() {
   var _isStartingFirst = false; // anti double-call sur tv_start_first_element
 
   // Durées (en ms) des étapes de fin
-  var FINISH_WINNER_DURATION_MS = 6000;
+  var FINISH_WINNER_DURATION_MS = 8000;   // un peu plus long pour profiter du wow effect
   var FINISH_PODIUM_DURATION_MS = 8000;
-  // (le leaderboard reste affiché jusqu'à ce que l'animateur arrête)
+  var FINISH_LEADERBOARD_DURATION_MS = 12000; // 🆕 leaderboard 12s avant stats
+  // (la page stats reste affichée jusqu'à ce que l'animateur arrête)
 
   // ─────────────────────────────────────────────────────────────────
   // Démarrage
@@ -140,6 +144,69 @@ window.TVQuizApp = (function() {
     var chosen = validStyles.indexOf(style) >= 0 ? style : 'kahoot';
     body.classList.add('style-' + chosen);
     console.log('[TVQuizApp] Style appliqué : style-' + chosen);
+
+    // 🎨 Style Burger : injecte le cuisinier SVG animé (fixe en bas-droite),
+    // ou le retire si on bascule vers un autre style.
+    var existingChef = document.getElementById('burger-chef');
+    if (chosen === 'burger') {
+      if (!existingChef && typeof getBurgerChefSvg === 'function') {
+        var chefDiv = document.createElement('div');
+        chefDiv.id = 'burger-chef';
+        chefDiv.innerHTML = getBurgerChefSvg();
+        document.body.appendChild(chefDiv);
+      }
+    } else if (existingChef) {
+      existingChef.remove();
+    }
+  }
+
+  /**
+   * SVG d'un cuisinier cartoon animé en CSS.
+   * Toque blanche + visage rond + tablier orange + bras qui balancent.
+   * Les groupes (g.chef-arm-left, .chef-eyes, etc.) sont animés via
+   * keyframes CSS dans tv-quiz-burger.css.
+   */
+  function getBurgerChefSvg() {
+    return [
+      '<svg viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg">',
+        '<g class="chef-hat-pompom">',
+          '<ellipse cx="100" cy="22" rx="42" ry="18" fill="#FFFFFF"/>',
+          '<ellipse cx="80" cy="14" rx="22" ry="14" fill="#FFFFFF"/>',
+          '<ellipse cx="115" cy="10" rx="24" ry="16" fill="#FFFFFF"/>',
+          '<ellipse cx="100" cy="32" rx="42" ry="10" fill="#F0F0F0"/>',
+        '</g>',
+        '<rect x="58" y="48" width="84" height="14" rx="3" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.5"/>',
+        '<ellipse cx="100" cy="92" rx="38" ry="36" fill="#FBD0A8" stroke="#1A1A1A" stroke-width="2"/>',
+        '<g class="chef-eyes">',
+          '<circle cx="86" cy="86" r="4" fill="#1A1A1A"/>',
+          '<circle cx="114" cy="86" r="4" fill="#1A1A1A"/>',
+          '<circle cx="87" cy="84" r="1.2" fill="#FFFFFF"/>',
+          '<circle cx="115" cy="84" r="1.2" fill="#FFFFFF"/>',
+        '</g>',
+        '<circle cx="76" cy="100" r="4" fill="#F8A8A0" opacity="0.6"/>',
+        '<circle cx="124" cy="100" r="4" fill="#F8A8A0" opacity="0.6"/>',
+        '<g class="chef-mouth">',
+          '<path d="M 84 105 Q 100 118 116 105" stroke="#1A1A1A" stroke-width="2.5" fill="none" stroke-linecap="round"/>',
+        '</g>',
+        '<path d="M 86 102 Q 92 100 100 102 Q 108 100 114 102" stroke="#6B4423" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.7"/>',
+        '<rect x="88" y="124" width="24" height="14" fill="#FBD0A8" stroke="#1A1A1A" stroke-width="2"/>',
+        '<path d="M 80 138 Q 100 148 120 138 L 124 156 L 76 156 Z" fill="#C0392B" stroke="#1A1A1A" stroke-width="2"/>',
+        '<circle cx="100" cy="146" r="2.5" fill="#FFD93D" stroke="#1A1A1A" stroke-width="0.8"/>',
+        '<path d="M 60 156 L 50 270 L 150 270 L 140 156 Z" fill="#F39C12" stroke="#1A1A1A" stroke-width="2.5"/>',
+        '<rect x="82" y="200" width="36" height="22" rx="2" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.5" opacity="0.7"/>',
+        '<text x="100" y="216" font-family="Bangers, Comic Sans MS, cursive" font-size="14" fill="#C0392B" text-anchor="middle" font-weight="bold">BQ</text>',
+        '<g class="chef-arm-left">',
+          '<rect x="36" y="156" width="22" height="68" rx="11" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2"/>',
+          '<circle cx="47" cy="226" r="13" fill="#FBD0A8" stroke="#1A1A1A" stroke-width="2"/>',
+        '</g>',
+        '<g class="chef-arm-right">',
+          '<rect x="142" y="156" width="22" height="68" rx="11" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2"/>',
+          '<circle cx="153" cy="226" r="13" fill="#FBD0A8" stroke="#1A1A1A" stroke-width="2"/>',
+          '<rect x="148" y="200" width="3" height="32" fill="#8B4513" stroke="#1A1A1A" stroke-width="0.8"/>',
+          '<rect x="142" y="194" width="15" height="10" rx="2" fill="#C0C0C0" stroke="#1A1A1A" stroke-width="1"/>',
+        '</g>',
+      '</svg>'
+    ].join('');
   }
 
   // ─────────────────────────────────────────────────────────────────
@@ -172,8 +239,6 @@ window.TVQuizApp = (function() {
     console.log('[TVQuizApp] Participants :', state.participantsCount);
   }
 
-  // Recharge tous les compteurs de réponses (au démarrage uniquement —
-  // ensuite ils sont incrémentés via realtime)
   async function loadAnswerCounts() {
     var sb = window.TVRealtime.getClient();
     var res = await sb
@@ -188,7 +253,7 @@ window.TVQuizApp = (function() {
   }
 
   // ─────────────────────────────────────────────────────────────────
-  // RPC : démarrer la première question (à la fin de l'intro)
+  // RPCs : démarrer / avancer
   // ─────────────────────────────────────────────────────────────────
 
   async function startFirstElement() {
@@ -208,10 +273,6 @@ window.TVQuizApp = (function() {
       setTimeout(function() { _isStartingFirst = false; }, 3000);
     }
   }
-
-  // ─────────────────────────────────────────────────────────────────
-  // RPC : passer à la question suivante
-  // ─────────────────────────────────────────────────────────────────
 
   async function advanceToNext() {
     if (_isAdvancing) {
@@ -250,23 +311,17 @@ window.TVQuizApp = (function() {
       stopAllTimers();
       renderLobby();
     } else if (s.status === 'active') {
-      // Status active : on regarde si la 1ère question a déjà été démarrée
       var firstQuestion = state.questions[0];
       if (firstQuestion && !firstQuestion.started_at) {
-        // Pas encore démarrée → on est en phase INTRO
         if (state.currentScreen !== 'intro') {
           renderIntro();
         }
       } else {
-        // Une question est démarrée → afficher la question courante
         var idx = s.current_project_index || 0;
         var q = state.questions[idx];
         if (q && q.started_at) {
           renderQuestion(q, idx);
         } else {
-          // Cas limite : pas de started_at sur la question courante
-          // (ex: tout juste après tv_advance_to_next, le realtime n'a pas
-          // encore propagé). On reste sur l'écran courant.
           console.log('[TVQuizApp] Question sans started_at, on attend le realtime');
         }
       }
@@ -277,7 +332,7 @@ window.TVQuizApp = (function() {
   }
 
   // ─────────────────────────────────────────────────────────────────
-  // Écran 1 : LOBBY (réutilise le style classique BeauOuPas)
+  // Écran 1 : LOBBY
   // ─────────────────────────────────────────────────────────────────
 
   function renderLobby() {
@@ -312,7 +367,7 @@ window.TVQuizApp = (function() {
   }
 
   // ─────────────────────────────────────────────────────────────────
-  // Écran 2 : INTRO (style-dépendant, durée configurable)
+  // Écran 2 : INTRO
   // ─────────────────────────────────────────────────────────────────
 
   function renderIntro() {
@@ -323,7 +378,6 @@ window.TVQuizApp = (function() {
     var nbQuestions = state.questions.length;
     var introDuration = state.series.intro_duration_seconds || 20;
 
-    // Structure neutre — c'est le CSS du thème qui transforme tout ça
     var html =
       '<div class="quiz-intro-content">' +
         '<div class="quiz-intro-tag">Préparez-vous</div>' +
@@ -369,9 +423,6 @@ window.TVQuizApp = (function() {
 
       if (remaining <= 0) {
         stopIntroCountdown();
-        // Fin de l'intro : on démarre la 1ère question
-        // Le realtime sur quiz_questions UPDATE va rebasculer l'écran
-        // automatiquement via renderCurrentScreen()
         startFirstElement();
       }
     }
@@ -394,8 +445,6 @@ window.TVQuizApp = (function() {
   async function renderQuestion(question, idx) {
     setActiveScreen('question');
 
-    // Charge les options de la question (sans is_correct, c'est la phase
-    // pendant laquelle les joueurs répondent — pas de spoiler côté client)
     var sb = window.TVRealtime.getClient();
     var optsRes = await sb.rpc('get_quiz_question_for_tv', {
       p_series_id: state.series.id
@@ -407,16 +456,12 @@ window.TVQuizApp = (function() {
       return;
     }
 
-    // Format de réponse RPC : { success, question: {...}, vote_duration_seconds, ... }
-    // On extrait l'objet question + on récupère le vote_duration au top-level si présent
     var rawData = optsRes.data;
     if (!rawData || !rawData.question) {
       console.warn('[TVQuizApp] Pas de question retournée par le RPC', rawData);
       return;
     }
     var qData = rawData.question;
-    // Si la RPC renvoie le vote_duration_seconds au top-level, on le synchronise
-    // dans state.series pour que le countdown soit cohérent avec ce que voit le joueur
     if (rawData.vote_duration_seconds && state.series) {
       state.series.vote_duration_seconds = rawData.vote_duration_seconds;
     }
@@ -426,10 +471,8 @@ window.TVQuizApp = (function() {
     var answerCount = state.answerCounts[qData.id] || 0;
     var totalParticipants = Math.max(1, state.participantsCount || 1);
 
-    // Construit les options (max 4)
     var optionsHtml = (qData.options || []).map(function(opt, i) {
-      var letter = String.fromCharCode(65 + i); // A, B, C, D
-      // RPC renvoie soit `text` soit `option_text` selon les versions, on supporte les 2
+      var letter = String.fromCharCode(65 + i);
       var optText = opt.text || opt.option_text || '';
       return '<div class="quiz-option" data-option-idx="' + i + '">' +
         '<div class="quiz-option-letter">' + letter + '</div>' +
@@ -468,7 +511,6 @@ window.TVQuizApp = (function() {
 
     document.getElementById('screen-question').innerHTML = html;
 
-    // Démarre le countdown synchronisé via started_at
     startQuestionCountdown(question);
   }
 
@@ -498,9 +540,28 @@ window.TVQuizApp = (function() {
         else el.classList.remove('urgent');
       }
 
+      // 🎨 Style Millionnaire : alimente le cercle timer central
+      var mTimer = document.getElementById('millionaire-timer');
+      if (mTimer) {
+        var progress = duration > 0
+          ? Math.min(1, Math.max(0, elapsed / duration))
+          : 0;
+        mTimer.style.setProperty('--millionaire-progress', progress.toFixed(3));
+        var mVal = document.getElementById('millionaire-timer-value');
+        if (mVal) mVal.textContent = remaining;
+        if (remaining <= 5) mTimer.classList.add('urgent');
+        else mTimer.classList.remove('urgent');
+      }
+
+      // 🎨 Style Burger : le cuisinier s'agite quand le timer devient urgent
+      var bChef = document.getElementById('burger-chef');
+      if (bChef) {
+        if (remaining <= 5) bChef.classList.add('urgent');
+        else bChef.classList.remove('urgent');
+      }
+
       if (remaining <= 0) {
         stopQuestionCountdown();
-        // Fin du timer → on charge les résultats et passe à la révélation
         triggerReveal(question);
       }
     }
@@ -517,11 +578,11 @@ window.TVQuizApp = (function() {
   }
 
   // ─────────────────────────────────────────────────────────────────
-  // Écran 4 : REVEAL (~3s, bonne réponse en vert + stats)
+  // Écran 4 : REVEAL (~3s, juste les barres de votes — sans révéler la
+  // bonne réponse, c'est gardé pour la page stats finale)
   // ─────────────────────────────────────────────────────────────────
 
   async function triggerReveal(question) {
-    // Garde-fou : si on a déjà déclenché la révélation pour cette question
     if (state.revealData && state.revealData.question_id === question.id) return;
 
     try {
@@ -532,12 +593,10 @@ window.TVQuizApp = (function() {
       if (res.error) throw res.error;
 
       state.revealData = res.data;
-      // Marque l'ID de la question révélée pour éviter le double-déclenchement
       state.revealData.question_id = question.id;
       renderReveal(question);
     } catch (err) {
       console.error('[TVQuizApp] triggerReveal error:', err);
-      // Si le reveal foire, on avance quand même pour ne pas bloquer
       advanceToNext();
     }
   }
@@ -550,33 +609,31 @@ window.TVQuizApp = (function() {
     var totalQuestions = state.questions.length;
     var pos = idx + 1;
 
-    // 🔧 FIX BUG REVEAL : la RPC get_quiz_question_results retourne les options
-    // dans data.question.options (et le texte dans data.question.question_text),
-    // pas directement dans data. Sans ce fix, toutes les barres restent à 0.
+    // RPC get_quiz_question_results retourne les options dans data.question.options
     var questionData = (data && data.question) ? data.question : data;
     var options = questionData.options || data.options || [];
     var questionText = questionData.question_text || data.question_text || '';
     var questionTitle = questionData.title || data.title || '';
 
-    // Compteur total de réponses pour cette question
     var totalAnswers = options.reduce(function(sum, opt) {
       return sum + (opt.vote_count || 0);
     }, 0);
 
+    // 🔧 SUJET 1 : on ne révèle PLUS la bonne réponse pendant ce reveal
+    // (ni ✓, ni surlignage vert). On affiche juste les barres de votes.
+    // La bonne réponse sera révélée à la fin sur la page stats globale.
     var optionsHtml = options.map(function(opt, i) {
       var letter = String.fromCharCode(65 + i);
       var voteCount = opt.vote_count || 0;
       var percent = totalAnswers > 0 ? Math.round((voteCount / totalAnswers) * 100) : 0;
-      var classes = 'quiz-reveal-option';
-      if (opt.is_correct) classes += ' is-correct';
-      else classes += ' is-wrong';
       var optText = opt.text || opt.option_text || '';
 
-      return '<div class="' + classes + '">' +
+      // ⚠️ Pas de classe is-correct/is-wrong, pas d'icône ✓ : ce reveal
+      // sert uniquement à montrer la répartition des votes.
+      return '<div class="quiz-reveal-option">' +
         '<div class="quiz-reveal-option-main">' +
           '<div class="quiz-option-letter">' + letter + '</div>' +
           '<div class="quiz-option-text">' + escapeHtml(optText) + '</div>' +
-          '<div class="quiz-reveal-option-icon">' + (opt.is_correct ? '✓' : '') + '</div>' +
         '</div>' +
         '<div class="quiz-reveal-option-stats">' +
           '<div class="quiz-reveal-option-bar">' +
@@ -594,7 +651,7 @@ window.TVQuizApp = (function() {
     var html =
       '<div class="quiz-question-header">' +
         '<div class="quiz-question-progress">Question ' + pos + ' / ' + totalQuestions + '</div>' +
-        '<div class="quiz-reveal-tag">Révélation</div>' +
+        '<div class="quiz-reveal-tag">Résultats</div>' +
       '</div>' +
       '<div class="quiz-question-body">' +
         titleHtml +
@@ -609,7 +666,6 @@ window.TVQuizApp = (function() {
 
     document.getElementById('screen-reveal').innerHTML = html;
 
-    // Programme l'avancement vers la question suivante
     var revealMs = window.TV_CONFIG.QUIZ_REVEAL_DURATION_MS || 3000;
     if (state.revealTimeout) clearTimeout(state.revealTimeout);
     state.revealTimeout = setTimeout(function() {
@@ -617,14 +673,13 @@ window.TVQuizApp = (function() {
     }, revealMs);
   }
 
-  // ─────────────────────────────────────────────────────────────────
-  // Écran 5 : FINISH (vainqueur → podium → leaderboard complet)
-  // ─────────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════
+  // Écran 5 : FINISH (vainqueur → podium → leaderboard → stats)
+  // ═══════════════════════════════════════════════════════════════════
 
   async function renderFinish() {
     setActiveScreen('finish');
 
-    // Spinner pendant le chargement
     document.getElementById('screen-finish').innerHTML =
       '<div style="margin: auto;"><div class="tv-loading-spinner"></div></div>';
 
@@ -635,6 +690,18 @@ window.TVQuizApp = (function() {
       });
       if (res.error) throw res.error;
       state.finalResults = res.data;
+
+      // 🆕 Charge en parallèle les stats détaillées pour la dernière étape
+      // (on ne bloque pas le rendu si ça échoue)
+      sb.rpc('get_quiz_detailed_stats', { p_series_id: state.series.id })
+        .then(function(r) {
+          if (!r.error) {
+            state.detailedStats = r.data;
+            console.log('[TVQuizApp] Stats détaillées chargées');
+          } else {
+            console.warn('[TVQuizApp] get_quiz_detailed_stats error:', r.error);
+          }
+        });
     } catch (err) {
       console.error('[TVQuizApp] get_quiz_final_results error:', err);
       showError('Erreur', err.message || 'Impossible de charger les résultats');
@@ -645,7 +712,6 @@ window.TVQuizApp = (function() {
     var leaderboard = state.finalResults.leaderboard || [];
 
     if (top3.length === 0 && leaderboard.length === 0) {
-      // Cas limite : aucun joueur n'a participé
       document.getElementById('screen-finish').innerHTML =
         '<div style="margin: auto; text-align: center;">' +
           '<div style="font-size: 4vw; margin-bottom: 2vh;">🤔</div>' +
@@ -654,7 +720,7 @@ window.TVQuizApp = (function() {
       return;
     }
 
-    // Étape 1 : vainqueur seul
+    // Étape 1 : vainqueur seul (avec wow effect)
     state.finishStep = 'winner';
     renderFinishWinner();
 
@@ -670,10 +736,35 @@ window.TVQuizApp = (function() {
         state.finishStepTimeout = setTimeout(function() {
           state.finishStep = 'leaderboard';
           renderFinishLeaderboard();
+
+          // 🆕 Étape 4 : page stats globales (après le leaderboard)
+          state.finishStepTimeout = setTimeout(function() {
+            state.finishStep = 'stats';
+            renderFinishStats();
+          }, FINISH_LEADERBOARD_DURATION_MS);
+        }, FINISH_PODIUM_DURATION_MS);
+      } else {
+        // Pas de leaderboard à afficher → on saute directement aux stats
+        state.finishStepTimeout = setTimeout(function() {
+          state.finishStep = 'stats';
+          renderFinishStats();
         }, FINISH_PODIUM_DURATION_MS);
       }
     }, FINISH_WINNER_DURATION_MS);
   }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // 🆕 WOW EFFECT — vainqueur avec effet spectaculaire
+  // ═══════════════════════════════════════════════════════════════════
+  // Composition :
+  //   - Overlay sombre (vignette autour du vainqueur)
+  //   - Faisceau spotlight blanc descendant du haut
+  //   - Couronne SVG dorée qui tombe avec rebond
+  //   - Halo doré pulsant derrière l'avatar
+  //   - 16 rayons dorés rotatifs autour de l'avatar
+  //   - 12 étincelles SVG qui scintillent en boucle
+  //   - Zoom in dramatique de l'avatar (0% → 110% → 100%)
+  // ═══════════════════════════════════════════════════════════════════
 
   function renderFinishWinner() {
     var top3 = state.finalResults.top3 || [];
@@ -684,11 +775,85 @@ window.TVQuizApp = (function() {
       ? '<img src="' + escapeHtml(winner.avatar_url) + '" alt="">'
       : '<div class="quiz-finish-avatar-placeholder">' + escapeHtml((winner.username || '?').charAt(0).toUpperCase()) + '</div>';
 
+    // Génère 16 rayons en SVG (étoile éclatante autour de l'avatar)
+    var rays = '';
+    for (var i = 0; i < 16; i++) {
+      var angle = i * (360 / 16);
+      rays += '<div class="winner-ray" style="transform: translate(-50%, -100%) rotate(' + angle + 'deg);"></div>';
+    }
+
+    // Génère 12 étincelles SVG dispersées autour
+    var sparkles = '';
+    var sparklePositions = [
+      { top: '8%',  left: '20%', delay: '0s',   size: 18 },
+      { top: '15%', left: '78%', delay: '0.3s', size: 22 },
+      { top: '30%', left: '12%', delay: '0.6s', size: 16 },
+      { top: '40%', left: '85%', delay: '0.9s', size: 24 },
+      { top: '55%', left: '22%', delay: '1.2s', size: 18 },
+      { top: '60%', left: '75%', delay: '1.5s', size: 20 },
+      { top: '20%', left: '50%', delay: '0.4s', size: 14 },
+      { top: '70%', left: '15%', delay: '0.7s', size: 16 },
+      { top: '75%', left: '82%', delay: '1.0s', size: 20 },
+      { top: '35%', left: '5%',  delay: '1.3s', size: 18 },
+      { top: '50%', left: '92%', delay: '1.6s', size: 16 },
+      { top: '10%', left: '60%', delay: '0.5s', size: 22 }
+    ];
+    sparklePositions.forEach(function(p) {
+      sparkles +=
+        '<div class="winner-sparkle" style="top:' + p.top + ';left:' + p.left +
+        ';animation-delay:' + p.delay + ';width:' + p.size + 'px;height:' + p.size + 'px;">' +
+          '<svg viewBox="0 0 24 24" fill="none">' +
+            '<path d="M12 0 L13.5 9 L24 12 L13.5 15 L12 24 L10.5 15 L0 12 L10.5 9 Z" fill="#FFD93D"/>' +
+          '</svg>' +
+        '</div>';
+    });
+
+    // Couronne SVG dorée
+    var crownSvg =
+      '<svg viewBox="0 0 200 100" xmlns="http://www.w3.org/2000/svg">' +
+        '<defs>' +
+          '<linearGradient id="crownGradient" x1="0%" y1="0%" x2="0%" y2="100%">' +
+            '<stop offset="0%" style="stop-color:#FFE680"/>' +
+            '<stop offset="50%" style="stop-color:#FFC107"/>' +
+            '<stop offset="100%" style="stop-color:#FF8F00"/>' +
+          '</linearGradient>' +
+        '</defs>' +
+        // Base couronne (forme cintrée)
+        '<path d="M 20 70 L 30 30 L 60 60 L 100 15 L 140 60 L 170 30 L 180 70 Z" ' +
+              'fill="url(#crownGradient)" stroke="#8B6914" stroke-width="2" stroke-linejoin="round"/>' +
+        // Bandeau du bas
+        '<rect x="20" y="68" width="160" height="14" fill="url(#crownGradient)" stroke="#8B6914" stroke-width="2"/>' +
+        // Pierres précieuses (3 cercles)
+        '<circle cx="60" cy="75" r="4" fill="#E91E63" stroke="#fff" stroke-width="0.8"/>' +
+        '<circle cx="100" cy="75" r="5" fill="#1976D2" stroke="#fff" stroke-width="0.8"/>' +
+        '<circle cx="140" cy="75" r="4" fill="#388E3C" stroke="#fff" stroke-width="0.8"/>' +
+        // Points sur les pointes
+        '<circle cx="30" cy="30" r="3" fill="#FFE082" stroke="#8B6914" stroke-width="1"/>' +
+        '<circle cx="100" cy="15" r="4" fill="#FFE082" stroke="#8B6914" stroke-width="1"/>' +
+        '<circle cx="170" cy="30" r="3" fill="#FFE082" stroke="#8B6914" stroke-width="1"/>' +
+      '</svg>';
+
     var html =
       '<button class="tv-reveal-stop-btn" id="finish-stop-btn" title="Arrêter le mode TV">✕ Arrêter</button>' +
-      '<div class="quiz-finish-winner">' +
+      // Overlay vignette : assombrit les bords pour focaliser sur le vainqueur
+      '<div class="winner-vignette"></div>' +
+      // Spotlight : faisceau de lumière descendant
+      '<div class="winner-spotlight"></div>' +
+      // Étincelles dispersées
+      '<div class="winner-sparkles-layer">' + sparkles + '</div>' +
+      // Conteneur central (avec animation entrance)
+      '<div class="quiz-finish-winner winner-with-wow">' +
+        // Couronne au-dessus de l'avatar (animation chute + rebond)
+        '<div class="winner-crown">' + crownSvg + '</div>' +
+        // Tag "Vainqueur"
         '<div class="quiz-finish-winner-tag">🏆 Vainqueur</div>' +
-        '<div class="quiz-finish-winner-avatar">' + avatarHtml + '</div>' +
+        // Avatar avec halo + rayons rotatifs derrière
+        '<div class="winner-avatar-wrap">' +
+          '<div class="winner-rays">' + rays + '</div>' +
+          '<div class="winner-halo"></div>' +
+          '<div class="quiz-finish-winner-avatar">' + avatarHtml + '</div>' +
+        '</div>' +
+        // Nom + score
         '<div class="quiz-finish-winner-name">' + escapeHtml(winner.username || 'Joueur') + '</div>' +
         '<div class="quiz-finish-winner-score">' +
           winner.score + ' bonne' + (winner.score > 1 ? 's' : '') + ' réponse' + (winner.score > 1 ? 's' : '') +
@@ -701,7 +866,6 @@ window.TVQuizApp = (function() {
 
   function renderFinishPodium() {
     var top3 = state.finalResults.top3 || [];
-    // Ordre d'affichage : 2e à gauche, 1er au centre, 3e à droite
     var positions = [
       { rank: 2, idx: 1, cls: 'second' },
       { rank: 1, idx: 0, cls: 'first' },
@@ -710,7 +874,7 @@ window.TVQuizApp = (function() {
 
     var podiumHtml = positions.map(function(p) {
       var player = top3[p.idx];
-      if (!player) return ''; // Cas où il n'y a pas 3 joueurs
+      if (!player) return '';
       var avatar = player.avatar_url
         ? '<img src="' + escapeHtml(player.avatar_url) + '" alt="">'
         : '<div class="quiz-finish-avatar-placeholder">' + escapeHtml((player.username || '?').charAt(0).toUpperCase()) + '</div>';
@@ -754,6 +918,144 @@ window.TVQuizApp = (function() {
       '<div class="quiz-finish-leaderboard-wrap">' +
         '<div class="quiz-finish-leaderboard-title">Classement complet</div>' +
         '<div class="quiz-leaderboard">' + rowsHtml + '</div>' +
+      '</div>';
+
+    document.getElementById('screen-finish').innerHTML = html;
+    bindStopBtn();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // 🆕 PAGE STATS GLOBALES (4ème étape finish, reste affichée jusqu'à arrêt)
+  // ═══════════════════════════════════════════════════════════════════
+
+  function renderFinishStats() {
+    var stats = state.detailedStats;
+
+    // Si la RPC n'a pas répondu / a échoué : message neutre
+    if (!stats || !stats.success) {
+      console.warn('[TVQuizApp] Stats indisponibles, on reste sur le leaderboard');
+      // On reste sur le leaderboard (pas de fallback brutal)
+      return;
+    }
+
+    var totals = stats.totals || {};
+    var hardest = stats.hardest_question;
+    var easiest = stats.easiest_question;
+    var genderArr = stats.gender_breakdown || [];
+    var ageArr = stats.age_breakdown || [];
+
+    // ─── 4 cartes totaux ──────────────────────────────────────────
+    var totalsHtml =
+      '<div class="quiz-stats-totals">' +
+        '<div class="quiz-stats-card">' +
+          '<div class="quiz-stats-card-value">' + (totals.players || 0) + '</div>' +
+          '<div class="quiz-stats-card-label">Joueurs</div>' +
+        '</div>' +
+        '<div class="quiz-stats-card">' +
+          '<div class="quiz-stats-card-value">' + (totals.questions || 0) + '</div>' +
+          '<div class="quiz-stats-card-label">Questions</div>' +
+        '</div>' +
+        '<div class="quiz-stats-card">' +
+          '<div class="quiz-stats-card-value">' + (totals.answers || 0) + '</div>' +
+          '<div class="quiz-stats-card-label">Réponses totales</div>' +
+        '</div>' +
+        '<div class="quiz-stats-card">' +
+          '<div class="quiz-stats-card-value">' + (totals.success_rate || 0) + '%</div>' +
+          '<div class="quiz-stats-card-label">Taux de réussite</div>' +
+        '</div>' +
+      '</div>';
+
+    // ─── 2 blocs hardest / easiest ─────────────────────────────────
+    var qBlocksHtml = '<div class="quiz-stats-questions">';
+    if (hardest) {
+      qBlocksHtml +=
+        '<div class="quiz-stats-question-card hardest">' +
+          '<div class="quiz-stats-question-tag">❄️ Question la plus difficile</div>' +
+          '<div class="quiz-stats-question-text">' + escapeHtml(hardest.question_text || '') + '</div>' +
+          '<div class="quiz-stats-question-rate">' + (hardest.success_rate || 0) + '% de réussite</div>' +
+        '</div>';
+    }
+    if (easiest) {
+      qBlocksHtml +=
+        '<div class="quiz-stats-question-card easiest">' +
+          '<div class="quiz-stats-question-tag">🔥 Question la plus facile</div>' +
+          '<div class="quiz-stats-question-text">' + escapeHtml(easiest.question_text || '') + '</div>' +
+          '<div class="quiz-stats-question-rate">' + (easiest.success_rate || 0) + '% de réussite</div>' +
+        '</div>';
+    }
+    qBlocksHtml += '</div>';
+
+    // ─── Barres genre ──────────────────────────────────────────────
+    var genderLabels = { male: 'Hommes', female: 'Femmes', other: 'Autre', unknown: 'Non précisé' };
+    var genderBarsHtml = '';
+    genderArr.forEach(function(g) {
+      if (!g.count) return;
+      var label = genderLabels[g.key] || 'Inconnu';
+      genderBarsHtml +=
+        '<div class="quiz-stats-bar-row">' +
+          '<div class="quiz-stats-bar-header">' +
+            '<span class="quiz-stats-bar-label">' + label + '</span>' +
+            '<span class="quiz-stats-bar-success">✓ ' + (g.success_rate || 0) + '%</span>' +
+          '</div>' +
+          '<div class="quiz-stats-bar-track">' +
+            '<div class="quiz-stats-bar-fill" style="width:' + Math.max(2, g.percent || 0) + '%;">' +
+              '<span class="quiz-stats-bar-text">' + (g.count || 0) + ' • ' + (g.percent || 0) + '%</span>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+    });
+
+    // ─── Barres âge ────────────────────────────────────────────────
+    var ageLabels = {
+      '0_17': 'Moins de 18 ans',
+      '18_29': '18 - 29 ans',
+      '30_49': '30 - 49 ans',
+      '50_plus': '50 ans et plus',
+      'unknown': 'Non précisé'
+    };
+    var ageBarsHtml = '';
+    ageArr.forEach(function(a) {
+      if (!a.count) return;
+      var label = ageLabels[a.key] || 'Inconnu';
+      ageBarsHtml +=
+        '<div class="quiz-stats-bar-row">' +
+          '<div class="quiz-stats-bar-header">' +
+            '<span class="quiz-stats-bar-label">' + label + '</span>' +
+            '<span class="quiz-stats-bar-success">✓ ' + (a.success_rate || 0) + '%</span>' +
+          '</div>' +
+          '<div class="quiz-stats-bar-track">' +
+            '<div class="quiz-stats-bar-fill" style="width:' + Math.max(2, a.percent || 0) + '%;">' +
+              '<span class="quiz-stats-bar-text">' + (a.count || 0) + ' • ' + (a.percent || 0) + '%</span>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+    });
+
+    var demoHtml = '<div class="quiz-stats-demo">';
+    if (genderBarsHtml) {
+      demoHtml +=
+        '<div class="quiz-stats-demo-col">' +
+          '<div class="quiz-stats-demo-title">Par genre</div>' +
+          genderBarsHtml +
+        '</div>';
+    }
+    if (ageBarsHtml) {
+      demoHtml +=
+        '<div class="quiz-stats-demo-col">' +
+          '<div class="quiz-stats-demo-title">Par tranche d\'âge</div>' +
+          ageBarsHtml +
+        '</div>';
+    }
+    demoHtml += '</div>';
+
+    // ─── Compose le HTML final ─────────────────────────────────────
+    var html =
+      '<button class="tv-reveal-stop-btn" id="finish-stop-btn" title="Arrêter le mode TV">✕ Arrêter</button>' +
+      '<div class="quiz-stats-page">' +
+        '<div class="quiz-stats-title">📊 Statistiques du quiz</div>' +
+        totalsHtml +
+        qBlocksHtml +
+        demoHtml +
       '</div>';
 
     document.getElementById('screen-finish').innerHTML = html;
@@ -866,13 +1168,6 @@ window.TVQuizApp = (function() {
     if (elCount) elCount.textContent = answerCount + ' / ' + totalParticipants + ' ont répondu';
     if (elFill) elFill.style.width = percent + '%';
 
-    // Auto-avancement à 100% des réponses (+ délai 2s)
-    // Conditions :
-    //   - status = 'active' (question en cours)
-    //   - au moins 1 participant
-    //   - tout le monde a répondu (answerCount >= participants)
-    //   - pas déjà en train d'avancer
-    //   - pas en pause
     if (state.series.status === 'active'
         && state.participantsCount > 0
         && answerCount >= state.participantsCount
@@ -911,18 +1206,14 @@ window.TVQuizApp = (function() {
         return;
       }
 
-      // Si quiz_style a changé en cours de route (rare mais possible),
-      // on re-applique le style.
       if (prev.quiz_style !== payload.quiz_style) {
         applyQuizStyle(payload.quiz_style);
       }
 
-      // Changement de status ou d'index → on re-route
       if (prev.status !== payload.status ||
           prev.current_project_index !== payload.current_project_index) {
         _isAdvancing = false;
         _isStartingFirst = false;
-        // Reset le revealData quand on change de question
         if (prev.current_project_index !== payload.current_project_index) {
           state.revealData = null;
         }
@@ -930,21 +1221,12 @@ window.TVQuizApp = (function() {
       }
     }
     else if (type === 'quiz_question') {
-      // Une question vient d'avoir son started_at posé (ou mis à jour)
       var found = state.questions.find(function(q) { return q.id === payload.id; });
       var prevStartedAt = found ? found.started_at : null;
       if (found) {
         found.started_at = payload.started_at;
       }
 
-      // Si l'event concerne la question courante (current_project_index)
-      // ET qu'on vient de poser/changer son started_at, alors il faut re-router :
-      // - cas 1 (sortie d'intro)         : on était sur 'intro' → bascule sur 'question'
-      // - cas 2 (transition Q1→Q2)        : on était sur 'reveal' (Q1) → bascule sur 'question' (Q2)
-      // - cas 3 (Q→Q+1 sans reveal)       : on était sur 'question' (Q1), l'index a changé
-      //                                    en parallèle, started_at de Q2 vient d'arriver
-      // Dans tous les cas : on appelle renderCurrentScreen, qui ira chercher la bonne question
-      // selon current_project_index ET son started_at.
       var idx = state.series.current_project_index || 0;
       var currentQ = state.questions[idx];
       var newlyStarted = (!prevStartedAt && payload.started_at);
@@ -954,7 +1236,6 @@ window.TVQuizApp = (function() {
       }
     }
     else if (type === 'quiz_answer') {
-      // Nouvelle réponse → incrémente le compteur
       var qid = payload.question_id;
       state.answerCounts[qid] = (state.answerCounts[qid] || 0) + 1;
       updateAnswersCounter();
