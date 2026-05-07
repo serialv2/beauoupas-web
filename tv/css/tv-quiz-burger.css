@@ -1,85 +1,60 @@
 /* ═════════════════════════════════════════════════════════════════
-   BeauOuPas TV Quizz — Thème BURGER QUIZ
+   BeauOuPas TV Quizz — Thème BURGER QUIZ (v3)
    ───────────────────────────────────────────────────────────────────
-   Inspiré de l'émission "Burger Quiz" (TMC) :
-   - Décor cuisine pop : fond brique rouge + étagères avec ustensiles
-   - TV rétro cathodique avec encadré vert/jaune sur fond cyan
-   - 4 options A/B/C/D empilées verticalement (pas en grille 2×2),
-     chaque lettre dans un carré rouge/noir caractéristique
-   - Police comic / fun : Fredoka One ou Bangers (Google Fonts)
-   - Avatar cuisinier animé SVG (clignement, sway, bras qui bougent)
+   v3 — réécriture complète du décor :
+   - Fond : photo brique rouge réelle (img/burger-bg.jpg) + dégradé chaud
+   - Étagères en bois sombre sur les côtés (CSS, pas au centre)
+   - Casseroles suspendues + ustensiles SVG inline sur les étagères
+   - TV cathodique épaisse au centre (boutons sur le côté droit, pieds)
+   - Le cuisinier reste en bas-droite (inchangé)
 
-   Tout est namespacé sous `body.style-burger`.
+   Fallback : si l'image ne charge pas, dégradé brique rouge à la place.
    ═════════════════════════════════════════════════════════════════ */
 
 @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Bangers&display=swap');
 
 body.style-burger {
-  background: #B23A1F;
+  /* Couleur de fallback brique rouge si l'image ne charge pas */
+  background: #8A2C18;
   color: #1A1A1A;
   font-family: 'Fredoka', 'Comic Sans MS', cursive, sans-serif;
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   FOND CUISINE : pattern briques + lumière jaune chaude
+   FOND CUISINE : photo briques rouges + lumière jaune chaude
    ───────────────────────────────────────────────────────────────── */
 body.style-burger::before {
   content: '';
   position: fixed;
   inset: 0;
   background:
-    /* pattern brique : 2 gradients en damier */
-    repeating-linear-gradient(
-      0deg,
-      transparent 0,
-      transparent 56px,
-      rgba(0, 0, 0, 0.18) 56px,
-      rgba(0, 0, 0, 0.18) 60px
-    ),
-    repeating-linear-gradient(
-      90deg,
-      transparent 0,
-      transparent 130px,
-      rgba(0, 0, 0, 0.18) 130px,
-      rgba(0, 0, 0, 0.18) 134px
-    ),
-    /* décalage des briques sur les lignes paires */
-    repeating-linear-gradient(
-      0deg,
-      transparent 0,
-      transparent 60px,
-      transparent 116px,
-      rgba(0, 0, 0, 0.18) 116px,
-      rgba(0, 0, 0, 0.18) 120px,
-      transparent 120px,
-      transparent 176px
-    ),
-    /* couleur de base brique avec variations */
-    radial-gradient(circle at 30% 40%, #C04826 0%, #A6311A 60%),
-    linear-gradient(180deg, #B23A1F 0%, #8A2C18 100%);
-  background-size: auto, auto, 264px 240px, auto, auto;
+    /* Lumière jaune chaude descendante (effet projecteur restaurant) */
+    radial-gradient(ellipse at 50% 0%, rgba(255, 220, 80, 0.18) 0%, transparent 55%),
+    /* Image de fond briques rouges (téléchargée par l'utilisateur) */
+    url('../img/burger-bg.jpg') center / cover no-repeat,
+    /* Fallback couleur brique si l'image ne charge pas */
+    linear-gradient(180deg, #B23A1F 0%, #6F2210 100%);
   z-index: 0;
 }
 
-/* Étagère du haut + lumière jaune cuisine */
+/* Couche d'overlay : assombrit légèrement les bords + bord supérieur en bois */
 body.style-burger::after {
   content: '';
   position: fixed;
   inset: 0;
   background:
-    /* Lumière jaune chaude descendante */
-    radial-gradient(ellipse at 50% -10%, rgba(255, 220, 80, 0.35) 0%, transparent 55%),
-    /* Étagère beige claire en haut */
+    /* Étagère/poutre en bois en haut */
     linear-gradient(180deg,
-      #C9A97E 0%,
-      #C9A97E 4vh,
-      #4A3220 4vh,
+      #4A3220 0%,
+      #5C3F28 4vh,
       #4A3220 5vh,
       transparent 5vh,
       transparent 100%
     ),
-    /* Coin sombre bas pour profondeur */
-    radial-gradient(ellipse at 50% 110%, rgba(0, 0, 0, 0.4) 0%, transparent 50%);
+    /* Coin sombre en bas pour profondeur */
+    radial-gradient(ellipse at 50% 110%, rgba(0, 0, 0, 0.5) 0%, transparent 55%),
+    /* Vignette assombrissement périphérique pour mettre la TV au centre */
+    radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(0, 0, 0, 0.45) 100%);
   pointer-events: none;
   z-index: 1;
 }
@@ -88,6 +63,68 @@ body.style-burger .tv-container,
 body.style-burger .tv-screen {
   position: relative;
   z-index: 2;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   ÉTAGÈRES LATÉRALES + USTENSILES (SVG inline en CSS)
+   ───────────────────────────────────────────────────────────────────
+   On positionne 2 étagères en bois sombre + des ustensiles suspendus
+   à GAUCHE et à DROITE seulement. Le centre reste libre pour la TV.
+   ───────────────────────────────────────────────────────────────── */
+
+/* Étagère gauche */
+body.style-burger .tv-screen.quiz-question-screen::before {
+  content: '';
+  position: absolute;
+  top: 8vh;
+  left: 0;
+  width: 18vw;
+  height: 4vh;
+  background: linear-gradient(180deg, #5C3F28 0%, #3E2818 100%);
+  border-bottom: 0.6vh solid #2A1810;
+  box-shadow:
+    0 0.6vh 2vh rgba(0, 0, 0, 0.6),
+    inset 0 0.3vh 0 rgba(255, 200, 120, 0.15);
+  z-index: 1;
+}
+
+/* Étagère droite */
+body.style-burger .tv-screen.quiz-question-screen::after {
+  content: '';
+  position: absolute;
+  top: 8vh;
+  right: 0;
+  width: 18vw;
+  height: 4vh;
+  background: linear-gradient(180deg, #5C3F28 0%, #3E2818 100%);
+  border-bottom: 0.6vh solid #2A1810;
+  box-shadow:
+    0 0.6vh 2vh rgba(0, 0, 0, 0.6),
+    inset 0 0.3vh 0 rgba(255, 200, 120, 0.15);
+  z-index: 1;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   USTENSILES SUSPENDUS (SVG positionnés sur les étagères)
+   Injectés via background SVG inline pour rester self-contained.
+   ───────────────────────────────────────────────────────────────── */
+
+/* Casserole suspendue à gauche */
+body.style-burger .tv-screen.quiz-question-screen {
+  /* On utilise le screen lui-même comme ancre pour les ustensiles via
+     box-shadow ne marche pas ici. À la place : un background SVG global. */
+  background-image:
+    /* Casserole gauche (manche en bas) */
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 80 110'><rect x='10' y='40' width='60' height='35' rx='4' fill='%23808080' stroke='%23303030' stroke-width='2'/><rect x='5' y='45' width='10' height='4' fill='%23303030'/><rect x='65' y='45' width='10' height='4' fill='%23303030'/><line x1='40' y1='15' x2='40' y2='40' stroke='%23303030' stroke-width='3'/><circle cx='40' cy='12' r='3' fill='%23303030'/><rect x='20' y='75' width='40' height='5' fill='%235C3F28' rx='2'/></svg>"),
+    /* Fouet droite */
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 130'><line x1='30' y1='8' x2='30' y2='30' stroke='%23303030' stroke-width='2.5'/><circle cx='30' cy='6' r='2.5' fill='%23303030'/><rect x='25' y='30' width='10' height='35' fill='%235C3F28' rx='2' stroke='%23303030' stroke-width='1'/><path d='M 18 65 Q 30 95 42 65 M 22 65 Q 30 90 38 65 M 26 65 Q 30 85 34 65' stroke='%23A0A0A0' stroke-width='1.8' fill='none'/><ellipse cx='30' cy='95' rx='14' ry='5' fill='none' stroke='%23A0A0A0' stroke-width='1.5'/></svg>");
+  background-position:
+    8vw 9vh,        /* casserole gauche */
+    calc(100% - 8vw) 9vh;  /* fouet droite */
+  background-size:
+    9vh 12vh,
+    7vh 14vh;
+  background-repeat: no-repeat;
 }
 
 /* ═════════════════════════════════════════════════════════════════
@@ -143,7 +180,7 @@ body.style-burger .quiz-intro-meta-label {
   text-transform: uppercase;
 }
 
-body.style-burger .quiz-intro-countdown {
+body.style-burger .quiz-intro-countdown-value {
   color: #FFD93D;
   font-family: 'Bangers', cursive;
   text-shadow: 0.5vh 0.5vh 0 #1A1A1A;
@@ -154,33 +191,34 @@ body.style-burger .quiz-intro-countdown-label {
 }
 
 /* ═════════════════════════════════════════════════════════════════
-   ÉCRAN QUESTION — TV RÉTRO CATHODIQUE
+   ÉCRAN QUESTION — TV CATHODIQUE CENTRALE
    ───────────────────────────────────────────────────────────────────
-   Structure :
-   - .quiz-question-screen est le fond cuisine (déjà ::before)
-   - .quiz-question-body devient la TV cathodique : encadré vert+jaune
-     épais, fond cyan à l'intérieur
-   - Énoncé en haut, options A/B/C/D EMPILÉES verticalement avec
-     petit carré rouge/noir pour la lettre
-   - Cuisinier SVG animé en bas à droite (injecté par tv-quiz-app.js)
+   La TV est posée AU CENTRE de l'écran, par-dessus le mur de briques.
+   Cadre épais marron (corps du téléviseur) + bordure jaune/verte
+   intérieure + écran cyan + boutons à droite.
    ═════════════════════════════════════════════════════════════════ */
 
 body.style-burger .quiz-question-screen {
   padding: 4vh 4vw;
-  gap: 2vh;
+  gap: 1.5vh;
 }
 
-/* Header : "Question N/M" en haut à gauche, countdown à droite */
+/* Header : "Question N/M" en haut à gauche, countdown au-dessus de la TV */
 body.style-burger .quiz-question-header {
   position: relative;
   align-items: center;
+  z-index: 3;
 }
 
 body.style-burger .quiz-question-progress {
+  background: rgba(0, 0, 0, 0.6);
   color: #FFD93D;
   font-family: 'Bangers', cursive;
   font-size: 1.6vw;
   letter-spacing: 3px;
+  padding: 0.6vh 1.6vw;
+  border-radius: 12px;
+  border: 0.3vh solid #1A1A1A;
   text-shadow: 0.3vh 0.3vh 0 #1A1A1A;
 }
 
@@ -200,45 +238,66 @@ body.style-burger .quiz-question-countdown.urgent {
   color: #FFFFFF;
 }
 
-/* TV CATHODIQUE : .quiz-question-body devient l'écran TV */
+/* TV CATHODIQUE : .quiz-question-body devient le boîtier de la TV */
 body.style-burger .quiz-question-body {
-  background: #7DC8E5;
-  border: 1.2vh solid #FFD93D;
-  border-radius: 4vh;
+  /* Cadre marron-noir épais simulant le boîtier en plastique d'un vieux TV */
+  background:
+    linear-gradient(180deg, #3A2418 0%, #2A1810 100%);
+  border: 1.5vh solid #4A2E1F;
+  border-radius: 3vh;
   box-shadow:
-    /* bordure verte intérieure */
-    inset 0 0 0 0.4vh #4FA34A,
-    /* contour noir extérieur fin */
-    0 0 0 0.4vh #1A1A1A,
-    /* ombre épaisse pour effet "posé sur l'étagère" */
-    0 1.5vh 4vh rgba(0, 0, 0, 0.7),
-    /* lumière intérieure haute */
-    inset 0 3vh 6vh rgba(255, 255, 255, 0.3);
-  padding: 3vh 5vw;
-  gap: 2vh;
+    /* Bordure intérieure (entre boîtier et écran) noire fine */
+    inset 0 0 0 0.4vh #1A1A1A,
+    /* Bordure jaune/verte intérieure caractéristique */
+    inset 0 0 0 1.2vh #FFD93D,
+    inset 0 0 0 1.6vh #4FA34A,
+    inset 0 0 0 2vh #1A1A1A,
+    /* Ombre extérieure : effet "posé sur étagère" */
+    0 2vh 5vh rgba(0, 0, 0, 0.85),
+    /* Léger reflet sur le boîtier */
+    inset 0 2vh 3vh rgba(255, 255, 255, 0.08);
+  padding: 5vh 6vw;
+  gap: 1.8vh;
   flex: 1;
-  width: 80%;
-  max-width: 1400px;
+  width: 70%;
+  max-width: 1200px;
   margin: 0 auto;
-  /* Léger effet bombé tube cathodique */
   position: relative;
+  z-index: 2;
 }
 
-/* Reflet brillant en haut de l'écran TV */
+/* Écran cyan à l'intérieur du boîtier */
 body.style-burger .quiz-question-body::before {
   content: '';
   position: absolute;
-  top: 4%;
+  inset: 2vh;
+  background: linear-gradient(180deg, #8FD2EC 0%, #6BB8D4 100%);
+  border-radius: 2vh;
+  z-index: 0;
+  box-shadow: inset 0 0 4vh rgba(0, 0, 0, 0.15);
+}
+
+/* Reflet brillant en haut de l'écran cathodique */
+body.style-burger .quiz-question-body::after {
+  content: '';
+  position: absolute;
+  top: 4vh;
   left: 8%;
   right: 8%;
-  height: 25%;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, transparent 100%);
+  height: 18%;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, transparent 100%);
   border-radius: 50% 50% 30% 30% / 100% 100% 0% 0%;
   pointer-events: none;
   z-index: 1;
 }
 
-/* Catégorie (si présente) — petit pavé jaune/rouge */
+/* Tous les contenus de la TV doivent passer au-dessus du fond cyan */
+body.style-burger .quiz-question-body > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Catégorie (si présente) — petit pavé rouge */
 body.style-burger .quiz-question-category {
   background: #E74C3C;
   color: #FFFFFF;
@@ -249,7 +308,6 @@ body.style-burger .quiz-question-category {
   border-radius: 14px;
   box-shadow: 0.4vh 0.4vh 0 #1A1A1A;
   padding: 0.8vh 2vw;
-  z-index: 2;
 }
 
 /* Énoncé : sur fond cyan, en noir */
@@ -257,25 +315,23 @@ body.style-burger .quiz-question-text {
   color: #1A1A1A;
   font-family: 'Fredoka', 'Comic Sans MS', cursive;
   font-weight: 700;
-  font-size: 2.4vw;
+  font-size: 2.2vw;
   text-align: center;
   line-height: 1.3;
   max-width: 100%;
-  z-index: 2;
 }
 
 /* Photo (si présente) */
 body.style-burger .quiz-question-photo img {
   border: 0.5vh solid #1A1A1A;
   border-radius: 12px;
-  max-height: 25vh;
+  max-height: 22vh;
   box-shadow: 0.5vh 0.5vh 0 #1A1A1A;
-  z-index: 2;
 }
 
 /* ─────────────────────────────────────────────────────────────────
    OPTIONS A/B/C/D EMPILÉES VERTICALEMENT
-   Chaque lettre dans un petit carré rouge/noir comme dans l'image
+   Chaque lettre dans un petit carré rouge/noir caractéristique
    ───────────────────────────────────────────────────────────────── */
 
 body.style-burger .quiz-options {
@@ -284,14 +340,13 @@ body.style-burger .quiz-options {
   gap: 1vh;
   width: 100%;
   max-width: none;
-  z-index: 2;
 }
 
 body.style-burger .quiz-option {
   background: transparent;
   border-radius: 0;
   padding: 0.5vh 1vw;
-  min-height: 5vh;
+  min-height: 4.5vh;
   border: none;
   box-shadow: none;
   align-items: center;
@@ -305,10 +360,10 @@ body.style-burger .quiz-option-letter {
   font-weight: 400;
   border: 0.3vh solid #1A1A1A;
   border-radius: 6px;
-  width: 3.5vw;
-  height: 3.5vw;
-  min-width: 3.5vw;
-  font-size: 2.2vw;
+  width: 3vw;
+  height: 3vw;
+  min-width: 3vw;
+  font-size: 1.8vw;
   box-shadow: 0.3vh 0.3vh 0 #1A1A1A;
   text-shadow: 0.2vh 0.2vh 0 rgba(0, 0, 0, 0.3);
 }
@@ -317,14 +372,12 @@ body.style-burger .quiz-option-text {
   color: #1A1A1A;
   font-family: 'Fredoka', 'Comic Sans MS', cursive;
   font-weight: 600;
-  font-size: 1.7vw;
+  font-size: 1.5vw;
   text-align: left;
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   COMPTEUR "X/Y ont répondu"
-   On le détache en haut à droite (pareil que Millionnaire), restylé
-   pop : fond jaune + barre rouge + bordure noire épaisse
+   COMPTEUR "X/Y ont répondu" — pop, en haut à droite
    ───────────────────────────────────────────────────────────────── */
 body.style-burger .quiz-question-footer {
   height: 0;
@@ -374,10 +427,7 @@ body.style-burger .quiz-question-footer .quiz-answers-counter-fill {
 }
 
 /* ═════════════════════════════════════════════════════════════════
-   AVATAR CUISINIER ANIMÉ
-   ───────────────────────────────────────────────────────────────────
-   Position : en bas à droite, hors de la TV
-   Injecté par tv-quiz-app.js (#burger-chef)
+   AVATAR CUISINIER ANIMÉ (inchangé depuis v1)
    ═════════════════════════════════════════════════════════════════ */
 
 #burger-chef {
@@ -389,7 +439,6 @@ body.style-burger .quiz-question-footer .quiz-answers-counter-fill {
   height: auto;
   z-index: 4;
   pointer-events: none;
-  /* Sway permanent (légère oscillation) */
   animation: burgerChefSway 4s ease-in-out infinite;
   transform-origin: bottom center;
 }
@@ -399,7 +448,6 @@ body.style-burger .quiz-question-footer .quiz-answers-counter-fill {
   50%      { transform: rotate(2deg)  translateY(-0.5vh); }
 }
 
-/* Bras gauche : balancement régulier */
 #burger-chef .chef-arm-left {
   transform-origin: 35% 25%;
   animation: chefArmLeft 3s ease-in-out infinite;
@@ -410,7 +458,6 @@ body.style-burger .quiz-question-footer .quiz-answers-counter-fill {
   50%      { transform: rotate(15deg); }
 }
 
-/* Bras droit : balancement opposé */
 #burger-chef .chef-arm-right {
   transform-origin: 65% 25%;
   animation: chefArmRight 3s ease-in-out infinite;
@@ -421,7 +468,6 @@ body.style-burger .quiz-question-footer .quiz-answers-counter-fill {
   50%      { transform: rotate(-15deg); }
 }
 
-/* Yeux : clignotement */
 #burger-chef .chef-eyes {
   animation: chefBlink 5s ease-in-out infinite;
   transform-origin: center;
@@ -432,7 +478,6 @@ body.style-burger .quiz-question-footer .quiz-answers-counter-fill {
   94%                { transform: scaleY(0.05); }
 }
 
-/* Pompon de la toque : petit rebond */
 #burger-chef .chef-hat-pompom {
   transform-origin: bottom center;
   animation: chefPompom 2s ease-in-out infinite;
@@ -443,7 +488,6 @@ body.style-burger .quiz-question-footer .quiz-answers-counter-fill {
   50%      { transform: translateY(-0.5vh); }
 }
 
-/* Bouche : sourire qui s'agrandit légèrement */
 #burger-chef .chef-mouth {
   transform-origin: center;
   animation: chefSmile 4s ease-in-out infinite;
@@ -454,7 +498,6 @@ body.style-burger .quiz-question-footer .quiz-answers-counter-fill {
   50%      { transform: scaleX(1.1) scaleY(1.2); }
 }
 
-/* État "urgent" (timer ≤ 5s) : tout s'agite plus */
 #burger-chef.urgent {
   animation: burgerChefSway 0.6s ease-in-out infinite;
 }
@@ -548,48 +591,147 @@ body.style-burger .quiz-reveal-summary {
 }
 
 /* ═════════════════════════════════════════════════════════════════
-   ÉCRAN FINISH (podium + leaderboard)
+   ÉCRAN FINISH (vainqueur + podium + leaderboard)
    ═════════════════════════════════════════════════════════════════ */
 
-body.style-burger .quiz-finish-title {
-  color: #FFD93D;
+body.style-burger .quiz-finish-winner-tag {
+  background: linear-gradient(135deg, #FFD93D, #FFB800);
+  color: #1A1A1A;
   font-family: 'Bangers', cursive;
   font-weight: 400;
+  letter-spacing: 4px;
+  border: 0.4vh solid #1A1A1A;
+  border-radius: 20px;
+  box-shadow: 0.5vh 0.5vh 0 #1A1A1A;
+  padding: 1vh 3vw;
+  display: inline-block;
+  transform: rotate(-2deg);
+}
+
+body.style-burger .quiz-finish-winner-name {
+  color: #FFFFFF;
+  font-family: 'Bangers', cursive;
+  font-weight: 400;
+  letter-spacing: 2px;
+  text-shadow: 0.4vh 0.4vh 0 #1A1A1A;
+}
+
+body.style-burger .quiz-finish-winner-score {
+  color: #FFD93D;
+  font-family: 'Bangers', cursive;
+  text-shadow: 0.3vh 0.3vh 0 #1A1A1A;
+}
+
+body.style-burger .quiz-finish-winner-avatar {
+  border: 0.5vh solid #FFFFFF;
+  border-radius: 50%;
+  box-shadow: 0.6vh 0.6vh 0 #1A1A1A,
+              0 0 4vh rgba(255, 217, 61, 0.5);
+}
+
+body.style-burger .quiz-finish-podium-title {
+  color: #FFFFFF;
+  font-family: 'Bangers', cursive;
+  font-weight: 400;
+  letter-spacing: 4px;
   text-shadow:
     0.4vh 0.4vh 0 #1A1A1A,
     0 1vh 3vh rgba(0, 0, 0, 0.6);
 }
 
-body.style-burger .quiz-podium-card {
+body.style-burger .quiz-podium-spot {
   background: #7DC8E5;
-  border: 0.6vh solid #1A1A1A;
+  border: 0.5vh solid #1A1A1A;
   border-radius: 18px;
   box-shadow: 0.6vh 0.6vh 0 #1A1A1A;
+  padding: 2vh 1.5vw;
+  color: #1A1A1A;
 }
 
-body.style-burger .quiz-podium-card.rank-1 {
+body.style-burger .quiz-podium-spot.quiz-podium-first {
   background: linear-gradient(180deg, #FFD93D 0%, #FFB800 100%);
   transform: rotate(-2deg);
 }
 
-body.style-burger .quiz-podium-card.rank-2 {
+body.style-burger .quiz-podium-spot.quiz-podium-second {
+  background: linear-gradient(180deg, #E0E0E0 0%, #BDBDBD 100%);
   transform: rotate(1deg);
 }
 
-body.style-burger .quiz-podium-card.rank-3 {
+body.style-burger .quiz-podium-spot.quiz-podium-third {
+  background: linear-gradient(180deg, #D7B17B 0%, #B8895A 100%);
   transform: rotate(-1deg);
 }
 
+body.style-burger .quiz-podium-rank {
+  color: #C0392B;
+  font-family: 'Bangers', cursive;
+  font-weight: 400;
+  text-shadow: 0.3vh 0.3vh 0 #FFFFFF;
+}
+
+body.style-burger .quiz-podium-avatar {
+  border: 0.4vh solid #FFFFFF;
+  border-radius: 50%;
+  box-shadow: 0.4vh 0.4vh 0 #1A1A1A;
+  overflow: hidden;
+}
+
+body.style-burger .quiz-podium-name {
+  color: #1A1A1A;
+  font-family: 'Bangers', cursive;
+  font-weight: 400;
+  letter-spacing: 1px;
+}
+
+body.style-burger .quiz-podium-score {
+  color: #1A1A1A;
+  font-weight: 700;
+}
+
+body.style-burger .quiz-finish-leaderboard-title {
+  color: #FFD93D;
+  font-family: 'Bangers', cursive;
+  font-weight: 400;
+  letter-spacing: 3px;
+  text-shadow: 0.4vh 0.4vh 0 #1A1A1A;
+}
+
 body.style-burger .quiz-leaderboard-row {
-  background: rgba(125, 200, 229, 0.85);
+  background: rgba(125, 200, 229, 0.92);
   border: 0.3vh solid #1A1A1A;
   border-radius: 12px;
   box-shadow: 0.3vh 0.3vh 0 #1A1A1A;
   color: #1A1A1A;
 }
 
+body.style-burger .quiz-leaderboard-row.top3 {
+  background: linear-gradient(180deg, #FFD93D 0%, #FFB800 100%);
+}
+
 body.style-burger .quiz-leaderboard-rank {
   color: #C0392B;
   font-family: 'Bangers', cursive;
+  font-weight: 400;
+  font-size: 1.6em;
+}
+
+body.style-burger .quiz-leaderboard-name {
+  color: #1A1A1A;
+  font-family: 'Fredoka', 'Comic Sans MS', cursive;
+  font-weight: 700;
+}
+
+body.style-burger .quiz-leaderboard-score {
+  color: #C0392B;
+  font-family: 'Bangers', cursive;
+  font-weight: 400;
+}
+
+body.style-burger .quiz-finish-avatar-placeholder {
+  background: linear-gradient(135deg, #FFD93D, #FFB800);
+  color: #1A1A1A;
+  font-family: 'Bangers', cursive;
+  border: 0.3vh solid #1A1A1A;
   font-weight: 400;
 }
