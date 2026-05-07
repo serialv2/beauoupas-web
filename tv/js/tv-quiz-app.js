@@ -560,12 +560,21 @@ window.TVQuizApp = (function() {
     var totalQuestions = state.questions.length;
     var pos = idx + 1;
 
+    // 🔧 BUG FIX : la RPC get_quiz_question_results retourne les options DANS
+    // un sous-objet `question`, pas au top-level. Format réel :
+    //   { success, series_id, question: { id, title, question_text, options:[...] }, stats }
+    // Avant : on lisait data.options (toujours undefined) → page reveal vide.
+    var qNode = data.question || {};
+    var qOptions = qNode.options || data.options || [];   // fallback rétrocompat
+    var qTitle = qNode.title || data.title || '';
+    var qText = qNode.question_text || data.question_text || '';
+
     // Compteur total de réponses pour cette question
-    var totalAnswers = (data.options || []).reduce(function(sum, opt) {
+    var totalAnswers = qOptions.reduce(function(sum, opt) {
       return sum + (opt.vote_count || 0);
     }, 0);
 
-    var optionsHtml = (data.options || []).map(function(opt, i) {
+    var optionsHtml = qOptions.map(function(opt, i) {
       var letter = String.fromCharCode(65 + i);
       var voteCount = opt.vote_count || 0;
       var percent = totalAnswers > 0 ? Math.round((voteCount / totalAnswers) * 100) : 0;
@@ -589,8 +598,8 @@ window.TVQuizApp = (function() {
       '</div>';
     }).join('');
 
-    var titleHtml = data.title
-      ? '<div class="quiz-question-category">' + escapeHtml(data.title) + '</div>'
+    var titleHtml = qTitle
+      ? '<div class="quiz-question-category">' + escapeHtml(qTitle) + '</div>'
       : '';
 
     var html =
@@ -600,7 +609,7 @@ window.TVQuizApp = (function() {
       '</div>' +
       '<div class="quiz-question-body">' +
         titleHtml +
-        '<div class="quiz-question-text">' + escapeHtml(data.question_text) + '</div>' +
+        '<div class="quiz-question-text">' + escapeHtml(qText) + '</div>' +
         '<div class="quiz-options quiz-reveal-options">' + optionsHtml + '</div>' +
       '</div>' +
       '<div class="quiz-question-footer">' +
