@@ -447,10 +447,12 @@ window.TVQuizApp = (function() {
 
     // 🎨 Style Millionnaire : grand cercle timer central au-dessus du bandeau de question.
     // Sur les autres styles, ce HTML reste vide → le countdown reste dans le header.
+    // Structure 2 frères : .ring (masquée par conic-gradient) + .value (au-dessus, NON masquée).
     var millionaireTimerHtml = '';
     if (state.series && state.series.quiz_style === 'millionaire') {
       millionaireTimerHtml =
         '<div id="millionaire-timer" style="--millionaire-progress: 1;">' +
+          '<div class="millionaire-timer-ring"></div>' +
           '<span class="millionaire-timer-value" id="millionaire-timer-value">--</span>' +
         '</div>';
     }
