@@ -355,17 +355,7 @@ window.TVQuizApp = (function() {
   function startIntroCountdown(durationSec) {
     stopIntroCountdown();
 
-    // 🔧 BUG FIX : on cale le countdown sur series.tv_started_at (timestamp serveur)
-    // au lieu de Date.now() local. Comme ça TV et tous les mobiles partagent le même
-    // point de référence et restent synchronisés. Fallback sur Date.now() si null.
-    var startedAt;
-    if (state.series && state.series.tv_started_at) {
-      startedAt = new Date(state.series.tv_started_at).getTime();
-      console.log('[TVQuizApp] Intro calée sur tv_started_at =', state.series.tv_started_at);
-    } else {
-      startedAt = Date.now();
-      console.log('[TVQuizApp] Intro calée sur Date.now() (tv_started_at null)');
-    }
+    var startedAt = Date.now();
     var totalMs = durationSec * 1000;
 
     function tick() {
@@ -455,12 +445,23 @@ window.TVQuizApp = (function() {
       ? '<div class="quiz-question-category">' + escapeHtml(qData.title) + '</div>'
       : '';
 
+    // 🎨 Style Millionnaire : grand cercle timer central au-dessus du bandeau de question.
+    // Sur les autres styles, ce HTML reste vide → le countdown reste dans le header.
+    var millionaireTimerHtml = '';
+    if (state.series && state.series.quiz_style === 'millionaire') {
+      millionaireTimerHtml =
+        '<div id="millionaire-timer" style="--millionaire-progress: 1;">' +
+          '<span class="millionaire-timer-value" id="millionaire-timer-value">--</span>' +
+        '</div>';
+    }
+
     var html =
       '<div class="quiz-question-header">' +
         '<div class="quiz-question-progress">Question ' + pos + ' / ' + totalQuestions + '</div>' +
         '<div class="quiz-question-countdown" id="question-countdown">--s</div>' +
       '</div>' +
       '<div class="quiz-question-body">' +
+        millionaireTimerHtml +
         titleHtml +
         '<div class="quiz-question-text">' + escapeHtml(qData.question_text) + '</div>' +
         photoHtml +
@@ -506,6 +507,21 @@ window.TVQuizApp = (function() {
         el.textContent = remaining + 's';
         if (remaining <= 5) el.classList.add('urgent');
         else el.classList.remove('urgent');
+      }
+
+      // 🎨 Style Millionnaire : alimente le cercle timer central
+      // - --millionaire-progress va de 0 (anneau plein) à 1 (anneau vidé)
+      // - le label central affiche le compteur en secondes
+      var mTimer = document.getElementById('millionaire-timer');
+      if (mTimer) {
+        var progress = duration > 0
+          ? Math.min(1, Math.max(0, elapsed / duration))
+          : 0;
+        mTimer.style.setProperty('--millionaire-progress', progress.toFixed(3));
+        var mVal = document.getElementById('millionaire-timer-value');
+        if (mVal) mVal.textContent = remaining;
+        if (remaining <= 5) mTimer.classList.add('urgent');
+        else mTimer.classList.remove('urgent');
       }
 
       if (remaining <= 0) {
@@ -560,21 +576,12 @@ window.TVQuizApp = (function() {
     var totalQuestions = state.questions.length;
     var pos = idx + 1;
 
-    // 🔧 BUG FIX : la RPC get_quiz_question_results retourne les options DANS
-    // un sous-objet `question`, pas au top-level. Format réel :
-    //   { success, series_id, question: { id, title, question_text, options:[...] }, stats }
-    // Avant : on lisait data.options (toujours undefined) → page reveal vide.
-    var qNode = data.question || {};
-    var qOptions = qNode.options || data.options || [];   // fallback rétrocompat
-    var qTitle = qNode.title || data.title || '';
-    var qText = qNode.question_text || data.question_text || '';
-
     // Compteur total de réponses pour cette question
-    var totalAnswers = qOptions.reduce(function(sum, opt) {
+    var totalAnswers = (data.options || []).reduce(function(sum, opt) {
       return sum + (opt.vote_count || 0);
     }, 0);
 
-    var optionsHtml = qOptions.map(function(opt, i) {
+    var optionsHtml = (data.options || []).map(function(opt, i) {
       var letter = String.fromCharCode(65 + i);
       var voteCount = opt.vote_count || 0;
       var percent = totalAnswers > 0 ? Math.round((voteCount / totalAnswers) * 100) : 0;
@@ -598,8 +605,8 @@ window.TVQuizApp = (function() {
       '</div>';
     }).join('');
 
-    var titleHtml = qTitle
-      ? '<div class="quiz-question-category">' + escapeHtml(qTitle) + '</div>'
+    var titleHtml = data.title
+      ? '<div class="quiz-question-category">' + escapeHtml(data.title) + '</div>'
       : '';
 
     var html =
@@ -609,7 +616,7 @@ window.TVQuizApp = (function() {
       '</div>' +
       '<div class="quiz-question-body">' +
         titleHtml +
-        '<div class="quiz-question-text">' + escapeHtml(qText) + '</div>' +
+        '<div class="quiz-question-text">' + escapeHtml(data.question_text) + '</div>' +
         '<div class="quiz-options quiz-reveal-options">' + optionsHtml + '</div>' +
       '</div>' +
       '<div class="quiz-question-footer">' +
