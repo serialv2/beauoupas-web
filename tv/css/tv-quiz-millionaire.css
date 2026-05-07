@@ -1,5 +1,522 @@
 /* ═════════════════════════════════════════════════════════════════
-   BeauOuPas TV Quizz — Thème millionaire
-   À implémenter dans une étape ultérieure.
+   BeauOuPas TV Quizz — Thème MILLIONNAIRE
+   ───────────────────────────────────────────────────────────────────
+   Inspiré de "Qui veut gagner des millions ?" :
+   - Fond bleu nuit profond avec spotlights radiaux (effet scène TV)
+   - Bandeaux cintrés bleu dégradé pour question + options (forme
+     hexagonale/losange aplati typique de l'émission)
+   - Lettre A/B/C/D en orange #FFB300 avec diamant à gauche
+   - Cercle timer central avec conic-gradient qui se vide
+   - Compteur numérique au centre du cercle
+   - Pas de compteur "X/Y ont répondu" (caché — non présent dans
+     l'émission, simplification voulue)
+
+   Tout est namespacé sous `body.style-millionaire` pour ne pas
+   leaker sur les autres thèmes.
    ═════════════════════════════════════════════════════════════════ */
 
+body.style-millionaire {
+  background: #050C28;
+  color: #FFFFFF;
+  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Effet scène TV : spotlights radiaux + dégradé profond bleu nuit */
+body.style-millionaire::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(70, 130, 220, 0.25) 0%, transparent 45%),
+    radial-gradient(circle at 15% 30%, rgba(255, 220, 100, 0.06) 0%, transparent 25%),
+    radial-gradient(circle at 85% 25%, rgba(255, 220, 100, 0.06) 0%, transparent 25%),
+    radial-gradient(ellipse at 50% 100%, rgba(20, 50, 120, 0.5) 0%, transparent 60%),
+    linear-gradient(180deg, #050C28 0%, #0A1648 45%, #050C28 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Petits "stars" très discrètes en arrière-plan pour donner profondeur */
+body.style-millionaire::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(2px 2px at 20% 15%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1.5px 1.5px at 70% 22%, rgba(255, 255, 255, 0.4), transparent),
+    radial-gradient(2px 2px at 35% 60%, rgba(255, 255, 255, 0.3), transparent),
+    radial-gradient(1.5px 1.5px at 90% 50%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 10% 80%, rgba(255, 255, 255, 0.4), transparent);
+  pointer-events: none;
+  z-index: 0;
+}
+
+body.style-millionaire .tv-container,
+body.style-millionaire .tv-screen {
+  position: relative;
+  z-index: 1;
+}
+
+/* ═════════════════════════════════════════════════════════════════
+   ÉCRAN INTRO
+   ═════════════════════════════════════════════════════════════════ */
+
+body.style-millionaire .quiz-intro-tag {
+  background: linear-gradient(135deg, #FFB300, #FF8F00);
+  color: #050C28;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  box-shadow: 0 0.6vh 2vh rgba(255, 179, 0, 0.5),
+              inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+body.style-millionaire .quiz-intro-title {
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFD78A 80%, #FFB300 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 1vh 4vh rgba(255, 179, 0, 0.4);
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+body.style-millionaire .quiz-intro-description {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+body.style-millionaire .quiz-intro-meta-item {
+  background: linear-gradient(180deg, rgba(30, 60, 140, 0.7), rgba(15, 30, 80, 0.7));
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(10px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+body.style-millionaire .quiz-intro-meta-value {
+  color: #FFB300;
+  font-weight: 800;
+}
+
+body.style-millionaire .quiz-intro-meta-label {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+body.style-millionaire .quiz-intro-countdown-label {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+body.style-millionaire .quiz-intro-countdown {
+  color: #FFB300;
+  text-shadow: 0 0 30px rgba(255, 179, 0, 0.8);
+  font-weight: 800;
+}
+
+/* ═════════════════════════════════════════════════════════════════
+   ÉCRAN QUESTION
+   ───────────────────────────────────────────────────────────────────
+   Mise en page :
+   - Header : juste position en haut à gauche (countdown sera dans le
+     cercle central, pas dans le header)
+   - Body : énoncé en bandeau cintré bleu, AU-DESSUS un grand cercle
+     timer central (le countdown vient du conic-gradient + label au
+     centre)
+   - Footer : compteur "X/Y ont répondu" caché (pas dans l'émission)
+   ═════════════════════════════════════════════════════════════════ */
+
+body.style-millionaire .quiz-question-screen {
+  padding: 4vh 4vw;
+  gap: 2vh;
+}
+
+/* Header : seul "Question N/M" à gauche, countdown caché (déplacé dans cercle) */
+body.style-millionaire .quiz-question-header {
+  position: relative;
+  justify-content: flex-start;
+}
+
+body.style-millionaire .quiz-question-progress {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 1.4vw;
+  letter-spacing: 4px;
+  font-weight: 600;
+}
+
+/* Le countdown du header est masqué — un cercle timer va le remplacer
+   au-dessus du bandeau de question (ajouté via JS, voir plus bas
+   dans tv-quiz-app.js).
+   On garde une fallback visible si le JS n'a pas injecté le cercle :
+   on positionne le countdown header en grand au centre. */
+body.style-millionaire .quiz-question-header .quiz-question-countdown {
+  display: none;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   CERCLE TIMER MILLIONNAIRE
+   Affiche un grand cercle au-dessus du bandeau de question,
+   piloté par la variable CSS --millionaire-progress (0 → 1).
+   Inséré dynamiquement par tv-quiz-app.js (#millionaire-timer).
+   ───────────────────────────────────────────────────────────────── */
+
+#millionaire-timer {
+  width: 14vw;
+  height: 14vw;
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: 50%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  flex-shrink: 0;
+  /* Anneau coloré : rouge → orange → jaune → blanc → gris (selon temps écoulé)
+     conic-gradient fixe, et on superpose un masque qui révèle
+     uniquement la portion correspondant à --millionaire-progress.
+     0   = anneau plein (timer complet)
+     1   = anneau vide (timer écoulé) */
+  background:
+    conic-gradient(
+      from -90deg,
+      #E53935 0%,
+      #FF6F00 18%,
+      #FFB300 36%,
+      #FFEB3B 54%,
+      #FFFFFF 72%,
+      #B0BEC5 90%,
+      #607D8B 100%
+    );
+  box-shadow:
+    0 0 4vh rgba(255, 179, 0, 0.4),
+    inset 0 0 2vh rgba(0, 0, 0, 0.5);
+  /* Masque qui cache une partie de l'anneau au fur et à mesure :
+     conic-gradient transparent → noir tournant selon --millionaire-progress */
+  -webkit-mask:
+    radial-gradient(circle, transparent 60%, #000 62%),
+    conic-gradient(
+      from -90deg,
+      #000 0%,
+      #000 calc(var(--millionaire-progress, 0) * 100%),
+      transparent calc(var(--millionaire-progress, 0) * 100%),
+      transparent 100%
+    );
+  -webkit-mask-composite: source-out;
+          mask:
+    radial-gradient(circle, transparent 60%, #000 62%),
+    conic-gradient(
+      from -90deg,
+      #000 0%,
+      #000 calc(var(--millionaire-progress, 0) * 100%),
+      transparent calc(var(--millionaire-progress, 0) * 100%),
+      transparent 100%
+    );
+  mask-composite: exclude;
+}
+
+/* Cercle intérieur sombre + compteur au centre */
+#millionaire-timer::before {
+  content: '';
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, #0A1648 0%, #050C28 100%);
+  border: 0.3vh solid rgba(255, 255, 255, 0.5);
+  box-shadow: inset 0 0 3vh rgba(0, 0, 0, 0.6);
+  z-index: 0;
+}
+
+#millionaire-timer .millionaire-timer-value {
+  position: relative;
+  z-index: 1;
+  font-size: 4vw;
+  font-weight: 800;
+  color: #FFFFFF;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 2vh rgba(255, 179, 0, 0.7);
+}
+
+#millionaire-timer.urgent .millionaire-timer-value {
+  color: #FF5252;
+  animation: millionaireUrgent 0.7s ease-in-out infinite;
+}
+
+@keyframes millionaireUrgent {
+  0%, 100% { transform: scale(1); text-shadow: 0 0 2vh rgba(255, 82, 82, 0.7); }
+  50%      { transform: scale(1.12); text-shadow: 0 0 4vh rgba(255, 82, 82, 1); }
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   BODY : énoncé en bandeau cintré bleu
+   ───────────────────────────────────────────────────────────────── */
+
+body.style-millionaire .quiz-question-body {
+  gap: 2.5vh;
+}
+
+body.style-millionaire .quiz-question-category {
+  background: linear-gradient(135deg, #FFB300, #FF8F00);
+  color: #050C28;
+  font-weight: 800;
+  letter-spacing: 4px;
+  box-shadow: 0 0.4vh 1.5vh rgba(255, 179, 0, 0.4);
+}
+
+/* Le bandeau d'énoncé : shape cintrée caractéristique avec dégradé bleu */
+body.style-millionaire .quiz-question-text {
+  position: relative;
+  background: linear-gradient(180deg, #1A3F8A 0%, #0D2255 100%);
+  color: #FFFFFF;
+  font-size: 2.4vw;
+  font-weight: 700;
+  text-align: center;
+  padding: 3vh 8vw;
+  /* Forme hexagonale aplatie typique Millionaire */
+  clip-path: polygon(
+    0% 50%,
+    4% 0%,
+    96% 0%,
+    100% 50%,
+    96% 100%,
+    4% 100%
+  );
+  border: 0.3vh solid rgba(255, 255, 255, 0.85);
+  /* On simule la bordure avec une ombre extérieure puisque clip-path
+     ne supporte pas bien le border. */
+  filter: drop-shadow(0 0 0.4vh rgba(255, 255, 255, 0.6));
+  max-width: 80%;
+  width: 80%;
+  line-height: 1.3;
+}
+
+/* La photo (si présente) reste centrée mais avec un cadre stylé */
+body.style-millionaire .quiz-question-photo img {
+  border: 0.3vh solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 1vh 4vh rgba(0, 0, 0, 0.6);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   COMPTEUR "X/Y ont répondu"
+   On masque le footer original (bas de l'écran), et on détache
+   .quiz-answers-counter en absolute pour le remonter en haut à droite
+   de l'écran question — plus discret, ne mange pas la vue centrale.
+   Style restyle complet pour matcher l'ambiance Millionnaire :
+     - Pastille bleu profond avec bordure blanche fine
+     - Texte blanc + barre de progression dégradée orange #FFB300
+   ───────────────────────────────────────────────────────────────── */
+body.style-millionaire .quiz-question-footer {
+  /* Le wrapper d'origine est rendu invisible mais on ne met pas
+     display:none pour ne pas casser le layout flex parent : on le rend
+     juste invisible et de taille nulle. */
+  height: 0;
+  padding: 0;
+  margin: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+body.style-millionaire .quiz-question-footer .quiz-answers-counter {
+  position: fixed;
+  top: 3vh;
+  right: 3vw;
+  width: 22vw;
+  max-width: 360px;
+  pointer-events: auto;
+  background: linear-gradient(180deg, #1A3F8A 0%, #0D2255 100%);
+  border: 0.2vh solid rgba(255, 255, 255, 0.55);
+  border-radius: 12px;
+  padding: 1.2vh 1.4vw;
+  box-shadow: 0 0.6vh 2vh rgba(0, 0, 0, 0.5),
+              inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  z-index: 5;
+  flex-direction: column;
+  gap: 0.8vh;
+}
+
+body.style-millionaire .quiz-question-footer .quiz-answers-counter-text {
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 1.1vw;
+  text-align: center;
+  letter-spacing: 1px;
+  text-shadow: 0 0.2vh 0.4vh rgba(0, 0, 0, 0.6);
+}
+
+body.style-millionaire .quiz-question-footer .quiz-answers-counter-bar {
+  background: rgba(0, 0, 0, 0.5);
+  border: 0.1vh solid rgba(255, 255, 255, 0.2);
+  height: 0.9vh;
+}
+
+body.style-millionaire .quiz-question-footer .quiz-answers-counter-fill {
+  background: linear-gradient(90deg, #FFB300 0%, #FF8F00 100%);
+  box-shadow: 0 0 1vh rgba(255, 179, 0, 0.6);
+}
+
+/* ═════════════════════════════════════════════════════════════════
+   OPTIONS DE RÉPONSE — bandeaux cintrés bleus 2×2
+   ═════════════════════════════════════════════════════════════════ */
+
+body.style-millionaire .quiz-options {
+  width: 92%;
+  max-width: 1700px;
+  gap: 2vh 3vw;
+}
+
+body.style-millionaire .quiz-option {
+  position: relative;
+  background: linear-gradient(180deg, #1A3F8A 0%, #0D2255 100%);
+  color: #FFFFFF;
+  padding: 2.2vh 3vw;
+  /* Forme hexagonale aplatie identique au bandeau de question */
+  clip-path: polygon(
+    0% 50%,
+    3% 0%,
+    97% 0%,
+    100% 50%,
+    97% 100%,
+    3% 100%
+  );
+  border-radius: 0;
+  font-weight: 700;
+  filter: drop-shadow(0 0 0.4vh rgba(255, 255, 255, 0.6));
+  min-height: 9vh;
+  align-items: center;
+  gap: 1.5vw;
+}
+
+/* Diamant orange à gauche du letter — pseudo-element */
+body.style-millionaire .quiz-option::before {
+  content: '';
+  position: absolute;
+  left: 4%;
+  top: 50%;
+  width: 1.4vw;
+  height: 1.4vw;
+  background: linear-gradient(135deg, #FFB300, #FF8F00);
+  transform: translateY(-50%) rotate(45deg);
+  box-shadow: 0 0 1vh rgba(255, 179, 0, 0.6);
+  z-index: 2;
+}
+
+body.style-millionaire .quiz-option-letter {
+  background: transparent;
+  color: #FFB300;
+  font-weight: 800;
+  font-size: 2.2vw;
+  width: auto;
+  height: auto;
+  margin-left: 2vw;
+  text-shadow: 0 0 1vh rgba(255, 179, 0, 0.6);
+}
+
+/* Petit ":" après la lettre (cohérent image de réf) */
+body.style-millionaire .quiz-option-letter::after {
+  content: ':';
+  color: #FFB300;
+  margin-left: 0.2vw;
+}
+
+body.style-millionaire .quiz-option-text {
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 1.7vw;
+  letter-spacing: 0.5px;
+}
+
+/* ═════════════════════════════════════════════════════════════════
+   ÉCRAN REVEAL
+   ───────────────────────────────────────────────────────────────────
+   Bonne réponse en vert avec halo, mauvaises en rouge atténué.
+   ═════════════════════════════════════════════════════════════════ */
+
+body.style-millionaire .quiz-reveal-tag {
+  background: linear-gradient(135deg, #FFB300, #FF8F00);
+  color: #050C28;
+  font-weight: 800;
+  letter-spacing: 4px;
+  box-shadow: 0 0.4vh 1.5vh rgba(255, 179, 0, 0.5);
+}
+
+body.style-millionaire .quiz-reveal-option {
+  position: relative;
+  background: linear-gradient(180deg, #1A3F8A 0%, #0D2255 100%);
+  clip-path: polygon(
+    0% 50%, 3% 0%, 97% 0%, 100% 50%, 97% 100%, 3% 100%
+  );
+  filter: drop-shadow(0 0 0.4vh rgba(255, 255, 255, 0.6));
+  border-radius: 0;
+}
+
+body.style-millionaire .quiz-reveal-option.is-correct {
+  background: linear-gradient(180deg, #2E7D32 0%, #1B5E20 100%);
+  filter: drop-shadow(0 0 0.6vh rgba(102, 187, 106, 0.8));
+}
+
+body.style-millionaire .quiz-reveal-option.is-wrong {
+  opacity: 0.45;
+  background: linear-gradient(180deg, #1A3F8A 0%, #0D2255 100%);
+}
+
+body.style-millionaire .quiz-reveal-option-icon {
+  color: #FFFFFF;
+  font-size: 2.2vw;
+  font-weight: 800;
+}
+
+body.style-millionaire .quiz-reveal-option-bar {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+body.style-millionaire .quiz-reveal-option-fill {
+  background: linear-gradient(90deg, #FFB300, #FF8F00);
+}
+
+body.style-millionaire .quiz-reveal-option-count {
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 700;
+}
+
+body.style-millionaire .quiz-reveal-summary {
+  color: rgba(255, 255, 255, 0.75);
+  font-weight: 600;
+  letter-spacing: 2px;
+}
+
+/* ═════════════════════════════════════════════════════════════════
+   ÉCRAN FINISH (podium + leaderboard)
+   ═════════════════════════════════════════════════════════════════ */
+
+body.style-millionaire .quiz-finish-title {
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFD78A 80%, #FFB300 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+}
+
+body.style-millionaire .quiz-podium-card {
+  background: linear-gradient(180deg, #1A3F8A 0%, #0D2255 100%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 1vh 4vh rgba(0, 0, 0, 0.5);
+}
+
+body.style-millionaire .quiz-podium-card.rank-1 {
+  background: linear-gradient(180deg, #FFB300 0%, #FF8F00 100%);
+  color: #050C28;
+  box-shadow: 0 1vh 5vh rgba(255, 179, 0, 0.6);
+}
+
+body.style-millionaire .quiz-podium-card.rank-1 .quiz-podium-name,
+body.style-millionaire .quiz-podium-card.rank-1 .quiz-podium-score {
+  color: #050C28;
+}
+
+body.style-millionaire .quiz-leaderboard-row {
+  background: rgba(26, 63, 138, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+body.style-millionaire .quiz-leaderboard-rank {
+  color: #FFB300;
+  font-weight: 800;
+}
