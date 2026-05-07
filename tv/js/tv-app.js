@@ -40,6 +40,7 @@ window.TVApp = (function() {
   };
 
   var _isAdvancing = false;
+  var _isStartingFirst = false; // 🔧 BUG FIX : anti double-call sur tv_start_first_element
 
   // Labels & emojis des options de vote (cohérent avec l'app MAUI)
   var OPTION_META = {
@@ -192,6 +193,39 @@ window.TVApp = (function() {
   }
 
   // ─────────────────────────────────────────────────────────────────
+  // 🔧 BUG FIX : Démarrer le 1er projet (équivalent vote du startFirstElement
+  // côté quiz). Appelée par le routeur quand on entre en status='active' et
+  // que series_projects[0].started_at est encore NULL.
+  //
+  // tv_start_series ne pose volontairement PAS started_at sur le 1er projet
+  // (pour permettre une éventuelle phase intro entre 'active' et le 1er vote).
+  // Comme le mode vote n'a pas d'écran intro, on appelle ici dès l'arrivée
+  // en 'active'. La RPC tv_start_first_element est idempotente côté serveur
+  // (UPDATE WHERE started_at IS NULL), donc même si plusieurs onglets TV
+  // appellent ça, pas de double-pose.
+  //
+  // Sans cet appel : le 1er projet a started_at=NULL → countdown bloqué sur
+  // "En attente" → mobile bloqué sur "IsWaitingForTv" → écosystème figé.
+  // ─────────────────────────────────────────────────────────────────
+  async function startFirstElement() {
+    if (_isStartingFirst) return;
+    _isStartingFirst = true;
+    try {
+      var sb = window.TVRealtime.getClient();
+      console.log('[TVApp] Appel RPC tv_start_first_element');
+      var res = await sb.rpc('tv_start_first_element', {
+        p_series_id: state.series.id
+      });
+      if (res.error) console.error('[TVApp] tv_start_first_element error:', res.error);
+      else console.log('[TVApp] tv_start_first_element OK:', res.data);
+    } catch (err) {
+      console.error('[TVApp] startFirstElement exception:', err);
+    } finally {
+      setTimeout(function() { _isStartingFirst = false; }, 3000);
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────
   // La TV appelle tv_advance_to_next quand le timer expire
   // ─────────────────────────────────────────────────────────────────
 
@@ -293,6 +327,16 @@ window.TVApp = (function() {
     if (!sp || !sp.projects) {
       showError('Projet introuvable', 'Le projet n°' + (sIdx + 1) + ' n\'a pas pu être chargé.');
       return;
+    }
+
+    // 🔧 BUG FIX : si on est sur le 1er projet et qu'il n'a pas de started_at,
+    // c'est qu'on vient juste d'entrer en 'active' (tv_start_series ne pose
+    // volontairement pas started_at). On déclenche l'appel à tv_start_first_element.
+    // Le realtime sur series_projects UPDATE va re-router et on pourra démarrer
+    // le countdown avec un started_at valide.
+    if (sIdx === 0 && !sp.started_at) {
+      console.log('[TVApp] 1er projet sans started_at → appel startFirstElement');
+      startFirstElement();
     }
 
     var p = sp.projects;

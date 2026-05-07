@@ -355,7 +355,17 @@ window.TVQuizApp = (function() {
   function startIntroCountdown(durationSec) {
     stopIntroCountdown();
 
-    var startedAt = Date.now();
+    // 🔧 BUG FIX : on cale le countdown sur series.tv_started_at (timestamp serveur)
+    // au lieu de Date.now() local. Comme ça TV et tous les mobiles partagent le même
+    // point de référence et restent synchronisés. Fallback sur Date.now() si null.
+    var startedAt;
+    if (state.series && state.series.tv_started_at) {
+      startedAt = new Date(state.series.tv_started_at).getTime();
+      console.log('[TVQuizApp] Intro calée sur tv_started_at =', state.series.tv_started_at);
+    } else {
+      startedAt = Date.now();
+      console.log('[TVQuizApp] Intro calée sur Date.now() (tv_started_at null)');
+    }
     var totalMs = durationSec * 1000;
 
     function tick() {
