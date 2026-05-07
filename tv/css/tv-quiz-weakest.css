@@ -1,5 +1,580 @@
 /* ═════════════════════════════════════════════════════════════════
-   BeauOuPas TV Quizz — Thème weakest
-   À implémenter dans une étape ultérieure.
+   BeauOuPas TV Quizz — Thème WEAKEST LINK (Maillon Faible)
+   ───────────────────────────────────────────────────────────────────
+   Inspiration "Le Maillon Faible" :
+   - Fond bleu nuit/violet profond avec spotlights bleus
+   - Public en silhouettes floues en bas (immersion studio TV)
+   - Bandeau question en haut, fond noir avec lignes blanches
+   - Liste de réponses verticale empilée, fond noir, séparateurs blancs
+   - Réponse sélectionnée surlignée en jaune (#FFD93D)
+   - Timer rond métallique en haut à droite avec glow bleu
+   - Compteur "X/Y ont répondu" CENTRÉ EN BAS pour éviter le chevauchement
+     avec le timer (problème déjà rencontré sur Burger Quiz)
+
+   Tout est namespacé sous `body.style-weakest`.
    ═════════════════════════════════════════════════════════════════ */
 
+body.style-weakest {
+  background: #050010;
+  color: #FFFFFF;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   FOND : spotlights bleus + dégradé bleu nuit profond
+   ───────────────────────────────────────────────────────────────── */
+body.style-weakest::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    /* Spotlights bleus descendants depuis le haut */
+    radial-gradient(circle at 25% 0%, rgba(80, 140, 255, 0.35) 0%, transparent 30%),
+    radial-gradient(circle at 75% 0%, rgba(80, 140, 255, 0.35) 0%, transparent 30%),
+    radial-gradient(circle at 50% 100%, rgba(120, 80, 200, 0.18) 0%, transparent 50%),
+    /* Sol sombre tirant vers le bleu nuit en bas (zone du public) */
+    linear-gradient(180deg, transparent 0%, transparent 60%, rgba(20, 30, 60, 0.85) 75%, rgba(10, 15, 30, 1) 100%),
+    /* Fond bleu nuit principal */
+    radial-gradient(ellipse at 50% 30%, #1F1238 0%, #0A0420 70%, #050010 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   PUBLIC FLOU EN BAS : silhouettes en SVG inline
+   ───────────────────────────────────────────────────────────────── */
+body.style-weakest::after {
+  content: '';
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 22vh;
+  background:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 200' preserveAspectRatio='none'><g fill='%23030814' opacity='0.95'><ellipse cx='40' cy='180' rx='34' ry='50'/><ellipse cx='110' cy='180' rx='32' ry='55'/><ellipse cx='180' cy='180' rx='34' ry='48'/><ellipse cx='250' cy='180' rx='35' ry='52'/><ellipse cx='320' cy='180' rx='32' ry='50'/><ellipse cx='390' cy='180' rx='34' ry='55'/><ellipse cx='460' cy='180' rx='34' ry='48'/><ellipse cx='530' cy='180' rx='35' ry='53'/><ellipse cx='600' cy='180' rx='32' ry='50'/><ellipse cx='670' cy='180' rx='34' ry='52'/><ellipse cx='740' cy='180' rx='35' ry='48'/><ellipse cx='810' cy='180' rx='32' ry='55'/><ellipse cx='880' cy='180' rx='34' ry='50'/><ellipse cx='950' cy='180' rx='35' ry='52'/><ellipse cx='1020' cy='180' rx='34' ry='48'/><ellipse cx='1090' cy='180' rx='32' ry='55'/><ellipse cx='1160' cy='180' rx='35' ry='50'/><circle cx='40' cy='130' r='18'/><circle cx='110' cy='125' r='16'/><circle cx='180' cy='130' r='18'/><circle cx='250' cy='128' r='17'/><circle cx='320' cy='130' r='17'/><circle cx='390' cy='125' r='17'/><circle cx='460' cy='130' r='18'/><circle cx='530' cy='127' r='17'/><circle cx='600' cy='130' r='17'/><circle cx='670' cy='128' r='17'/><circle cx='740' cy='130' r='17'/><circle cx='810' cy='125' r='17'/><circle cx='880' cy='130' r='18'/><circle cx='950' cy='128' r='17'/><circle cx='1020' cy='130' r='17'/><circle cx='1090' cy='125' r='17'/><circle cx='1160' cy='130' r='17'/></g></svg>") center bottom / 100% 100% no-repeat;
+  filter: blur(2.5px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+body.style-weakest .tv-container,
+body.style-weakest .tv-screen {
+  position: relative;
+  z-index: 1;
+}
+
+/* ═════════════════════════════════════════════════════════════════
+   ÉCRAN INTRO
+   ═════════════════════════════════════════════════════════════════ */
+
+body.style-weakest .quiz-intro-tag {
+  background: rgba(0, 0, 0, 0.7);
+  color: #FFD93D;
+  border: 0.2vh solid #FFFFFF;
+  border-radius: 4px;
+  padding: 1vh 3vw;
+  font-weight: 700;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+}
+
+body.style-weakest .quiz-intro-title {
+  color: #FFFFFF;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-shadow:
+    0 0 3vh rgba(80, 140, 255, 0.5),
+    0 1vh 4vh rgba(0, 0, 0, 0.8);
+}
+
+body.style-weakest .quiz-intro-description {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+body.style-weakest .quiz-intro-meta-item {
+  background: rgba(0, 0, 0, 0.7);
+  border: 0.2vh solid rgba(255, 255, 255, 0.4);
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+  color: #FFFFFF;
+}
+
+body.style-weakest .quiz-intro-meta-value {
+  color: #FFD93D;
+  font-weight: 700;
+}
+
+body.style-weakest .quiz-intro-meta-label {
+  color: rgba(255, 255, 255, 0.65);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+body.style-weakest .quiz-intro-countdown-value {
+  color: #FFD93D;
+  font-weight: 700;
+  text-shadow: 0 0 2vh rgba(255, 217, 61, 0.6);
+}
+
+body.style-weakest .quiz-intro-countdown-label {
+  color: rgba(255, 255, 255, 0.65);
+  text-transform: uppercase;
+  letter-spacing: 3px;
+}
+
+/* ═════════════════════════════════════════════════════════════════
+   ÉCRAN QUESTION
+   ───────────────────────────────────────────────────────────────────
+   Layout :
+   - Header : "QUESTION N / M" à gauche + Timer rond à droite
+   - Body : bandeau question en haut, options empilées en dessous
+   - Footer (compteur "X/Y ont répondu") déplacé en BAS CENTRÉ
+     pour éviter de chevaucher le timer en haut-droite (problème
+     déjà rencontré sur Burger Quiz, fix ici)
+   ═════════════════════════════════════════════════════════════════ */
+
+body.style-weakest .quiz-question-screen {
+  padding: 4vh 5vw;
+  gap: 2vh;
+}
+
+body.style-weakest .quiz-question-header {
+  align-items: center;
+  margin-bottom: 2vh;
+}
+
+body.style-weakest .quiz-question-progress {
+  background: rgba(0, 0, 0, 0.5);
+  color: rgba(255, 255, 255, 0.9);
+  padding: 0.8vh 2vw;
+  border-radius: 4px;
+  font-size: 1.4vw;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  font-weight: 600;
+  border: 0.15vh solid rgba(255, 255, 255, 0.25);
+}
+
+/* TIMER ROND MÉTALLIQUE avec glow bleu */
+body.style-weakest .quiz-question-countdown {
+  width: 8vw;
+  height: 8vw;
+  max-width: 130px;
+  max-height: 130px;
+  background: radial-gradient(circle at 30% 30%, #5A6878 0%, #2A3848 100%);
+  border: 0.5vh solid #1A1A1A;
+  border-radius: 50% !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.4vw;
+  font-weight: 700;
+  color: #FFFFFF;
+  box-shadow:
+    inset 0 0 2vh rgba(0, 0, 0, 0.6),
+    inset 0 0.4vh 0 rgba(255, 255, 255, 0.2),
+    0 0 3vh rgba(80, 140, 255, 0.5),
+    0 0.8vh 2vh rgba(0, 0, 0, 0.5);
+  font-variant-numeric: tabular-nums;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 1px;
+  text-shadow: 0 0 1.5vh rgba(100, 200, 255, 0.7);
+  padding: 0;
+  min-width: 0;
+}
+
+body.style-weakest .quiz-question-countdown.urgent {
+  background: radial-gradient(circle at 30% 30%, #C04848 0%, #882828 100%);
+  box-shadow:
+    inset 0 0 2vh rgba(0, 0, 0, 0.6),
+    inset 0 0.4vh 0 rgba(255, 255, 255, 0.2),
+    0 0 3vh rgba(255, 80, 80, 0.7),
+    0 0.8vh 2vh rgba(0, 0, 0, 0.5);
+  text-shadow: 0 0 1.5vh rgba(255, 200, 200, 0.8);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   BODY : bandeau question + options
+   ───────────────────────────────────────────────────────────────── */
+
+body.style-weakest .quiz-question-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 4vh;
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
+body.style-weakest .quiz-question-category {
+  align-self: center;
+  background: rgba(0, 0, 0, 0.7);
+  color: #FFD93D;
+  border: 0.15vh solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  padding: 0.8vh 2vw;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+}
+
+/* Bandeau question : large, fond noir, lignes blanches en haut/bas */
+body.style-weakest .quiz-question-text {
+  background: rgba(0, 0, 0, 0.85);
+  border-top: 0.3vh solid #FFFFFF;
+  border-bottom: 0.3vh solid #FFFFFF;
+  padding: 2.5vh 4vw;
+  margin: 0 -5vw;
+  font-size: 2vw;
+  font-weight: 500;
+  color: #FFFFFF;
+  text-align: left;
+  line-height: 1.4;
+  max-width: none;
+  width: auto;
+  text-shadow: 0 0.3vh 1vh rgba(0, 0, 0, 0.6);
+}
+
+body.style-weakest .quiz-question-photo img {
+  border: 0.3vh solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 0 4vh rgba(80, 140, 255, 0.3);
+  max-height: 30vh;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   OPTIONS A/B/C/D EMPILÉES VERTICALEMENT
+   Liste verticale, séparateurs blancs entre options, sélection en
+   jaune (mais comme on n'a pas de "sélection" dans BeauOuPas, toutes
+   sont juste affichées en blanc/clair). La bonne réponse sera mise
+   en valeur lors du REVEAL.
+   ───────────────────────────────────────────────────────────────── */
+
+body.style-weakest .quiz-options {
+  display: flex;
+  flex-direction: column;
+  width: 80%;
+  max-width: 1200px;
+  margin: 0 auto;
+  background: rgba(0, 0, 0, 0.7);
+  border-top: 0.2vh solid #FFFFFF;
+  border-bottom: 0.2vh solid #FFFFFF;
+  backdrop-filter: blur(2px);
+  gap: 0;
+  padding: 0;
+}
+
+body.style-weakest .quiz-option {
+  display: flex;
+  align-items: center;
+  gap: 2vw;
+  padding: 2vh 3vw;
+  border: none;
+  border-bottom: 0.15vh solid rgba(255, 255, 255, 0.3);
+  border-radius: 0;
+  font-size: 1.6vw;
+  color: #FFFFFF;
+  background: transparent;
+  min-height: auto;
+  box-shadow: none;
+}
+
+body.style-weakest .quiz-option:last-child {
+  border-bottom: none;
+}
+
+body.style-weakest .quiz-option-letter {
+  background: transparent;
+  color: #FFD93D;
+  font-weight: 700;
+  font-size: 1.6vw;
+  width: 2vw;
+  height: 2vw;
+  min-width: 2vw;
+  border-radius: 0;
+  box-shadow: none;
+  text-shadow: 0 0 1vh rgba(255, 217, 61, 0.5);
+}
+
+body.style-weakest .quiz-option-text {
+  color: #FFFFFF;
+  font-size: 1.6vw;
+  font-weight: 500;
+  text-align: left;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   COMPTEUR "X/Y ont répondu" — 🔧 EN BAS CENTRÉ pour éviter le
+   chevauchement avec le timer en haut-droite (corrigé d'une
+   leçon apprise sur Burger Quiz)
+   ───────────────────────────────────────────────────────────────── */
+
+body.style-weakest .quiz-question-footer {
+  height: 0;
+  padding: 0;
+  margin: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+body.style-weakest .quiz-question-footer .quiz-answers-counter {
+  position: fixed;
+  bottom: 4vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 26vw;
+  max-width: 420px;
+  pointer-events: auto;
+  background: rgba(0, 0, 0, 0.85);
+  border: 0.2vh solid rgba(255, 255, 255, 0.4);
+  border-radius: 4px;
+  padding: 1vh 1.6vw;
+  z-index: 5;
+  flex-direction: column;
+  gap: 0.6vh;
+  box-shadow: 0 0.5vh 2vh rgba(0, 0, 0, 0.6);
+}
+
+body.style-weakest .quiz-question-footer .quiz-answers-counter-text {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1vw;
+  text-align: center;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+body.style-weakest .quiz-question-footer .quiz-answers-counter-bar {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  height: 0.6vh;
+  border-radius: 0;
+}
+
+body.style-weakest .quiz-question-footer .quiz-answers-counter-fill {
+  background: linear-gradient(90deg, #FFD93D 0%, #FFB300 100%);
+  border-radius: 0;
+  box-shadow: 0 0 1vh rgba(255, 217, 61, 0.6);
+}
+
+/* ═════════════════════════════════════════════════════════════════
+   ÉCRAN REVEAL
+   ───────────────────────────────────────────────────────────────────
+   Bonne réponse en vert avec halo, mauvaises atténuées.
+   ═════════════════════════════════════════════════════════════════ */
+
+body.style-weakest .quiz-reveal-tag {
+  background: rgba(0, 0, 0, 0.7);
+  color: #FFD93D;
+  border: 0.2vh solid #FFFFFF;
+  border-radius: 4px;
+  font-weight: 700;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  padding: 1vh 3vw;
+}
+
+body.style-weakest .quiz-reveal-options {
+  display: flex !important;
+  flex-direction: column;
+  width: 80%;
+  max-width: 1200px;
+  margin: 0 auto;
+  background: rgba(0, 0, 0, 0.7);
+  border-top: 0.2vh solid #FFFFFF;
+  border-bottom: 0.2vh solid #FFFFFF;
+  gap: 0;
+  padding: 0;
+}
+
+body.style-weakest .quiz-reveal-option {
+  background: transparent;
+  border: none;
+  border-bottom: 0.15vh solid rgba(255, 255, 255, 0.3);
+  border-radius: 0;
+  padding: 1.8vh 3vw;
+  color: #FFFFFF;
+  box-shadow: none;
+}
+
+body.style-weakest .quiz-reveal-option:last-child {
+  border-bottom: none;
+}
+
+body.style-weakest .quiz-reveal-option.is-correct {
+  background: linear-gradient(90deg, rgba(76, 175, 80, 0.4) 0%, rgba(76, 175, 80, 0.15) 100%);
+  border-left: 0.5vh solid #4CAF50;
+  box-shadow: inset 0 0 4vh rgba(76, 175, 80, 0.2);
+}
+
+body.style-weakest .quiz-reveal-option.is-correct .quiz-option-text {
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+body.style-weakest .quiz-reveal-option.is-correct .quiz-option-letter {
+  color: #66FF88;
+  text-shadow: 0 0 2vh rgba(102, 255, 136, 0.8);
+}
+
+body.style-weakest .quiz-reveal-option.is-wrong {
+  opacity: 0.45;
+}
+
+body.style-weakest .quiz-reveal-option-icon {
+  color: #66FF88;
+  font-size: 1.8vw;
+  font-weight: 700;
+}
+
+body.style-weakest .quiz-reveal-option-bar {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  height: 0.5vh;
+}
+
+body.style-weakest .quiz-reveal-option-fill {
+  background: linear-gradient(90deg, #FFD93D 0%, #FFB300 100%);
+}
+
+body.style-weakest .quiz-reveal-option-count {
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 600;
+  font-size: 1vw;
+}
+
+body.style-weakest .quiz-reveal-summary {
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+/* ═════════════════════════════════════════════════════════════════
+   ÉCRAN FINISH (vainqueur + podium + leaderboard)
+   ═════════════════════════════════════════════════════════════════ */
+
+body.style-weakest .quiz-finish-winner-tag {
+  background: rgba(0, 0, 0, 0.7);
+  color: #FFD93D;
+  border: 0.2vh solid #FFFFFF;
+  border-radius: 4px;
+  font-weight: 700;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  padding: 1vh 3vw;
+}
+
+body.style-weakest .quiz-finish-winner-name {
+  color: #FFFFFF;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-shadow:
+    0 0 3vh rgba(255, 217, 61, 0.5),
+    0 1vh 4vh rgba(0, 0, 0, 0.8);
+}
+
+body.style-weakest .quiz-finish-winner-score {
+  color: #FFD93D;
+  font-weight: 700;
+  text-shadow: 0 0 2vh rgba(255, 217, 61, 0.6);
+}
+
+body.style-weakest .quiz-finish-winner-avatar {
+  border: 0.4vh solid #FFFFFF;
+  border-radius: 50%;
+  box-shadow:
+    0 0 4vh rgba(255, 217, 61, 0.6),
+    0 0 8vh rgba(80, 140, 255, 0.4);
+}
+
+body.style-weakest .quiz-finish-podium-title {
+  color: #FFFFFF;
+  font-weight: 700;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  text-shadow: 0 0 3vh rgba(80, 140, 255, 0.5);
+}
+
+body.style-weakest .quiz-podium-spot {
+  background: rgba(0, 0, 0, 0.7);
+  border: 0.2vh solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  padding: 2vh 1.5vw;
+  color: #FFFFFF;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 0.5vh 2vh rgba(0, 0, 0, 0.6);
+}
+
+body.style-weakest .quiz-podium-spot.quiz-podium-first {
+  background: linear-gradient(180deg, rgba(255, 217, 61, 0.25) 0%, rgba(0, 0, 0, 0.7) 100%);
+  border-color: #FFD93D;
+  box-shadow: 0 0 4vh rgba(255, 217, 61, 0.5);
+}
+
+body.style-weakest .quiz-podium-rank {
+  color: #FFD93D;
+  font-weight: 700;
+  text-shadow: 0 0 2vh rgba(255, 217, 61, 0.6);
+}
+
+body.style-weakest .quiz-podium-avatar {
+  border: 0.3vh solid rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+body.style-weakest .quiz-podium-name {
+  color: #FFFFFF;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+body.style-weakest .quiz-podium-score {
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 600;
+}
+
+body.style-weakest .quiz-finish-leaderboard-title {
+  color: #FFD93D;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+}
+
+body.style-weakest .quiz-leaderboard-row {
+  background: rgba(0, 0, 0, 0.7);
+  border: 0.15vh solid rgba(255, 255, 255, 0.2);
+  border-radius: 0;
+  color: #FFFFFF;
+}
+
+body.style-weakest .quiz-leaderboard-row.top3 {
+  background: linear-gradient(90deg, rgba(255, 217, 61, 0.2) 0%, rgba(0, 0, 0, 0.7) 100%);
+  border-color: rgba(255, 217, 61, 0.5);
+}
+
+body.style-weakest .quiz-leaderboard-rank {
+  color: #FFD93D;
+  font-weight: 700;
+  font-size: 1.4em;
+}
+
+body.style-weakest .quiz-leaderboard-name {
+  color: #FFFFFF;
+  font-weight: 500;
+}
+
+body.style-weakest .quiz-leaderboard-score {
+  color: #FFD93D;
+  font-weight: 700;
+}
+
+body.style-weakest .quiz-finish-avatar-placeholder {
+  background: rgba(0, 0, 0, 0.85);
+  color: #FFD93D;
+  border: 0.2vh solid #FFFFFF;
+  font-weight: 700;
+}
