@@ -140,83 +140,6 @@ window.TVQuizApp = (function() {
     var chosen = validStyles.indexOf(style) >= 0 ? style : 'kahoot';
     body.classList.add('style-' + chosen);
     console.log('[TVQuizApp] Style appliqué : style-' + chosen);
-
-    // 🎨 Style Burger : injecte le cuisinier SVG animé (fixe en bas-droite),
-    // ou le retire si on bascule vers un autre style.
-    var existingChef = document.getElementById('burger-chef');
-    if (chosen === 'burger') {
-      if (!existingChef) {
-        var chefDiv = document.createElement('div');
-        chefDiv.id = 'burger-chef';
-        chefDiv.innerHTML = getBurgerChefSvg();
-        document.body.appendChild(chefDiv);
-      }
-    } else if (existingChef) {
-      existingChef.remove();
-    }
-  }
-
-  /**
-   * SVG d'un cuisinier cartoon animé en CSS.
-   * Toque blanche + visage rond + tablier orange + bras qui balancent.
-   * Les groupes (g.chef-arm-left, .chef-eyes, etc.) sont animés via
-   * keyframes CSS dans tv-quiz-burger.css.
-   */
-  function getBurgerChefSvg() {
-    return [
-      '<svg viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg">',
-        // Toque (chapeau de cuisinier)
-        '<g class="chef-hat-pompom">',
-          '<ellipse cx="100" cy="22" rx="42" ry="18" fill="#FFFFFF"/>',
-          '<ellipse cx="80" cy="14" rx="22" ry="14" fill="#FFFFFF"/>',
-          '<ellipse cx="115" cy="10" rx="24" ry="16" fill="#FFFFFF"/>',
-          '<ellipse cx="100" cy="32" rx="42" ry="10" fill="#F0F0F0"/>',
-        '</g>',
-        // Bandeau toque
-        '<rect x="58" y="48" width="84" height="14" rx="3" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.5"/>',
-        // Visage (rond beige)
-        '<ellipse cx="100" cy="92" rx="38" ry="36" fill="#FBD0A8" stroke="#1A1A1A" stroke-width="2"/>',
-        // Yeux (qui clignotent via .chef-eyes)
-        '<g class="chef-eyes">',
-          '<circle cx="86" cy="86" r="4" fill="#1A1A1A"/>',
-          '<circle cx="114" cy="86" r="4" fill="#1A1A1A"/>',
-          '<circle cx="87" cy="84" r="1.2" fill="#FFFFFF"/>',
-          '<circle cx="115" cy="84" r="1.2" fill="#FFFFFF"/>',
-        '</g>',
-        // Joues roses
-        '<circle cx="76" cy="100" r="4" fill="#F8A8A0" opacity="0.6"/>',
-        '<circle cx="124" cy="100" r="4" fill="#F8A8A0" opacity="0.6"/>',
-        // Sourire (anim .chef-mouth)
-        '<g class="chef-mouth">',
-          '<path d="M 84 105 Q 100 118 116 105" stroke="#1A1A1A" stroke-width="2.5" fill="none" stroke-linecap="round"/>',
-        '</g>',
-        // Moustache discrète
-        '<path d="M 86 102 Q 92 100 100 102 Q 108 100 114 102" stroke="#6B4423" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.7"/>',
-        // Cou
-        '<rect x="88" y="124" width="24" height="14" fill="#FBD0A8" stroke="#1A1A1A" stroke-width="2"/>',
-        // Foulard rouge
-        '<path d="M 80 138 Q 100 148 120 138 L 124 156 L 76 156 Z" fill="#C0392B" stroke="#1A1A1A" stroke-width="2"/>',
-        '<circle cx="100" cy="146" r="2.5" fill="#FFD93D" stroke="#1A1A1A" stroke-width="0.8"/>',
-        // Tablier (orange)
-        '<path d="M 60 156 L 50 270 L 150 270 L 140 156 Z" fill="#F39C12" stroke="#1A1A1A" stroke-width="2.5"/>',
-        '<rect x="82" y="200" width="36" height="22" rx="2" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.5" opacity="0.7"/>',
-        // Logo "BQ" sur le tablier
-        '<text x="100" y="216" font-family="Bangers, Comic Sans MS, cursive" font-size="14" fill="#C0392B" text-anchor="middle" font-weight="bold">BQ</text>',
-        // Bras gauche (animé)
-        '<g class="chef-arm-left">',
-          '<rect x="36" y="156" width="22" height="68" rx="11" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2"/>',
-          '<circle cx="47" cy="226" r="13" fill="#FBD0A8" stroke="#1A1A1A" stroke-width="2"/>',
-        '</g>',
-        // Bras droit (animé)
-        '<g class="chef-arm-right">',
-          '<rect x="142" y="156" width="22" height="68" rx="11" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2"/>',
-          '<circle cx="153" cy="226" r="13" fill="#FBD0A8" stroke="#1A1A1A" stroke-width="2"/>',
-          // Spatule dans la main droite
-          '<rect x="148" y="200" width="3" height="32" fill="#8B4513" stroke="#1A1A1A" stroke-width="0.8"/>',
-          '<rect x="142" y="194" width="15" height="10" rx="2" fill="#C0C0C0" stroke="#1A1A1A" stroke-width="1"/>',
-        '</g>',
-      '</svg>'
-    ].join('');
   }
 
   // ─────────────────────────────────────────────────────────────────
@@ -522,25 +445,12 @@ window.TVQuizApp = (function() {
       ? '<div class="quiz-question-category">' + escapeHtml(qData.title) + '</div>'
       : '';
 
-    // 🎨 Style Millionnaire : grand cercle timer central au-dessus du bandeau de question.
-    // Sur les autres styles, ce HTML reste vide → le countdown reste dans le header.
-    // Structure 2 frères : .ring (masquée par conic-gradient) + .value (au-dessus, NON masquée).
-    var millionaireTimerHtml = '';
-    if (state.series && state.series.quiz_style === 'millionaire') {
-      millionaireTimerHtml =
-        '<div id="millionaire-timer" style="--millionaire-progress: 1;">' +
-          '<div class="millionaire-timer-ring"></div>' +
-          '<span class="millionaire-timer-value" id="millionaire-timer-value">--</span>' +
-        '</div>';
-    }
-
     var html =
       '<div class="quiz-question-header">' +
         '<div class="quiz-question-progress">Question ' + pos + ' / ' + totalQuestions + '</div>' +
         '<div class="quiz-question-countdown" id="question-countdown">--s</div>' +
       '</div>' +
       '<div class="quiz-question-body">' +
-        millionaireTimerHtml +
         titleHtml +
         '<div class="quiz-question-text">' + escapeHtml(qData.question_text) + '</div>' +
         photoHtml +
@@ -586,28 +496,6 @@ window.TVQuizApp = (function() {
         el.textContent = remaining + 's';
         if (remaining <= 5) el.classList.add('urgent');
         else el.classList.remove('urgent');
-      }
-
-      // 🎨 Style Millionnaire : alimente le cercle timer central
-      // - --millionaire-progress va de 0 (anneau plein) à 1 (anneau vidé)
-      // - le label central affiche le compteur en secondes
-      var mTimer = document.getElementById('millionaire-timer');
-      if (mTimer) {
-        var progress = duration > 0
-          ? Math.min(1, Math.max(0, elapsed / duration))
-          : 0;
-        mTimer.style.setProperty('--millionaire-progress', progress.toFixed(3));
-        var mVal = document.getElementById('millionaire-timer-value');
-        if (mVal) mVal.textContent = remaining;
-        if (remaining <= 5) mTimer.classList.add('urgent');
-        else mTimer.classList.remove('urgent');
-      }
-
-      // 🎨 Style Burger : le cuisinier s'agite quand le timer devient urgent
-      var bChef = document.getElementById('burger-chef');
-      if (bChef) {
-        if (remaining <= 5) bChef.classList.add('urgent');
-        else bChef.classList.remove('urgent');
       }
 
       if (remaining <= 0) {
@@ -662,12 +550,20 @@ window.TVQuizApp = (function() {
     var totalQuestions = state.questions.length;
     var pos = idx + 1;
 
+    // 🔧 FIX BUG REVEAL : la RPC get_quiz_question_results retourne les options
+    // dans data.question.options (et le texte dans data.question.question_text),
+    // pas directement dans data. Sans ce fix, toutes les barres restent à 0.
+    var questionData = (data && data.question) ? data.question : data;
+    var options = questionData.options || data.options || [];
+    var questionText = questionData.question_text || data.question_text || '';
+    var questionTitle = questionData.title || data.title || '';
+
     // Compteur total de réponses pour cette question
-    var totalAnswers = (data.options || []).reduce(function(sum, opt) {
+    var totalAnswers = options.reduce(function(sum, opt) {
       return sum + (opt.vote_count || 0);
     }, 0);
 
-    var optionsHtml = (data.options || []).map(function(opt, i) {
+    var optionsHtml = options.map(function(opt, i) {
       var letter = String.fromCharCode(65 + i);
       var voteCount = opt.vote_count || 0;
       var percent = totalAnswers > 0 ? Math.round((voteCount / totalAnswers) * 100) : 0;
@@ -691,8 +587,8 @@ window.TVQuizApp = (function() {
       '</div>';
     }).join('');
 
-    var titleHtml = data.title
-      ? '<div class="quiz-question-category">' + escapeHtml(data.title) + '</div>'
+    var titleHtml = questionTitle
+      ? '<div class="quiz-question-category">' + escapeHtml(questionTitle) + '</div>'
       : '';
 
     var html =
@@ -702,7 +598,7 @@ window.TVQuizApp = (function() {
       '</div>' +
       '<div class="quiz-question-body">' +
         titleHtml +
-        '<div class="quiz-question-text">' + escapeHtml(data.question_text) + '</div>' +
+        '<div class="quiz-question-text">' + escapeHtml(questionText) + '</div>' +
         '<div class="quiz-options quiz-reveal-options">' + optionsHtml + '</div>' +
       '</div>' +
       '<div class="quiz-question-footer">' +
