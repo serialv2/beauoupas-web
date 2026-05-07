@@ -158,17 +158,26 @@ body.style-millionaire .quiz-question-header .quiz-question-countdown {
    ───────────────────────────────────────────────────────────────── */
 
 #millionaire-timer {
+  position: relative;
   width: 14vw;
   height: 14vw;
   max-width: 200px;
   max-height: 200px;
-  border-radius: 50%;
-  position: relative;
+  margin: 0 auto;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto;
-  flex-shrink: 0;
+}
+
+/* 🔧 FIX bug compteur caché : l'anneau coloré masqué est dans un div FRÈRE
+   du label numérique, plus dans le parent. Comme ça le mask CSS ne s'applique
+   qu'à l'anneau, et le label reste toujours visible quel que soit
+   --millionaire-progress. */
+#millionaire-timer .millionaire-timer-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
   /* Anneau coloré : rouge → orange → jaune → blanc → gris (selon temps écoulé)
      conic-gradient fixe, et on superpose un masque qui révèle
      uniquement la portion correspondant à --millionaire-progress.
@@ -210,9 +219,11 @@ body.style-millionaire .quiz-question-header .quiz-question-countdown {
       transparent 100%
     );
   mask-composite: exclude;
+  z-index: 1;
 }
 
-/* Cercle intérieur sombre + compteur au centre */
+/* Cercle intérieur sombre, en pseudo-élément du wrapper (PAS du ring),
+   pour ne pas être masqué non plus. Au-dessus de l'anneau (z-index: 2). */
 #millionaire-timer::before {
   content: '';
   position: absolute;
@@ -222,12 +233,15 @@ body.style-millionaire .quiz-question-header .quiz-question-countdown {
     radial-gradient(circle at 50% 50%, #0A1648 0%, #050C28 100%);
   border: 0.3vh solid rgba(255, 255, 255, 0.5);
   box-shadow: inset 0 0 3vh rgba(0, 0, 0, 0.6);
-  z-index: 0;
+  z-index: 2;
+  pointer-events: none;
 }
 
+/* Le label numérique passe au-dessus de TOUT le reste (z-index: 3),
+   jamais masqué. */
 #millionaire-timer .millionaire-timer-value {
   position: relative;
-  z-index: 1;
+  z-index: 3;
   font-size: 4vw;
   font-weight: 800;
   color: #FFFFFF;
@@ -292,6 +306,93 @@ body.style-millionaire .quiz-question-text {
 body.style-millionaire .quiz-question-photo img {
   border: 0.3vh solid rgba(255, 255, 255, 0.7);
   box-shadow: 0 1vh 4vh rgba(0, 0, 0, 0.6);
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   🎨 LAYOUT ADAPTATIF QUAND IL Y A UNE PHOTO
+   Sans photo  → layout vertical empilé (par défaut)
+   Avec photo  → photo à gauche + options à droite (cohabitent sur
+                 la même rangée). Évite de scroller quand 4 options.
+   On utilise :has() pour détecter la photo dans le body.
+   ───────────────────────────────────────────────────────────────── */
+
+body.style-millionaire .quiz-question-body:has(.quiz-question-photo) {
+  /* On remet le body en grille 2 colonnes pour l'écran question avec photo.
+     Ligne 1 : timer (centré, full width)
+     Ligne 2 : énoncé (centré, full width)
+     Ligne 3 : photo à gauche | options à droite */
+  display: grid;
+  grid-template-columns: 38% 1fr;
+  grid-template-rows: auto auto 1fr;
+  column-gap: 3vw;
+  row-gap: 2.5vh;
+  align-items: stretch;
+  justify-items: center;
+}
+
+/* Timer (s'il est rendu) prend la pleine largeur, ligne 1 */
+body.style-millionaire .quiz-question-body:has(.quiz-question-photo) #millionaire-timer {
+  grid-column: 1 / -1;
+  grid-row: 1;
+}
+
+/* Catégorie (si présente) : ligne 2 ou 1 selon la présence du timer */
+body.style-millionaire .quiz-question-body:has(.quiz-question-photo) .quiz-question-category {
+  grid-column: 1 / -1;
+}
+
+/* Énoncé : pleine largeur sur sa propre ligne */
+body.style-millionaire .quiz-question-body:has(.quiz-question-photo) .quiz-question-text {
+  grid-column: 1 / -1;
+}
+
+/* Photo : à gauche, dimensionnée pour la rangée disponible */
+body.style-millionaire .quiz-question-body:has(.quiz-question-photo) .quiz-question-photo {
+  grid-column: 1;
+  grid-row: -2 / -1;
+  width: 100%;
+  max-height: 38vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+body.style-millionaire .quiz-question-body:has(.quiz-question-photo) .quiz-question-photo img {
+  max-height: 38vh;
+  max-width: 100%;
+  width: auto;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+/* Options : à droite, en colonne (vertical) pour s'adapter à la
+   hauteur disponible. 2, 3 ou 4 options s'empilent proprement. */
+body.style-millionaire .quiz-question-body:has(.quiz-question-photo) .quiz-options {
+  grid-column: 2;
+  grid-row: -2 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.4vh;
+  width: 100%;
+  max-width: none;
+  align-self: stretch;
+  justify-content: center;
+}
+
+/* En layout adaptatif, on réduit légèrement la taille des options
+   pour qu'elles tiennent toutes à côté de la photo */
+body.style-millionaire .quiz-question-body:has(.quiz-question-photo) .quiz-option {
+  min-height: 7vh;
+  padding: 1.6vh 2vw;
+  font-size: 1.5vw;
+}
+
+body.style-millionaire .quiz-question-body:has(.quiz-question-photo) .quiz-option-text {
+  font-size: 1.4vw;
+}
+
+body.style-millionaire .quiz-question-body:has(.quiz-question-photo) .quiz-option-letter {
+  font-size: 1.8vw;
 }
 
 /* ─────────────────────────────────────────────────────────────────
