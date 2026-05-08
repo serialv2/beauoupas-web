@@ -461,7 +461,7 @@ function renderSeries() {
     var icon = isQuiz ? '🧠' : '🗳️';
 
     return (
-      '<a href="javascript:void(0)" onclick="alert(\'Ouverture des séries dans le Lot 2 du web\')" class="series-card">' +
+      '<a href="series-detail.html?id=' + encodeURIComponent(s.id) + '" class="series-card">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">' +
           '<div style="flex:1;min-width:0;">' +
             '<div class="series-card-name">' + icon + ' ' + escapeHtml(s.title || 'Sans titre') + '</div>' +
@@ -814,7 +814,9 @@ async function deleteGroup() {
 }
 
 function goCreateSeries() {
-  alert("La création de séries arrivera dans le Lot 2 du web.\n\nEn attendant, utilise l'app mobile pour créer une série dans ce groupe.");
+  var url = 'create-series-type.html?group_id=' + encodeURIComponent(groupId);
+  if (groupData && groupData.name) url += '&group_name=' + encodeURIComponent(groupData.name);
+  window.location.href = url;
 }
 
 // ─── Utils ────────────────────────────────────────────────

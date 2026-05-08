@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeauOuPas — Type de série</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.choice-card {
+  display: block;
+  padding: 28px 22px;
+  border-radius: 22px;
+  cursor: pointer;
+  text-decoration: none;
+  margin-bottom: 14px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.15s;
+  border: 2px solid transparent;
+}
+.choice-card:hover { transform: translateY(-2px); }
+.choice-card.vote { background: linear-gradient(135deg, #E91E8C 0%, #C4186F 100%); color: white; }
+.choice-card.quiz { background: linear-gradient(135deg, #6B46C1 0%, #553898 100%); color: white; }
+
+.choice-emoji {
+  position: absolute;
+  right: -10px;
+  bottom: -20px;
+  font-size: 110px;
+  opacity: 0.2;
+  pointer-events: none;
+}
+.choice-title { font-size: 22px; font-weight: 900; margin-bottom: 6px; }
+.choice-desc { font-size: 13px; opacity: 0.9; line-height: 1.5; }
+.choice-arrow { font-size: 16px; font-weight: 900; margin-top: 14px; }
+
+/* Quiz styles selector */
+.quiz-style-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 14px;
+}
+.quiz-style-card {
+  padding: 14px;
+  background: rgba(255,255,255,0.08);
+  border: 2px solid rgba(255,255,255,0.15);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+.quiz-style-card:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.4); }
+.quiz-style-card.selected {
+  background: rgba(255,255,255,0.2);
+  border-color: white;
+}
+.quiz-style-emoji { font-size: 28px; margin-bottom: 4px; }
+.quiz-style-name { font-size: 13px; font-weight: 800; }
+.quiz-style-desc { font-size: 10px; opacity: 0.8; margin-top: 2px; }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">BeauOuPas</div>
+  <nav id="sidebar-nav"></nav>
+  <div class="sidebar-footer">
+    <a href="create-group.html" class="btn btn-primary btn-full" style="margin-bottom:14px;text-decoration:none;">➕ Nouveau groupe</a>
+    <div id="sidebar-user"></div>
+  </div>
+</aside>
+<nav class="bottom-nav" id="bottom-nav"></nav>
+
+<main class="main-content">
+  <div style="max-width:600px;margin:0 auto;">
+
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:24px;">
+      <a href="javascript:history.back()" style="color:#888;text-decoration:none;font-size:24px;">←</a>
+      <h1 style="font-size:24px;font-weight:900;">✨ Créer une série</h1>
+    </div>
+
+    <!-- Contexte (group ou standalone) -->
+    <div id="context-banner" style="display:none;margin-bottom:18px;padding:12px 16px;background:rgba(233,30,140,0.08);border:1px solid rgba(233,30,140,0.2);border-radius:12px;font-size:13px;">
+      <span style="color:#E91E8C;font-weight:800;">Dans :</span>
+      <span id="context-name" style="color:white;font-weight:700;"></span>
+    </div>
+
+    <p style="color:#666;margin-bottom:24px;font-size:14px;">Choisis le type de série à créer</p>
+
+    <!-- VOTE -->
+    <a href="javascript:void(0)" class="choice-card vote" id="card-vote" onclick="selectVote()">
+      <div class="choice-emoji">🗳️</div>
+      <div class="choice-title">🗳️ Série de votes</div>
+      <div class="choice-desc">Photos, duels, sondages — les membres ajoutent leurs projets et tout le monde vote.</div>
+      <div class="choice-arrow">Choisir →</div>
+    </a>
+
+    <!-- QUIZ -->
+    <div class="choice-card quiz" id="card-quiz" onclick="toggleQuizExpand()" style="cursor:pointer;">
+      <div class="choice-emoji">🧠</div>
+      <div class="choice-title">🧠 Quiz</div>
+      <div class="choice-desc">Burger, Millionnaire, Kahoot, Maillon faible — tu prépares les questions, les joueurs répondent.</div>
+
+      <!-- Expanded quiz styles -->
+      <div id="quiz-styles" style="display:none;margin-top:18px;">
+        <div style="font-size:13px;font-weight:800;margin-bottom:8px;">Choisis un style :</div>
+        <div class="quiz-style-row">
+          <div class="quiz-style-card" data-style="kahoot" onclick="selectQuizStyle(event,'kahoot')">
+            <div class="quiz-style-emoji">🎨</div>
+            <div class="quiz-style-name">Kahoot</div>
+            <div class="quiz-style-desc">Coloré, rapide</div>
+          </div>
+          <div class="quiz-style-card" data-style="millionaire" onclick="selectQuizStyle(event,'millionaire')">
+            <div class="quiz-style-emoji">💰</div>
+            <div class="quiz-style-name">Millionnaire</div>
+            <div class="quiz-style-desc">Suspense, paliers</div>
+          </div>
+          <div class="quiz-style-card" data-style="burger" onclick="selectQuizStyle(event,'burger')">
+            <div class="quiz-style-emoji">🍔</div>
+            <div class="quiz-style-name">Burger</div>
+            <div class="quiz-style-desc">Fun, photos</div>
+          </div>
+          <div class="quiz-style-card" data-style="weakest" onclick="selectQuizStyle(event,'weakest')">
+            <div class="quiz-style-emoji">⛓️</div>
+            <div class="quiz-style-name">Maillon faible</div>
+            <div class="quiz-style-desc">Élimination, tendu</div>
+          </div>
+        </div>
+
+        <button type="button" class="btn btn-full" id="btn-validate-quiz"
+                style="margin-top:14px;background:white;color:#6B46C1;font-weight:900;display:none;"
+                onclick="goCreateQuiz()">
+          Continuer →
+        </button>
+      </div>
+
+      <div id="quiz-arrow" class="choice-arrow">Voir les styles ↓</div>
+    </div>
+
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script src="navbar.js"></script>
+<script>
+// ─── Récupération du contexte ────────────────────────────
+// Si on arrive depuis un groupe, l'URL contient ?group_id=...&group_name=...
+// Sinon, série standalone (rattachée à l'user, pas à un groupe).
+var params = new URLSearchParams(window.location.search);
+var groupId = params.get('group_id');
+var groupName = params.get('group_name');
+var selectedQuizStyle = null;
+
+async function init() {
+  var user = await requireAuth();
+  if (!user) return;
+
+  if (typeof renderNav === "function") renderNav("groups.html");
+  if (typeof loadSidebarProfile === "function") loadSidebarProfile();
+
+  if (groupId && groupName) {
+    document.getElementById("context-banner").style.display = "block";
+    document.getElementById("context-name").textContent = "Groupe \"" + groupName + "\"";
+  } else {
+    document.getElementById("context-banner").style.display = "block";
+    document.getElementById("context-name").textContent = "Mes séries (sans groupe)";
+  }
+}
+
+function selectVote() {
+  // On va vers le formulaire de création de série de vote
+  var url = 'create-series.html';
+  var qs = [];
+  if (groupId) qs.push('group_id=' + encodeURIComponent(groupId));
+  if (groupName) qs.push('group_name=' + encodeURIComponent(groupName));
+  if (qs.length) url += '?' + qs.join('&');
+  window.location.href = url;
+}
+
+function toggleQuizExpand() {
+  var styles = document.getElementById("quiz-styles");
+  var arrow = document.getElementById("quiz-arrow");
+  if (styles.style.display === 'none') {
+    styles.style.display = 'block';
+    arrow.style.display = 'none';
+  } else {
+    styles.style.display = 'none';
+    arrow.style.display = 'block';
+    selectedQuizStyle = null;
+    document.querySelectorAll('.quiz-style-card').forEach(function(c) {
+      c.classList.remove('selected');
+    });
+    document.getElementById("btn-validate-quiz").style.display = 'none';
+  }
+}
+
+function selectQuizStyle(event, style) {
+  if (event) event.stopPropagation();
+  selectedQuizStyle = style;
+  document.querySelectorAll('.quiz-style-card').forEach(function(c) {
+    c.classList.toggle('selected', c.dataset.style === style);
+  });
+  document.getElementById("btn-validate-quiz").style.display = 'inline-flex';
+}
+
+function goCreateQuiz() {
+  if (!selectedQuizStyle) return;
+  var url = 'create-quiz.html?style=' + selectedQuizStyle;
+  if (groupId) url += '&group_id=' + encodeURIComponent(groupId);
+  if (groupName) url += '&group_name=' + encodeURIComponent(groupName);
+  window.location.href = url;
+}
+
+init();
+</script>
+</body>
+</html>

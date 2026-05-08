@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeauOuPas — Rejoindre une série</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.code-input {
+  width: 100%;
+  background: #111;
+  border: 2px solid #292929;
+  border-radius: 14px;
+  padding: 22px 16px;
+  color: white;
+  font-size: 32px;
+  text-align: center;
+  font-weight: 900;
+  letter-spacing: 8px;
+  outline: none;
+  text-transform: uppercase;
+  font-family: monospace;
+  transition: all 0.2s;
+}
+.code-input:focus { border-color: #E91E8C; box-shadow: 0 0 0 4px rgba(233,30,140,0.15); }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">BeauOuPas</div>
+  <nav id="sidebar-nav"></nav>
+  <div class="sidebar-footer">
+    <a href="create-group.html" class="btn btn-primary btn-full" style="margin-bottom:14px;text-decoration:none;">➕ Nouveau groupe</a>
+    <div id="sidebar-user"></div>
+  </div>
+</aside>
+<nav class="bottom-nav" id="bottom-nav"></nav>
+
+<main class="main-content">
+  <div style="max-width:480px;margin:40px auto 0;">
+
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="font-size:64px;margin-bottom:12px;">🔑</div>
+      <h1 style="font-size:24px;font-weight:900;">Rejoindre une série</h1>
+      <p style="color:#666;margin-top:8px;font-size:14px;">Saisis le code à 6 lettres reçu d'un ami</p>
+    </div>
+
+    <div class="alert alert-error" id="error-msg"></div>
+    <div class="alert alert-success" id="success-msg"></div>
+
+    <input type="text" class="code-input" id="code-input"
+           placeholder="ABCDEF" maxlength="6"
+           autocomplete="off" autocapitalize="characters"
+           oninput="onCodeChange()" onkeydown="if(event.key==='Enter') joinByCode()">
+
+    <button class="btn btn-primary btn-full" id="btn-join"
+            style="margin-top:24px;" disabled
+            onclick="joinByCode()">
+      Rejoindre
+    </button>
+
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script src="navbar.js"></script>
+<script>
+var currentUser = null;
+
+async function init() {
+  currentUser = await requireAuth();
+  if (!currentUser) return;
+
+  if (typeof renderNav === "function") renderNav("groups.html");
+  if (typeof loadSidebarProfile === "function") loadSidebarProfile();
+
+  document.getElementById("code-input").focus();
+}
+
+function onCodeChange() {
+  var input = document.getElementById("code-input");
+  // Forcer en majuscules + ne garder que les lettres
+  var clean = input.value.toUpperCase().replace(/[^A-Z]/g, '');
+  if (clean !== input.value) input.value = clean;
+  document.getElementById("btn-join").disabled = clean.length !== 6;
+}
+
+async function joinByCode() {
+  var code = document.getElementById("code-input").value.trim().toUpperCase();
+  if (code.length !== 6) return;
+
+  document.getElementById("error-msg").style.display = 'none';
+  document.getElementById("success-msg").style.display = 'none';
+  setLoading("btn-join", true, "Rejoindre");
+
+  try {
+    // 1. Tenter la RPC join_series_by_code (qui fait l'insert dans
+    //    series_participants côté serveur si elle existe).
+    //    Si la RPC n'existe pas ou échoue, on continue avec un INSERT manuel.
+    var rpcOk = false;
+    try {
+      var rpcRes = await db.rpc('join_series_by_code', { p_code: code });
+      if (!rpcRes.error) rpcOk = true;
+      else console.warn("RPC join_series_by_code:", rpcRes.error);
+    } catch (e) {
+      console.warn("RPC join_series_by_code threw:", e);
+    }
+
+    // 2. Récupérer la série par son code
+    var { data: series, error: sErr } = await db
+      .from('series')
+      .select('*')
+      .eq('access_code', code)
+      .maybeSingle();
+
+    if (sErr || !series) {
+      console.error("series by code:", sErr);
+      throw new Error("Code invalide ou série introuvable");
+    }
+
+    if (series.status === 'finished') {
+      throw new Error("Cette série est déjà terminée");
+    }
+
+    // 3. Si la RPC n'a pas marché, on insert manuellement le participant
+    if (!rpcOk) {
+      try {
+        await db.from('series_participants').insert({
+          series_id: series.id,
+          user_id: currentUser.id
+        });
+      } catch (e) {
+        // Probablement déjà participant (UNIQUE constraint). Pas grave.
+        console.log("series_participants insert (probably already exists):", e);
+      }
+    }
+
+    showSuccess("success-msg", "✅ Tu as rejoint \"" + series.title + "\" !");
+    setTimeout(function() {
+      window.location.href = 'series-detail.html?id=' + encodeURIComponent(series.id);
+    }, 800);
+
+  } catch (e) {
+    console.error("joinByCode:", e);
+    showError("error-msg", "❌ " + (e.message || "Erreur de connexion"));
+    setLoading("btn-join", false, "Rejoindre");
+  }
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeauOuPas — Nouvelle série</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.option-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.option-btn {
+  padding: 12px 8px;
+  border-radius: 12px;
+  border: 2px solid #292929;
+  background: #111;
+  color: #888;
+  font-weight: 800;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: Arial;
+}
+.option-btn:hover { border-color: rgba(233,30,140,0.4); }
+.option-btn.selected {
+  border-color: #E91E8C;
+  background: rgba(233,30,140,0.1);
+  color: #E91E8C;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  border-bottom: 1px solid #1A1A1A;
+}
+.toggle-row:last-child { border-bottom: none; }
+.toggle-info {
+  flex: 1;
+  padding-right: 12px;
+}
+.toggle-title { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+.toggle-desc { font-size: 12px; color: #888; line-height: 1.4; }
+
+.toggle {
+  width: 48px;
+  height: 28px;
+  background: #292929;
+  border-radius: 999px;
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+.toggle.on { background: #E91E8C; }
+.toggle::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+.toggle.on::after { transform: translateX(20px); }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">BeauOuPas</div>
+  <nav id="sidebar-nav"></nav>
+  <div class="sidebar-footer">
+    <a href="create-group.html" class="btn btn-primary btn-full" style="margin-bottom:14px;text-decoration:none;">➕ Nouveau groupe</a>
+    <div id="sidebar-user"></div>
+  </div>
+</aside>
+<nav class="bottom-nav" id="bottom-nav"></nav>
+
+<main class="main-content">
+  <div style="max-width:600px;margin:0 auto;">
+
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:24px;">
+      <a href="javascript:history.back()" style="color:#888;text-decoration:none;font-size:24px;">←</a>
+      <h1 style="font-size:22px;font-weight:900;">🗳️ Nouvelle série</h1>
+    </div>
+
+    <div id="context-banner" style="display:none;margin-bottom:18px;padding:12px 16px;background:rgba(233,30,140,0.08);border:1px solid rgba(233,30,140,0.2);border-radius:12px;font-size:13px;">
+      <span style="color:#E91E8C;font-weight:800;">Dans :</span>
+      <span id="context-name" style="color:white;font-weight:700;"></span>
+    </div>
+
+    <div class="alert alert-error" id="error-msg"></div>
+    <div class="alert alert-success" id="success-msg"></div>
+
+    <!-- Bloc 1 : titre + description -->
+    <div class="card" style="padding:20px;margin-bottom:18px;">
+      <label class="input-label">Titre *</label>
+      <input type="text" class="input" id="series-title" placeholder="Ex. Soirée burger" maxlength="80" autofocus>
+
+      <div style="height:14px;"></div>
+
+      <label class="input-label">Description (optionnelle)</label>
+      <input type="text" class="input" id="series-description" placeholder="De quoi parle ta série ?" maxlength="200">
+    </div>
+
+    <!-- Bloc 2 : nombre de projets -->
+    <div class="card" style="padding:20px;margin-bottom:18px;">
+      <label class="input-label" style="margin-bottom:10px;">📸 Nombre maximum de projets</label>
+      <div class="option-row" id="max-projects-row">
+        <button type="button" class="option-btn" data-val="5" onclick="selectMaxProjects(5)">5</button>
+        <button type="button" class="option-btn selected" data-val="10" onclick="selectMaxProjects(10)">10</button>
+        <button type="button" class="option-btn" data-val="15" onclick="selectMaxProjects(15)">15</button>
+        <button type="button" class="option-btn" data-val="20" onclick="selectMaxProjects(20)">20</button>
+      </div>
+      <div style="font-size:11px;color:#666;margin-top:4px;">Au-delà, les ajouts sont refusés.</div>
+    </div>
+
+    <!-- Bloc 3 : projets par membre -->
+    <div class="card" style="padding:20px;margin-bottom:18px;">
+      <label class="input-label" style="margin-bottom:10px;">👤 Projets par membre</label>
+      <div class="option-row" id="max-per-member-row">
+        <button type="button" class="option-btn" data-val="1" onclick="selectMaxPerMember(1)">1</button>
+        <button type="button" class="option-btn selected" data-val="2" onclick="selectMaxPerMember(2)">2</button>
+        <button type="button" class="option-btn" data-val="3" onclick="selectMaxPerMember(3)">3</button>
+        <button type="button" class="option-btn" data-val="999" onclick="selectMaxPerMember(999)">∞</button>
+      </div>
+      <div style="font-size:11px;color:#666;margin-top:4px;">Combien chaque membre peut soumettre.</div>
+    </div>
+
+    <!-- Bloc 4 : options avancées -->
+    <div class="card" style="padding:6px 20px;margin-bottom:18px;">
+      <div class="toggle-row" onclick="toggleProjectsHidden()">
+        <div class="toggle-info">
+          <div class="toggle-title">🎁 Effet surprise</div>
+          <div class="toggle-desc">Cacher les projets aux membres jusqu'au démarrage. Sinon ils sont visibles dans la salle d'attente.</div>
+        </div>
+        <div id="toggle-hidden" class="toggle on"></div>
+      </div>
+      <div class="toggle-row" onclick="toggleShowStats()">
+        <div class="toggle-info">
+          <div class="toggle-title">📊 Statistiques détaillées</div>
+          <div class="toggle-desc">La TV affiche les stats par genre/âge entre chaque projet.</div>
+        </div>
+        <div id="toggle-stats" class="toggle on"></div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-full" id="btn-create" onclick="createSeries()">
+      Créer la série
+    </button>
+
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script src="navbar.js"></script>
+<script>
+var params = new URLSearchParams(window.location.search);
+var groupId = params.get('group_id');
+var groupName = params.get('group_name');
+
+var state = {
+  maxProjects: 10,
+  maxPerMember: 2,
+  projectsHidden: true,
+  showStats: true
+};
+
+var currentUser = null;
+
+async function init() {
+  currentUser = await requireAuth();
+  if (!currentUser) return;
+
+  if (typeof renderNav === "function") renderNav("groups.html");
+  if (typeof loadSidebarProfile === "function") loadSidebarProfile();
+
+  if (groupId && groupName) {
+    document.getElementById("context-banner").style.display = "block";
+    document.getElementById("context-name").textContent = "Groupe \"" + groupName + "\"";
+  } else {
+    document.getElementById("context-banner").style.display = "block";
+    document.getElementById("context-name").textContent = "Mes séries (sans groupe)";
+  }
+}
+
+function selectMaxProjects(val) {
+  state.maxProjects = val;
+  document.querySelectorAll('#max-projects-row .option-btn').forEach(function(b) {
+    b.classList.toggle('selected', parseInt(b.dataset.val, 10) === val);
+  });
+}
+
+function selectMaxPerMember(val) {
+  state.maxPerMember = val;
+  document.querySelectorAll('#max-per-member-row .option-btn').forEach(function(b) {
+    b.classList.toggle('selected', parseInt(b.dataset.val, 10) === val);
+  });
+}
+
+function toggleProjectsHidden() {
+  state.projectsHidden = !state.projectsHidden;
+  document.getElementById("toggle-hidden").classList.toggle('on', state.projectsHidden);
+}
+
+function toggleShowStats() {
+  state.showStats = !state.showStats;
+  document.getElementById("toggle-stats").classList.toggle('on', state.showStats);
+}
+
+// ─── Génération du code à 6 lettres ────────────────────────
+// Reprend la même logique que SeriesService.GenerateAccessCode du mobile.
+// Postgres a probablement un trigger qui en met un par défaut, mais on en
+// génère un côté client pour être sûr (et compatible avec le mobile).
+function generateAccessCode() {
+  var letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  var code = '';
+  for (var i = 0; i < 6; i++) {
+    code += letters[Math.floor(Math.random() * letters.length)];
+  }
+  return code;
+}
+
+async function createSeries() {
+  var title = document.getElementById("series-title").value.trim();
+  var description = document.getElementById("series-description").value.trim();
+
+  document.getElementById("error-msg").style.display = 'none';
+  document.getElementById("success-msg").style.display = 'none';
+
+  if (!title) {
+    showError("error-msg", "⚠️ Le titre est obligatoire");
+    return;
+  }
+
+  setLoading("btn-create", true, "Créer la série");
+
+  try {
+    var accessCode = generateAccessCode();
+
+    var seriesPayload = {
+      group_id: groupId || null,
+      creator_id: currentUser.id,
+      title: title,
+      description: description || null,
+      max_projects: state.maxProjects,
+      max_per_member: state.maxPerMember,
+      status: 'preparing',
+      is_standalone: !groupId,
+      access_code: accessCode,
+      projects_hidden: state.projectsHidden,
+      show_stats: state.showStats,
+      is_quiz: false
+    };
+
+    var { data, error } = await db.from('series').insert(seriesPayload).select();
+
+    if (error || !data || !data.length) {
+      console.error("INSERT series:", error);
+      throw new Error(error ? error.message : "Erreur de création");
+    }
+
+    var newSeries = data[0];
+
+    // Le créateur est automatiquement participant (souvent un trigger côté
+    // Postgres le fait, mais on l'insère manuellement au cas où). Si la ligne
+    // existe déjà via le trigger, on attrape silencieusement l'erreur.
+    try {
+      await db.from('series_participants').insert({
+        series_id: newSeries.id,
+        user_id: currentUser.id
+      });
+    } catch (e) { /* déjà inséré par trigger, OK */ }
+
+    showSuccess("success-msg", "✅ Série \"" + title + "\" créée avec le code " + accessCode + " !");
+
+    setTimeout(function() {
+      window.location.href = 'series-detail.html?id=' + encodeURIComponent(newSeries.id);
+    }, 1200);
+
+  } catch (e) {
+    console.error("createSeries:", e);
+    showError("error-msg", "❌ " + (e.message || "Erreur lors de la création"));
+    setLoading("btn-create", false, "Créer la série");
+  }
+}
+
+init();
+</script>
+</body>
+</html>
