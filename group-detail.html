@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeauOuPas — Détail groupe</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.tab-row {
+  display: flex;
+  gap: 6px;
+  background: #111;
+  padding: 4px;
+  border-radius: 12px;
+  margin-bottom: 18px;
+}
+.tab-btn {
+  flex: 1;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  color: #888;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.15s;
+  font-family: Arial;
+}
+.tab-btn.active { background: #E91E8C; color: white; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+.member-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #111;
+  border: 1px solid #222;
+  border-radius: 12px;
+  margin-bottom: 8px;
+}
+.member-name { font-weight: 700; }
+.member-role {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+.role-admin { background: rgba(233,30,140,0.15); color: #ff4fb0; }
+.role-member { background: rgba(255,255,255,0.05); color: #888; }
+
+.series-card {
+  display: block;
+  padding: 14px;
+  background: #111;
+  border: 1px solid #222;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  text-decoration: none;
+  color: white;
+  transition: border-color 0.15s;
+}
+.series-card:hover { border-color: rgba(233,30,140,0.4); }
+.series-card-name { font-weight: 800; margin-bottom: 4px; }
+.series-card-meta { font-size: 12px; color: #888; display: flex; gap: 10px; }
+
+/* ─── Chat ─── */
+.chat-box {
+  background: #0D0D0D;
+  border: 1px solid #1A1A1A;
+  border-radius: 14px;
+  height: 420px;
+  display: flex;
+  flex-direction: column;
+}
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.chat-input-row {
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  border-top: 1px solid #1A1A1A;
+}
+.chat-msg {
+  max-width: 75%;
+  padding: 8px 12px;
+  border-radius: 14px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+}
+.chat-msg.mine {
+  align-self: flex-end;
+  background: #E91E8C;
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+.chat-msg.theirs {
+  align-self: flex-start;
+  background: #222;
+  color: white;
+  border-bottom-left-radius: 4px;
+}
+.chat-msg .author {
+  font-size: 11px;
+  font-weight: 700;
+  margin-bottom: 2px;
+  opacity: 0.8;
+}
+.chat-msg .time {
+  font-size: 10px;
+  opacity: 0.6;
+  margin-top: 2px;
+}
+.chat-empty {
+  color: #555;
+  font-size: 13px;
+  text-align: center;
+  padding: 30px 20px;
+}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">BeauOuPas</div>
+  <nav id="sidebar-nav"></nav>
+  <div class="sidebar-footer">
+    <a href="create-group.html" class="btn btn-primary btn-full" style="margin-bottom:14px;text-decoration:none;">➕ Nouveau groupe</a>
+    <div id="sidebar-user"></div>
+  </div>
+</aside>
+<nav class="bottom-nav" id="bottom-nav"></nav>
+
+<main class="main-content">
+  <div style="max-width:700px;margin:0 auto;">
+
+    <!-- Header -->
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+      <a href="groups.html" style="color:#888;text-decoration:none;font-size:24px;">←</a>
+      <h1 id="group-title" style="font-size:22px;font-weight:900;flex:1;">Chargement…</h1>
+    </div>
+
+    <!-- Carte groupe -->
+    <div id="group-header"></div>
+
+    <!-- Tabs -->
+    <div class="tab-row">
+      <button class="tab-btn active" data-tab="series" onclick="switchTab('series')">📋 Séries</button>
+      <button class="tab-btn" data-tab="members" onclick="switchTab('members')">👥 Membres</button>
+      <button class="tab-btn" data-tab="chat" onclick="switchTab('chat')">💬 Chat</button>
+    </div>
+
+    <!-- Tab : Séries -->
+    <div class="tab-content active" id="tab-series">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h2 style="font-size:15px;font-weight:800;color:#888;">Séries du groupe</h2>
+        <button class="btn btn-sm btn-secondary" onclick="goCreateSeries()">➕ Créer</button>
+      </div>
+      <div id="series-list"><div class="spinner" style="margin:30px auto;"></div></div>
+    </div>
+
+    <!-- Tab : Membres -->
+    <div class="tab-content" id="tab-members">
+      <h2 style="font-size:15px;font-weight:800;color:#888;margin-bottom:12px;">Membres</h2>
+      <div id="members-list"></div>
+    </div>
+
+    <!-- Tab : Chat -->
+    <div class="tab-content" id="tab-chat">
+      <div class="chat-box">
+        <div class="chat-messages" id="chat-messages">
+          <div class="chat-empty">Chargement…</div>
+        </div>
+        <div class="chat-input-row">
+          <input type="text" class="input" id="chat-input" placeholder="Écris un message…" maxlength="500" style="flex:1;" onkeydown="if(event.key==='Enter') sendMessage()">
+          <button class="btn btn-primary btn-sm" onclick="sendMessage()" style="padding:10px 18px;">➤</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions admin/quitter (en bas) -->
+    <div id="group-actions" style="margin-top:24px;"></div>
+
+  </div>
+</main>
+
+<!-- Alerts toast -->
+<div id="toast" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#151515;border:1px solid #292929;color:white;padding:14px 22px;border-radius:14px;font-weight:700;z-index:200;"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script src="navbar.js"></script>
+<script>
+var currentUser = null;
+var currentProfile = null;
+var groupId = null;
+var groupData = null;
+var isAdmin = false;
+var members = [];
+var seriesList = [];
+var messages = [];
+var profilesById = {};      // user_id -> profile (pour afficher username/avatar dans chat)
+var chatChannel = null;     // realtime subscription
+
+async function init() {
+  groupId = new URLSearchParams(window.location.search).get('id');
+  if (!groupId) {
+    window.location.href = 'groups.html';
+    return;
+  }
+
+  currentUser = await requireAuth();
+  if (!currentUser) return;
+
+  currentProfile = await getProfile(currentUser.id);
+  if (typeof renderNav === "function") renderNav("groups.html");
+  if (typeof loadSidebarProfile === "function") loadSidebarProfile();
+
+  await loadAll();
+  startRealtime();
+}
+
+async function loadAll() {
+  // ⚡ Idéalement on appelle la RPC get_group_details qui fait tout en 1 coup.
+  // Si elle existe et marche, on l'utilise. Sinon, fallback à plusieurs requêtes.
+  try {
+    var { data, error } = await db.rpc('get_group_details', {
+      p_group_id: groupId,
+      p_user_id: currentUser.id
+    });
+
+    if (!error && data) {
+      // La RPC peut retourner soit un objet, soit un tableau d'1 ligne
+      var d = Array.isArray(data) ? data[0] : data;
+      if (d && d.group) {
+        applyGroupDetails(d);
+        return;
+      }
+    }
+    // Sinon fallback
+    console.warn("get_group_details indisponible, fallback manuel:", error);
+    await loadAllFallback();
+  } catch (e) {
+    console.error("loadAll RPC:", e);
+    await loadAllFallback();
+  }
+}
+
+function applyGroupDetails(d) {
+  // d = { group: {...}, is_admin: bool, members: [...], series: [...], messages: [...] }
+  groupData = d.group;
+  isAdmin = !!d.is_admin;
+  members = d.members || [];
+  seriesList = d.series || [];
+  messages = d.messages || [];
+
+  // Construire profilesById à partir des membres pour le chat
+  members.forEach(function(m) {
+    profilesById[m.user_id] = {
+      username: m.username || 'Inconnu',
+      avatar_url: m.avatar_url
+    };
+  });
+
+  renderHeader();
+  renderSeries();
+  renderMembers();
+  renderMessages();
+  renderActions();
+}
+
+async function loadAllFallback() {
+  // Plan B : on fait nous-mêmes les requêtes
+  var { data: g } = await db.from('groups').select('*').eq('id', groupId).single();
+  if (!g) {
+    document.getElementById("group-title").textContent = "Groupe introuvable";
+    return;
+  }
+  groupData = g;
+
+  // Membres + jointure avec profiles
+  var { data: rawMembers } = await db
+    .from('group_members')
+    .select('user_id, role, joined_at, profiles!inner(id, username, avatar_url)')
+    .eq('group_id', groupId);
+
+  members = (rawMembers || []).map(function(m) {
+    return {
+      user_id: m.user_id,
+      role: m.role,
+      joined_at: m.joined_at,
+      username: m.profiles ? m.profiles.username : 'Inconnu',
+      avatar_url: m.profiles ? m.profiles.avatar_url : null
+    };
+  });
+
+  members.forEach(function(m) {
+    profilesById[m.user_id] = { username: m.username, avatar_url: m.avatar_url };
+  });
+
+  isAdmin = members.some(function(m) {
+    return m.user_id === currentUser.id && m.role === 'admin';
+  });
+
+  // Séries du groupe
+  var { data: seriesRaw } = await db
+    .from('series')
+    .select('*')
+    .eq('group_id', groupId)
+    .order('created_at', { ascending: false });
+  seriesList = seriesRaw || [];
+
+  // Messages (50 derniers, ordre asc pour affichage)
+  var { data: msgRaw } = await db
+    .from('group_messages')
+    .select('*')
+    .eq('group_id', groupId)
+    .order('created_at', { ascending: false })
+    .limit(50);
+  messages = (msgRaw || []).reverse(); // remettre dans l'ordre chronologique
+
+  renderHeader();
+  renderSeries();
+  renderMembers();
+  renderMessages();
+  renderActions();
+}
+
+function renderHeader() {
+  document.getElementById("group-title").textContent = groupData.name || 'Groupe';
+
+  var firstLetter = (groupData.name || '?')[0].toUpperCase();
+  var avatarHtml = groupData.avatar_url
+    ? '<img src="' + escapeHtml(groupData.avatar_url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:18px;">'
+    : firstLetter;
+
+  var html =
+    '<div class="card" style="display:flex;gap:14px;align-items:center;margin-bottom:18px;padding:18px;">' +
+      '<div style="width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#E91E8C,#6B46C1);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;color:white;flex-shrink:0;overflow:hidden;">' +
+        avatarHtml +
+      '</div>' +
+      '<div style="flex:1;min-width:0;">' +
+        '<div style="font-size:18px;font-weight:800;">' + escapeHtml(groupData.name) + '</div>' +
+        (groupData.description
+          ? '<div style="font-size:13px;color:#888;margin-top:2px;">' + escapeHtml(groupData.description) + '</div>'
+          : '') +
+        '<div style="font-size:12px;color:#666;margin-top:6px;">👥 ' + members.length + ' membre' + (members.length > 1 ? 's' : '') +
+        ' · 📋 ' + seriesList.length + ' série' + (seriesList.length > 1 ? 's' : '') +
+        (isAdmin ? ' · <span class="badge badge-pink" style="padding:2px 8px;font-size:10px;">ADMIN</span>' : '') +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  document.getElementById("group-header").innerHTML = html;
+}
+
+function renderSeries() {
+  var listEl = document.getElementById("series-list");
+  if (!seriesList.length) {
+    listEl.innerHTML =
+      '<div style="text-align:center;padding:30px 10px;color:#666;font-size:13px;">' +
+        'Aucune série pour l\'instant.' +
+      '</div>';
+    return;
+  }
+  listEl.innerHTML = seriesList.map(function(s) {
+    var statusBadge = '';
+    if (s.status === 'active') statusBadge = '<span class="badge badge-green">🔥 ACTIVE</span>';
+    else if (s.status === 'finished') statusBadge = '<span class="badge badge-orange">TERMINÉE</span>';
+    var isQuiz = s.is_quiz === true;
+    var icon = isQuiz ? '🧠' : '🗳️';
+
+    return (
+      // Lot 2/3 : remplacer par series-detail.html?id=...
+      '<a href="javascript:void(0)" onclick="alert(\'Ouverture des séries dans le Lot 2 du web\')" class="series-card">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div class="series-card-name">' + icon + ' ' + escapeHtml(s.title || 'Sans titre') + '</div>' +
+            '<div class="series-card-meta">' +
+              '<span>' + (isQuiz ? 'Quiz' : 'Vote') + '</span>' +
+              (s.access_code ? '<span>Code: <b style="color:#E91E8C;">' + escapeHtml(s.access_code) + '</b></span>' : '') +
+            '</div>' +
+          '</div>' +
+          statusBadge +
+        '</div>' +
+      '</a>'
+    );
+  }).join('');
+}
+
+function renderMembers() {
+  var listEl = document.getElementById("members-list");
+  if (!members.length) {
+    listEl.innerHTML = '<div style="color:#666;font-size:13px;text-align:center;padding:20px;">Aucun membre</div>';
+    return;
+  }
+  listEl.innerHTML = members.map(function(m) {
+    var firstLetter = (m.username || '?')[0].toUpperCase();
+    var avatarContent = m.avatar_url
+      ? '<img src="' + escapeHtml(m.avatar_url) + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">'
+      : firstLetter;
+    var roleClass = m.role === 'admin' ? 'role-admin' : 'role-member';
+    var roleLabel = m.role === 'admin' ? '👑 Admin' : 'Membre';
+
+    return (
+      '<div class="member-row">' +
+        '<div class="avatar" style="width:38px;height:38px;font-size:14px;">' + avatarContent + '</div>' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div class="member-name">@' + escapeHtml(m.username) + '</div>' +
+        '</div>' +
+        '<span class="member-role ' + roleClass + '">' + roleLabel + '</span>' +
+      '</div>'
+    );
+  }).join('');
+}
+
+function renderMessages() {
+  var box = document.getElementById("chat-messages");
+  if (!messages.length) {
+    box.innerHTML = '<div class="chat-empty">💬 Aucun message pour l\'instant.<br>Sois le premier à écrire !</div>';
+    return;
+  }
+  box.innerHTML = messages.map(function(m) {
+    var isMine = m.sender_id === currentUser.id;
+    var prof = profilesById[m.sender_id] || { username: 'Inconnu' };
+    var time = formatTime(m.created_at);
+    return (
+      '<div class="chat-msg ' + (isMine ? 'mine' : 'theirs') + '">' +
+        (isMine ? '' : '<div class="author">@' + escapeHtml(prof.username) + '</div>') +
+        '<div>' + escapeHtml(m.content) + '</div>' +
+        '<div class="time">' + time + '</div>' +
+      '</div>'
+    );
+  }).join('');
+  box.scrollTop = box.scrollHeight;
+}
+
+function renderActions() {
+  var html = '';
+  if (isAdmin) {
+    html += '<button class="btn btn-ghost btn-full" style="border-color:rgba(244,67,54,0.4);color:#ef5350;margin-bottom:8px;" onclick="deleteGroup()">🗑️ Supprimer le groupe</button>';
+  } else {
+    html += '<button class="btn btn-ghost btn-full" style="border-color:rgba(244,67,54,0.4);color:#ef5350;" onclick="leaveGroup()">🚪 Quitter le groupe</button>';
+  }
+  document.getElementById("group-actions").innerHTML = html;
+}
+
+// ─── Tabs ─────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+  document.querySelectorAll('.tab-content').forEach(function(c) {
+    c.classList.toggle('active', c.id === 'tab-' + tab);
+  });
+  if (tab === 'chat') {
+    // Auto-scroll bas + focus input
+    setTimeout(function() {
+      var box = document.getElementById("chat-messages");
+      box.scrollTop = box.scrollHeight;
+      document.getElementById("chat-input").focus();
+    }, 50);
+  }
+}
+
+// ─── Chat ─────────────────────────────────────────────────
+async function sendMessage() {
+  var input = document.getElementById("chat-input");
+  var content = input.value.trim();
+  if (!content) return;
+
+  input.disabled = true;
+  try {
+    var { error } = await db.from('group_messages').insert({
+      group_id: groupId,
+      sender_id: currentUser.id,
+      content: content
+    });
+    if (error) {
+      console.error("send msg:", error);
+      showToast("❌ Erreur d'envoi");
+      return;
+    }
+    input.value = '';
+    // Le realtime ramènera le message dans la liste — pas besoin de reload manuel.
+    // Mais si le realtime est down, on append nous-mêmes en local pour feedback :
+    var localMsg = {
+      id: 'local-' + Date.now(),
+      group_id: groupId,
+      sender_id: currentUser.id,
+      content: content,
+      created_at: new Date().toISOString()
+    };
+    if (!messages.some(function(m) { return m.id === localMsg.id; })) {
+      messages.push(localMsg);
+      renderMessages();
+    }
+  } catch (e) {
+    console.error("send msg:", e);
+    showToast("❌ Erreur d'envoi");
+  } finally {
+    input.disabled = false;
+    input.focus();
+  }
+}
+
+function startRealtime() {
+  // Realtime sur les nouveaux messages du groupe.
+  // Note : Postgres Realtime applique les RLS, donc seuls les membres
+  // recevront les événements (cf. policies de group_messages).
+  try {
+    if (chatChannel) chatChannel.unsubscribe();
+    chatChannel = db.channel('group-msg-' + groupId)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'group_messages',
+        filter: 'group_id=eq.' + groupId
+      }, function(payload) {
+        var newMsg = payload.new;
+        if (!newMsg) return;
+        // Évite doublon si on l'a déjà ajouté localement
+        if (messages.some(function(m) { return m.id === newMsg.id; })) return;
+        messages.push(newMsg);
+        renderMessages();
+      })
+      .subscribe();
+  } catch (e) {
+    console.error("realtime:", e);
+  }
+}
+
+// ─── Actions ──────────────────────────────────────────────
+async function leaveGroup() {
+  if (!confirm("Quitter le groupe \"" + groupData.name + "\" ?\nTu pourras le rejoindre à nouveau si on t'invite.")) return;
+
+  try {
+    var { error } = await db
+      .from('group_members')
+      .delete()
+      .eq('group_id', groupId)
+      .eq('user_id', currentUser.id);
+
+    if (error) {
+      console.error("leave:", error);
+      showToast("❌ Impossible de quitter");
+      return;
+    }
+    showToast("✅ Tu as quitté le groupe");
+    setTimeout(function() { window.location.href = 'groups.html'; }, 800);
+  } catch (e) {
+    console.error("leave:", e);
+    showToast("❌ Erreur");
+  }
+}
+
+async function deleteGroup() {
+  if (!confirm("⚠️ Supprimer DÉFINITIVEMENT le groupe \"" + groupData.name + "\" ?\n\nLes séries du groupe seront déplacées dans \"Mes séries\" (pas perdues), mais le groupe disparaîtra pour tous les membres.")) return;
+
+  try {
+    // Utilise la RPC delete_group_safe qui gère les FK (séries, membres, messages)
+    var { data, error } = await db.rpc('delete_group_safe', {
+      p_group_id: groupId,
+      p_user_id: currentUser.id
+    });
+
+    if (error) {
+      console.error("delete_group_safe:", error);
+      showToast("❌ Erreur : " + error.message);
+      return;
+    }
+
+    var d = Array.isArray(data) ? data[0] : data;
+    if (!d || !d.success) {
+      showToast("❌ " + (d && d.message ? d.message : "Échec de la suppression"));
+      return;
+    }
+
+    var detached = d.detached_series_count || 0;
+    showToast("✅ Groupe supprimé" + (detached > 0 ? ' (' + detached + ' série(s) déplacée(s))' : ''));
+    setTimeout(function() { window.location.href = 'groups.html'; }, 1000);
+  } catch (e) {
+    console.error("delete:", e);
+    showToast("❌ Erreur technique");
+  }
+}
+
+function goCreateSeries() {
+  // Lot 2 : on activera la vraie redirection avec ?group_id=...
+  alert("La création de séries arrivera dans le Lot 2 du web.\n\nEn attendant, utilise l'app mobile pour créer une série dans ce groupe.");
+}
+
+// ─── Utils ────────────────────────────────────────────────
+function showToast(msg) {
+  var t = document.getElementById("toast");
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(function() { t.style.display = 'none'; }, 2500);
+}
+
+function formatTime(iso) {
+  if (!iso) return '';
+  try {
+    var d = new Date(iso);
+    var now = new Date();
+    var sameDay = d.toDateString() === now.toDateString();
+    if (sameDay) {
+      return d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
+    }
+    return d.getDate() + '/' + (d.getMonth() + 1) + ' ' + d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
+  } catch(e) { return ''; }
+}
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// Nettoyer la subscription quand on quitte la page
+window.addEventListener('beforeunload', function() {
+  if (chatChannel) chatChannel.unsubscribe();
+});
+
+init();
+</script>
+</body>
+</html>

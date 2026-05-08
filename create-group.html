@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeauOuPas — Nouveau groupe</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.friend-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #111;
+  border: 2px solid #292929;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-bottom: 8px;
+}
+.friend-row:hover { border-color: rgba(233,30,140,0.3); }
+.friend-row.selected {
+  border-color: #E91E8C;
+  background: rgba(233,30,140,0.06);
+}
+.friend-row .check {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid #444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.friend-row.selected .check {
+  background: #E91E8C;
+  border-color: #E91E8C;
+  color: white;
+}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">BeauOuPas</div>
+  <nav id="sidebar-nav"></nav>
+  <div class="sidebar-footer">
+    <a href="create-group.html" class="btn btn-primary btn-full" style="margin-bottom:14px;text-decoration:none;">➕ Nouveau groupe</a>
+    <div id="sidebar-user"></div>
+  </div>
+</aside>
+<nav class="bottom-nav" id="bottom-nav"></nav>
+
+<main class="main-content">
+  <div style="max-width:600px;margin:0 auto;">
+
+    <!-- Header avec bouton retour -->
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:24px;">
+      <a href="groups.html" style="color:#888;text-decoration:none;font-size:24px;">←</a>
+      <h1 style="font-size:24px;font-weight:900;">➕ Nouveau groupe</h1>
+    </div>
+
+    <!-- Alerts -->
+    <div class="alert alert-error" id="error-msg"></div>
+    <div class="alert alert-success" id="success-msg"></div>
+
+    <!-- Formulaire -->
+    <div class="card" style="padding:20px;margin-bottom:18px;">
+      <label class="input-label">Nom du groupe *</label>
+      <input type="text" class="input" id="group-name" placeholder="Ex. Foodies Lyon" maxlength="50" autofocus>
+
+      <div style="height:14px;"></div>
+
+      <label class="input-label">Description (optionnelle)</label>
+      <input type="text" class="input" id="group-description" placeholder="À quoi sert ce groupe ?" maxlength="200">
+    </div>
+
+    <!-- Sélection d'amis -->
+    <div class="card" style="padding:20px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+        <h2 style="font-size:16px;font-weight:800;">Inviter des amis</h2>
+        <span id="selected-count" style="font-size:13px;color:#888;">0 sélectionné</span>
+      </div>
+      <div id="friends-list">
+        <div class="spinner" style="margin:30px auto;"></div>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <button class="btn btn-primary btn-full" style="margin-top:20px;" id="btn-create" onclick="createGroup()">
+      Créer le groupe
+    </button>
+
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script src="navbar.js"></script>
+<script>
+var currentUser = null;
+var friends = [];        // tous les amis
+var selected = new Set(); // user_ids sélectionnés
+// ⚡ Quand on arrive depuis HomePage avec ?chain=true, on enchaîne ensuite
+// sur la création de série. Pour l'instant, on retourne juste sur groups.html.
+// Lot 2 : on activera la chaîne vers create-series-type.html.
+var chainCreate = new URLSearchParams(window.location.search).get('chain') === 'true';
+
+async function init() {
+  currentUser = await requireAuth();
+  if (!currentUser) return;
+
+  if (typeof renderNav === "function") renderNav("groups.html");
+  if (typeof loadSidebarProfile === "function") loadSidebarProfile();
+
+  await loadFriends();
+}
+
+async function loadFriends() {
+  var listEl = document.getElementById("friends-list");
+
+  try {
+    // Liste des amis acceptés (statut = 'accepted')
+    // On regarde les 2 directions car l'amitié peut être créée par l'un ou l'autre
+    var { data: rows1 } = await db
+      .from('friendships')
+      .select('addressee_id, profiles:addressee_id (id, username, avatar_url)')
+      .eq('requester_id', currentUser.id)
+      .eq('status', 'accepted');
+
+    var { data: rows2 } = await db
+      .from('friendships')
+      .select('requester_id, profiles:requester_id (id, username, avatar_url)')
+      .eq('addressee_id', currentUser.id)
+      .eq('status', 'accepted');
+
+    var friendProfiles = [];
+    (rows1 || []).forEach(function(r) { if (r.profiles) friendProfiles.push(r.profiles); });
+    (rows2 || []).forEach(function(r) { if (r.profiles) friendProfiles.push(r.profiles); });
+
+    // Dédupliquer par id (au cas où la BDD aurait des doublons)
+    var seen = new Set();
+    friends = friendProfiles.filter(function(p) {
+      if (seen.has(p.id)) return false;
+      seen.add(p.id);
+      return true;
+    });
+
+    if (!friends.length) {
+      listEl.innerHTML =
+        '<div style="text-align:center;padding:30px 10px;color:#666;font-size:14px;">' +
+          '👋 Tu n\'as pas encore d\'amis.<br>' +
+          '<a href="friends.html" style="color:#E91E8C;text-decoration:none;font-weight:700;">Ajoute des amis ici</a><br>' +
+          '<span style="font-size:12px;">Tu pourras quand même créer un groupe seul</span>' +
+        '</div>';
+      return;
+    }
+
+    renderFriends();
+  } catch (e) {
+    console.error("loadFriends:", e);
+    listEl.innerHTML = '<div style="color:#888;font-size:13px;text-align:center;padding:20px;">Impossible de charger tes amis</div>';
+  }
+}
+
+function renderFriends() {
+  var listEl = document.getElementById("friends-list");
+  listEl.innerHTML = friends.map(function(f) {
+    var isSelected = selected.has(f.id);
+    var firstLetter = (f.username || '?')[0].toUpperCase();
+    var avatarContent = f.avatar_url
+      ? '<img src="' + escapeHtml(f.avatar_url) + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">'
+      : firstLetter;
+
+    return (
+      '<div class="friend-row ' + (isSelected ? 'selected' : '') + '" onclick="toggleFriend(\'' + f.id + '\')">' +
+        '<div class="avatar" style="width:38px;height:38px;font-size:14px;">' + avatarContent + '</div>' +
+        '<div style="flex:1;font-weight:700;">@' + escapeHtml(f.username) + '</div>' +
+        '<div class="check">' + (isSelected ? '✓' : '') + '</div>' +
+      '</div>'
+    );
+  }).join('');
+
+  document.getElementById("selected-count").textContent = selected.size + ' sélectionné' + (selected.size > 1 ? 's' : '');
+}
+
+function toggleFriend(userId) {
+  if (selected.has(userId)) selected.delete(userId);
+  else selected.add(userId);
+  renderFriends();
+}
+
+async function createGroup() {
+  var name = document.getElementById("group-name").value.trim();
+  var description = document.getElementById("group-description").value.trim();
+
+  document.getElementById("error-msg").style.display = 'none';
+  document.getElementById("success-msg").style.display = 'none';
+
+  if (!name) {
+    showError("error-msg", "⚠️ Le nom du groupe est obligatoire");
+    return;
+  }
+
+  setLoading("btn-create", true, "Créer le groupe");
+
+  try {
+    // ⚡ Étape 1 : insert dans 'groups'
+    var { data: createdGroups, error: insertErr } = await db
+      .from('groups')
+      .insert({
+        name: name,
+        description: description || null,
+        owner_id: currentUser.id
+      })
+      .select();
+
+    if (insertErr || !createdGroups || !createdGroups.length) {
+      console.error("INSERT groups:", insertErr);
+      throw new Error("Impossible de créer le groupe");
+    }
+
+    var newGroup = createdGroups[0];
+
+    // ⚡ Étape 2 : insert moi-même comme admin dans group_members
+    var { error: memberErr } = await db
+      .from('group_members')
+      .insert({
+        group_id: newGroup.id,
+        user_id: currentUser.id,
+        role: 'admin'
+      });
+
+    if (memberErr) {
+      console.error("INSERT group_members owner:", memberErr);
+      // Pas fatal — on continue, l'owner peut quand même voir son groupe
+    }
+
+    // ⚡ Étape 3 : insert chaque ami sélectionné
+    if (selected.size > 0) {
+      var memberInserts = Array.from(selected).map(function(uid) {
+        return { group_id: newGroup.id, user_id: uid, role: 'member' };
+      });
+      var { error: addErr } = await db.from('group_members').insert(memberInserts);
+      if (addErr) {
+        console.error("INSERT group_members:", addErr);
+        // Pas fatal non plus
+      }
+    }
+
+    showSuccess("success-msg", "✅ Groupe \"" + name + "\" créé avec " + (selected.size + 1) + " membre(s) !");
+
+    // Lot 2 : si chainCreate, on enverrait vers create-series-type.html?group_id=...
+    setTimeout(function() {
+      window.location.href = 'group-detail.html?id=' + encodeURIComponent(newGroup.id);
+    }, 1000);
+
+  } catch (e) {
+    console.error("createGroup:", e);
+    showError("error-msg", "❌ " + (e.message || "Erreur lors de la création"));
+    setLoading("btn-create", false, "Créer le groupe");
+  }
+}
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+init();
+</script>
+</body>
+</html>

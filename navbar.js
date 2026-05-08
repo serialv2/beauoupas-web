@@ -2,10 +2,14 @@ function renderNav(activePage) {
   var pages = [
     { href: 'feed.html',     icon: '🏠', label: 'Feed' },
     { href: 'projects.html', icon: '📸', label: 'Projets' },
-    { href: 'friends.html',  icon: '👥', label: 'Amis' },
-    { href: 'chat.html',     icon: '💬', label: 'Chat' },
+    { href: 'groups.html',   icon: '👥', label: 'Groupes' },
+    { href: 'friends.html',  icon: '🤝', label: 'Amis' },
     { href: 'profile.html',  icon: '👤', label: 'Profil' },
   ];
+
+  // ⚡ NOUVEAU : "Groupes" ajouté entre Projets et Amis (Amis devient 🤝)
+  // Le label "groups.html" couvre aussi group-detail.html et create-group.html
+  // (la fonction reçoit l'argument exact, ces 2 pages forceront activePage = 'groups.html').
 
   // Sidebar desktop
   var sidebarHtml = pages.map(function(p) {
@@ -17,13 +21,11 @@ function renderNav(activePage) {
     return '<a href="' + href + '" style="' + style + '"><span style="font-size:18px;">' + p.icon + '</span>' + p.label + '</a>';
   }).join('');
 
-  // Bottom nav mobile — plus grande, mieux espacée
+  // Bottom nav mobile
   var bottomHtml =
-    // Barre crédits
     '<div style="display:flex;align-items:center;justify-content:center;padding:6px 0 5px;border-bottom:1px solid #1A1A1A;background:#0A0A0A;">' +
       '<span id="credits-display-mobile" style="font-size:13px;color:#E91E8C;font-weight:800;">💰 ... crédits</span>' +
     '</div>' +
-    // Icônes nav
     '<div style="display:flex;align-items:stretch;">' +
     pages.map(function(p) {
       var isActive = p.href === activePage;
@@ -41,7 +43,7 @@ function renderNav(activePage) {
         'background:' + bg + ';' +
         'border-top:' + (isActive ? '2px solid #E91E8C' : '2px solid transparent') + ';' +
         '">' +
-        '<span style="font-size:26px;line-height:1;">' + p.icon + '</span>' +
+        '<span style="font-size:24px;line-height:1;">' + p.icon + '</span>' +
         '<span>' + p.label + '</span>' +
         '</a>';
     }).join('') +
@@ -69,7 +71,6 @@ function updateSidebarCredits(profile) {
     ? '<img src="' + profile.avatar_url + '" alt="">'
     : '<span style="font-size:15px;font-weight:900;">' + (profile.username ? profile.username[0].toUpperCase() : '?') + '</span>';
 
-  // Sidebar desktop
   var el = document.getElementById('sidebar-user');
   if (el) {
     el.innerHTML =
@@ -83,7 +84,6 @@ function updateSidebarCredits(profile) {
       '</div>';
   }
 
-  // Bottom nav mobile
   var mobileEl = document.getElementById('credits-display-mobile');
   if (mobileEl) mobileEl.textContent = '💰 ' + credits + ' crédits';
 }
