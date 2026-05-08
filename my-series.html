@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeauOuPas — Mes séries</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.filter-row {
+  display: flex;
+  gap: 6px;
+  background: #111;
+  padding: 4px;
+  border-radius: 12px;
+  margin-bottom: 18px;
+}
+.filter-btn {
+  flex: 1;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  color: #888;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.15s;
+  font-family: Arial;
+}
+.filter-btn.active { background: #E91E8C; color: white; }
+
+.series-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #151515;
+  border: 1px solid #292929;
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 8px;
+  text-decoration: none;
+  color: white;
+  transition: all 0.15s;
+}
+.series-row:hover { border-color: rgba(233,30,140,0.4); transform: translateY(-1px); }
+
+.series-icon {
+  width: 48px; height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+.series-icon.vote { background: linear-gradient(135deg,#E91E8C,#C4186F); }
+.series-icon.quiz { background: linear-gradient(135deg,#6B46C1,#4C1D95); }
+
+.series-name { font-weight: 800; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.series-meta { font-size: 12px; color: #888; display: flex; gap: 10px; flex-wrap: wrap; }
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+.empty-state .icon { font-size: 64px; opacity: 0.3; margin-bottom: 12px; }
+.empty-state .title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.empty-state .desc { color: #888; font-size: 13px; margin-bottom: 18px; }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">BeauOuPas</div>
+  <nav id="sidebar-nav"></nav>
+  <div class="sidebar-footer">
+    <a href="create-group.html" class="btn btn-primary btn-full" style="margin-bottom:14px;text-decoration:none;">➕ Nouveau groupe</a>
+    <div id="sidebar-user"></div>
+  </div>
+</aside>
+<nav class="bottom-nav" id="bottom-nav"></nav>
+
+<main class="main-content">
+  <div style="max-width:700px;margin:0 auto;">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px;">
+      <div>
+        <h1 style="font-size:24px;font-weight:900;">📋 Mes séries</h1>
+        <p style="color:#666;font-size:13px;margin-top:4px;">Toutes les séries où je participe</p>
+      </div>
+      <a href="create-context.html" class="btn btn-primary btn-sm" style="text-decoration:none;">➕ Nouvelle série</a>
+    </div>
+
+    <!-- Filtres : Toutes / Standalone / En groupe -->
+    <div class="filter-row">
+      <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">Toutes</button>
+      <button class="filter-btn" data-filter="standalone" onclick="setFilter('standalone')">🎯 Sans groupe</button>
+      <button class="filter-btn" data-filter="group" onclick="setFilter('group')">👥 En groupe</button>
+    </div>
+
+    <div id="series-list"><div class="spinner"></div></div>
+
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script src="navbar.js"></script>
+<script>
+var currentUser = null;
+var allSeries = [];
+var groupsById = {};   // pour afficher le nom du groupe
+var currentFilter = 'all';
+
+async function init() {
+  currentUser = await requireAuth();
+  if (!currentUser) return;
+
+  if (typeof renderNav === "function") renderNav("home.html");
+  if (typeof loadSidebarProfile === "function") loadSidebarProfile();
+
+  await loadSeries();
+}
+
+async function loadSeries() {
+  var listEl = document.getElementById("series-list");
+  try {
+    // 1. Toutes les séries où je suis participant
+    var { data: parts } = await db
+      .from('series_participants')
+      .select('series_id')
+      .eq('user_id', currentUser.id);
+
+    var seriesIds = (parts || []).map(function(p) { return p.series_id; });
+
+    // 2. + Toutes les séries que j'ai créées (au cas où le trigger n'a pas inséré dans participants)
+    var { data: createdRaw } = await db
+      .from('series')
+      .select('id')
+      .eq('creator_id', currentUser.id);
+    (createdRaw || []).forEach(function(s) {
+      if (seriesIds.indexOf(s.id) === -1) seriesIds.push(s.id);
+    });
+
+    if (!seriesIds.length) {
+      renderEmpty();
+      return;
+    }
+
+    // 3. Charger toutes les séries en 1 requête
+    var { data: rawSeries } = await db
+      .from('series')
+      .select('*')
+      .in('id', seriesIds)
+      .order('created_at', { ascending: false });
+
+    allSeries = rawSeries || [];
+
+    // 4. Charger les noms des groupes pour celles qui ont un group_id
+    var groupIds = Array.from(new Set(
+      allSeries.filter(function(s) { return s.group_id; })
+              .map(function(s) { return s.group_id; })
+    ));
+    if (groupIds.length) {
+      var { data: groups } = await db
+        .from('groups')
+        .select('id, name')
+        .in('id', groupIds);
+      (groups || []).forEach(function(g) { groupsById[g.id] = g.name; });
+    }
+
+    render();
+  } catch (e) {
+    console.error("loadSeries:", e);
+    listEl.innerHTML = '<div class="alert alert-error" style="display:block;">Erreur de chargement</div>';
+  }
+}
+
+function setFilter(f) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.filter === f);
+  });
+  render();
+}
+
+function render() {
+  var filtered = allSeries.filter(function(s) {
+    if (currentFilter === 'standalone') return !s.group_id;
+    if (currentFilter === 'group') return !!s.group_id;
+    return true;
+  });
+
+  if (!filtered.length) {
+    renderEmpty();
+    return;
+  }
+
+  document.getElementById("series-list").innerHTML = filtered.map(function(s) {
+    var isQuiz = !!s.is_quiz;
+    var icon = isQuiz ? '🧠' : '🗳️';
+    var iconClass = isQuiz ? 'quiz' : 'vote';
+
+    var statusBadge = '';
+    if (s.status === 'preparing') {
+      statusBadge = '<span class="badge badge-orange">⏳ En préparation</span>';
+    } else if (s.status === 'active') {
+      statusBadge = '<span class="badge badge-green">🔥 EN COURS</span>';
+    } else if (s.status === 'finished') {
+      statusBadge = '<span style="color:#888;font-size:11px;">✅ Terminée</span>';
+    }
+
+    var meta = [];
+    meta.push(isQuiz ? 'Quiz' : 'Vote');
+    if (s.group_id && groupsById[s.group_id]) {
+      meta.push('👥 ' + escapeHtml(groupsById[s.group_id]));
+    } else if (!s.group_id) {
+      meta.push('🎯 Sans groupe');
+    }
+    if (s.access_code) {
+      meta.push('Code: <b style="color:#E91E8C;">' + escapeHtml(s.access_code) + '</b>');
+    }
+
+    var amCreator = s.creator_id === currentUser.id;
+
+    return (
+      '<a href="series-detail.html?id=' + encodeURIComponent(s.id) + '" class="series-row">' +
+        '<div class="series-icon ' + iconClass + '">' + icon + '</div>' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div class="series-name">' +
+            escapeHtml(s.title || 'Sans titre') +
+            (amCreator ? ' <span style="font-size:10px;color:#E91E8C;">👑</span>' : '') +
+          '</div>' +
+          '<div class="series-meta">' + meta.join(' · ') + '</div>' +
+        '</div>' +
+        '<div style="display:flex;flex-direction:column;align-items:end;gap:6px;">' +
+          statusBadge +
+        '</div>' +
+      '</a>'
+    );
+  }).join('');
+}
+
+function renderEmpty() {
+  var label = '';
+  if (currentFilter === 'standalone') label = "Aucune série \"sans groupe\" pour l'instant.";
+  else if (currentFilter === 'group') label = "Aucune série en groupe pour l'instant.";
+  else label = "Tu n'as pas encore de série.";
+
+  document.getElementById("series-list").innerHTML =
+    '<div class="empty-state">' +
+      '<div class="icon">📋</div>' +
+      '<div class="title">' + label + '</div>' +
+      '<div class="desc">Crée ta première série ou rejoins-en une avec un code.</div>' +
+      '<a href="create-context.html" class="btn btn-primary" style="text-decoration:none;">➕ Créer une série</a>' +
+    '</div>';
+}
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+init();
+</script>
+</body>
+</html>

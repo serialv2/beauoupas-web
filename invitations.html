@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeauOuPas — Invitations</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.invite-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #151515;
+  border: 1px solid #292929;
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 8px;
+  transition: border-color 0.15s;
+  flex-wrap: wrap;
+}
+.invite-card:hover { border-color: rgba(233,30,140,0.4); }
+
+.invite-icon {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+.invite-icon.vote { background: linear-gradient(135deg,#E91E8C,#C4186F); }
+.invite-icon.quiz { background: linear-gradient(135deg,#6B46C1,#4C1D95); }
+
+.invite-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+.empty-state .icon { font-size: 64px; opacity: 0.3; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">BeauOuPas</div>
+  <nav id="sidebar-nav"></nav>
+  <div class="sidebar-footer">
+    <a href="create-group.html" class="btn btn-primary btn-full" style="margin-bottom:14px;text-decoration:none;">➕ Nouveau groupe</a>
+    <div id="sidebar-user"></div>
+  </div>
+</aside>
+<nav class="bottom-nav" id="bottom-nav"></nav>
+
+<main class="main-content">
+  <div style="max-width:700px;margin:0 auto;">
+
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+      <a href="home.html" style="color:#888;text-decoration:none;font-size:24px;">←</a>
+      <h1 style="font-size:24px;font-weight:900;">📬 Invitations</h1>
+    </div>
+
+    <p style="color:#666;font-size:13px;margin-bottom:18px;">
+      Tes invitations en attente à des séries et quiz.
+    </p>
+
+    <div id="list"><div class="spinner"></div></div>
+
+  </div>
+</main>
+
+<div id="toast" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#151515;border:1px solid #292929;color:white;padding:14px 22px;border-radius:14px;font-weight:700;z-index:200;"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script src="navbar.js"></script>
+<script>
+var currentUser = null;
+var invitations = []; // [{ id, series_id, invited_by, status, series: {...}, inviter: {...} }]
+
+async function init() {
+  currentUser = await requireAuth();
+  if (!currentUser) return;
+
+  if (typeof renderNav === "function") renderNav("home.html");
+  if (typeof loadSidebarProfile === "function") loadSidebarProfile();
+
+  await loadInvitations();
+}
+
+async function loadInvitations() {
+  var listEl = document.getElementById("list");
+  try {
+    var { data: rawInvites } = await db
+      .from('series_invitations')
+      .select('id, series_id, invited_by, status, created_at')
+      .eq('invited_user_id', currentUser.id)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false });
+
+    if (!rawInvites || !rawInvites.length) {
+      listEl.innerHTML =
+        '<div class="empty-state">' +
+          '<div class="icon">📭</div>' +
+          '<div style="font-size:16px;font-weight:700;margin-bottom:6px;">Aucune invitation en attente</div>' +
+          '<div style="color:#888;font-size:13px;">Quand quelqu\'un t\'invitera à une série, ça apparaîtra ici.</div>' +
+        '</div>';
+      return;
+    }
+
+    // Charger les séries et inviters en parallèle
+    var seriesIds = rawInvites.map(function(i) { return i.series_id; });
+    var inviterIds = Array.from(new Set(rawInvites.map(function(i) { return i.invited_by; })));
+
+    var [{ data: seriesData }, { data: inviters }] = await Promise.all([
+      db.from('series').select('id, title, is_quiz, status, access_code, group_id').in('id', seriesIds),
+      db.from('profiles').select('id, username, avatar_url').in('id', inviterIds)
+    ]);
+
+    var seriesById = {};
+    (seriesData || []).forEach(function(s) { seriesById[s.id] = s; });
+    var inviterById = {};
+    (inviters || []).forEach(function(p) { inviterById[p.id] = p; });
+
+    invitations = rawInvites.map(function(i) {
+      return {
+        ...i,
+        series: seriesById[i.series_id] || null,
+        inviter: inviterById[i.invited_by] || null
+      };
+    });
+
+    render();
+  } catch (e) {
+    console.error("loadInvitations:", e);
+    listEl.innerHTML = '<div class="alert alert-error" style="display:block;">Erreur de chargement</div>';
+  }
+}
+
+function render() {
+  var html = invitations.map(function(inv) {
+    var s = inv.series;
+    var p = inv.inviter;
+    if (!s) return '<!-- série introuvable, ignorée -->';
+
+    var icon = s.is_quiz ? '🧠' : '🗳️';
+    var iconClass = s.is_quiz ? 'quiz' : 'vote';
+    var inviterName = p ? '@' + p.username : 'Quelqu\'un';
+
+    return (
+      '<div class="invite-card" data-id="' + inv.id + '">' +
+        '<div class="invite-icon ' + iconClass + '">' + icon + '</div>' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="font-weight:800;font-size:15px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' +
+            escapeHtml(s.title || 'Série sans titre') +
+          '</div>' +
+          '<div style="font-size:12px;color:#888;">' +
+            'Invité par <b style="color:white;">' + escapeHtml(inviterName) + '</b>' +
+          '</div>' +
+        '</div>' +
+        '<div class="invite-actions">' +
+          '<button class="btn btn-primary btn-sm" onclick="acceptInvite(\'' + inv.id + '\',\'' + inv.series_id + '\')">' +
+            '✅ Accepter' +
+          '</button>' +
+          '<button class="btn btn-ghost btn-sm" onclick="declineInvite(\'' + inv.id + '\')">' +
+            '✕' +
+          '</button>' +
+        '</div>' +
+      '</div>'
+    );
+  }).join('');
+
+  document.getElementById("list").innerHTML = html;
+}
+
+async function acceptInvite(invitationId, seriesId) {
+  try {
+    // 1. Marquer l'invitation comme acceptée
+    var { error: updErr } = await db
+      .from('series_invitations')
+      .update({ status: 'accepted', responded_at: new Date().toISOString() })
+      .eq('id', invitationId);
+    if (updErr) {
+      console.error("update invitation:", updErr);
+      showToast("❌ Erreur");
+      return;
+    }
+
+    // 2. Insérer dans series_participants (si pas déjà fait)
+    try {
+      await db.from('series_participants').insert({
+        series_id: seriesId,
+        user_id: currentUser.id
+      });
+    } catch (e) {
+      // Probable doublon → ignore
+    }
+
+    showToast("✅ Tu as rejoint la série !");
+    setTimeout(function() {
+      window.location.href = 'series-detail.html?id=' + encodeURIComponent(seriesId);
+    }, 600);
+  } catch (e) {
+    console.error("acceptInvite:", e);
+    showToast("❌ Erreur");
+  }
+}
+
+async function declineInvite(invitationId) {
+  if (!confirm("Refuser cette invitation ?")) return;
+  try {
+    var { error } = await db
+      .from('series_invitations')
+      .update({ status: 'declined', responded_at: new Date().toISOString() })
+      .eq('id', invitationId);
+    if (error) {
+      console.error("decline:", error);
+      showToast("❌ Erreur");
+      return;
+    }
+    showToast("Invitation refusée");
+    invitations = invitations.filter(function(i) { return i.id !== invitationId; });
+    if (invitations.length === 0) {
+      // Recharger pour afficher l'empty state
+      await loadInvitations();
+    } else {
+      render();
+    }
+  } catch (e) {
+    console.error("decline:", e);
+    showToast("❌ Erreur");
+  }
+}
+
+function showToast(msg) {
+  var t = document.getElementById("toast");
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(function() { t.style.display = 'none'; }, 2500);
+}
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+init();
+</script>
+</body>
+</html>

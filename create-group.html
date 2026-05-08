@@ -302,8 +302,17 @@ async function createGroup() {
 
     showSuccess("success-msg", "✅ Groupe \"" + name + "\" créé avec " + (selected.size + 1) + " membre(s) !");
 
+    // ⚡ Lot 4 : gestion du paramètre ?chain=true
+    // Si on vient de "create-context.html" → "Nouveau groupe", on enchaîne
+    // automatiquement sur la création de série dans ce nouveau groupe.
+    var chainCreate = new URLSearchParams(window.location.search).get('chain') === 'true';
     setTimeout(function() {
-      window.location.href = 'group-detail.html?id=' + encodeURIComponent(newGroup.id);
+      if (chainCreate) {
+        window.location.href = 'create-series-type.html?group_id=' +
+          encodeURIComponent(newGroup.id) + '&group_name=' + encodeURIComponent(name);
+      } else {
+        window.location.href = 'group-detail.html?id=' + encodeURIComponent(newGroup.id);
+      }
     }, 1000);
 
   } catch (e) {

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeauOuPas — Choisir un groupe</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.group-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #151515;
+  border: 1px solid #292929;
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  color: white;
+  transition: all 0.15s;
+}
+.group-row:hover { border-color: rgba(233,30,140,0.4); transform: translateY(-1px); }
+.group-avatar {
+  width: 48px; height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg,#E91E8C,#6B46C1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 900;
+  color: white;
+  flex-shrink: 0;
+}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">BeauOuPas</div>
+  <nav id="sidebar-nav"></nav>
+  <div class="sidebar-footer">
+    <a href="create-group.html" class="btn btn-primary btn-full" style="margin-bottom:14px;text-decoration:none;">➕ Nouveau groupe</a>
+    <div id="sidebar-user"></div>
+  </div>
+</aside>
+<nav class="bottom-nav" id="bottom-nav"></nav>
+
+<main class="main-content">
+  <div style="max-width:600px;margin:0 auto;">
+
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+      <a href="create-context.html" style="color:#888;text-decoration:none;font-size:24px;">←</a>
+      <h1 style="font-size:22px;font-weight:900;">👥 Dans quel groupe ?</h1>
+    </div>
+
+    <p style="color:#666;font-size:13px;margin-bottom:18px;">
+      Sélectionne le groupe dans lequel créer ta nouvelle série.
+    </p>
+
+    <div id="groups-list"><div class="spinner"></div></div>
+
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script src="navbar.js"></script>
+<script>
+var currentUser = null;
+
+async function init() {
+  currentUser = await requireAuth();
+  if (!currentUser) return;
+
+  if (typeof renderNav === "function") renderNav("home.html");
+  if (typeof loadSidebarProfile === "function") loadSidebarProfile();
+
+  await loadGroups();
+}
+
+async function loadGroups() {
+  var listEl = document.getElementById("groups-list");
+  try {
+    var { data: memberships } = await db
+      .from('group_members')
+      .select('group_id')
+      .eq('user_id', currentUser.id);
+
+    if (!memberships || !memberships.length) {
+      listEl.innerHTML =
+        '<div style="text-align:center;padding:40px 20px;color:#666;">' +
+          '<div style="font-size:48px;margin-bottom:12px;opacity:0.3;">👥</div>' +
+          '<div style="font-size:14px;margin-bottom:14px;">Tu n\'as pas encore de groupe.</div>' +
+          '<a href="create-group.html?chain=true" class="btn btn-primary" style="text-decoration:none;">➕ Créer un groupe maintenant</a>' +
+        '</div>';
+      return;
+    }
+
+    var ids = memberships.map(function(m) { return m.group_id; });
+    var { data: groups } = await db
+      .from('groups')
+      .select('id, name, description, avatar_url')
+      .in('id', ids)
+      .order('created_at', { ascending: false });
+
+    if (!groups || !groups.length) {
+      listEl.innerHTML = '<div style="color:#666;text-align:center;padding:30px;">Aucun groupe trouvé</div>';
+      return;
+    }
+
+    listEl.innerHTML = groups.map(function(g) {
+      var firstLetter = (g.name || '?')[0].toUpperCase();
+      var avatarContent = g.avatar_url
+        ? '<img src="' + escapeHtml(g.avatar_url) + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:14px;">'
+        : firstLetter;
+      return (
+        '<a href="create-series-type.html?group_id=' + encodeURIComponent(g.id) +
+            '&group_name=' + encodeURIComponent(g.name) + '" class="group-row">' +
+          '<div class="group-avatar">' + avatarContent + '</div>' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div style="font-weight:800;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(g.name) + '</div>' +
+            (g.description
+              ? '<div style="font-size:12px;color:#888;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(g.description) + '</div>'
+              : '') +
+          '</div>' +
+          '<span style="color:#E91E8C;font-size:18px;">→</span>' +
+        '</a>'
+      );
+    }).join('');
+  } catch (e) {
+    console.error("loadGroups:", e);
+    listEl.innerHTML = '<div class="alert alert-error" style="display:block;">Erreur de chargement</div>';
+  }
+}
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+init();
+</script>
+</body>
+</html>

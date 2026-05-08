@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeauOuPas — Où créer ?</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.context-card {
+  display: block;
+  border-radius: 18px;
+  padding: 22px;
+  margin-bottom: 12px;
+  color: white;
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.15s;
+  min-height: 110px;
+}
+.context-card:hover { transform: translateY(-2px); }
+.context-card.standalone { background: linear-gradient(135deg, #E91E8C 0%, #C4186F 100%); }
+.context-card.new-group { background: linear-gradient(135deg, #6B46C1 0%, #4C1D95 100%); }
+.context-card.existing-group { background: linear-gradient(135deg, #FF9800 0%, #E65100 100%); }
+
+.context-card .emoji-bg {
+  position: absolute;
+  right: -6px;
+  bottom: -16px;
+  font-size: 90px;
+  opacity: 0.18;
+  pointer-events: none;
+}
+.context-card .title { font-size: 18px; font-weight: 900; margin-bottom: 4px; }
+.context-card .desc { font-size: 12px; opacity: 0.9; line-height: 1.5; }
+.context-card .arrow { font-size: 12px; font-weight: 700; margin-top: 8px; }
+
+.intro-block {
+  text-align: center;
+  margin: 12px 0 24px;
+}
+.intro-emoji { font-size: 48px; margin-bottom: 8px; }
+.intro-title { font-size: 22px; font-weight: 900; margin-bottom: 4px; }
+.intro-sub { color: #888; font-size: 14px; }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">BeauOuPas</div>
+  <nav id="sidebar-nav"></nav>
+  <div class="sidebar-footer">
+    <a href="create-group.html" class="btn btn-primary btn-full" style="margin-bottom:14px;text-decoration:none;">➕ Nouveau groupe</a>
+    <div id="sidebar-user"></div>
+  </div>
+</aside>
+<nav class="bottom-nav" id="bottom-nav"></nav>
+
+<main class="main-content">
+  <div style="max-width:600px;margin:0 auto;">
+
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+      <a href="home.html" style="color:#888;text-decoration:none;font-size:24px;">←</a>
+      <h1 style="font-size:22px;font-weight:900;">✨ Créer</h1>
+    </div>
+
+    <div class="intro-block">
+      <div class="intro-emoji">✨</div>
+      <div class="intro-title">Où veux-tu créer ?</div>
+      <div class="intro-sub">Choisis le contexte de ton nouveau quiz ou série</div>
+    </div>
+
+    <!-- 1. Sans groupe -->
+    <a href="create-series-type.html" class="context-card standalone">
+      <div class="emoji-bg">🎯</div>
+      <div class="title">🎯 Sans groupe</div>
+      <div class="desc">Crée dans tes séries personnelles (pas rattaché à un groupe)</div>
+      <div class="arrow">Continuer →</div>
+    </a>
+
+    <!-- 2. Nouveau groupe -->
+    <a href="create-group.html?chain=true" class="context-card new-group">
+      <div class="emoji-bg">➕</div>
+      <div class="title">➕ Nouveau groupe</div>
+      <div class="desc">Crée d'abord un groupe puis ta série dedans</div>
+      <div class="arrow">Continuer →</div>
+    </a>
+
+    <!-- 3. Groupe existant — caché si 0 groupe -->
+    <a href="javascript:void(0)" class="context-card existing-group"
+       id="existing-card" style="display:none;"
+       onclick="goExistingGroup()">
+      <div class="emoji-bg">👥</div>
+      <div class="title">👥 Dans un groupe existant</div>
+      <div class="desc">Choisis l'un de tes groupes pour y créer la série</div>
+      <div class="arrow">Continuer →</div>
+    </a>
+
+    <div id="loading-existing" style="text-align:center;padding:20px;color:#666;font-size:13px;">
+      <div class="spinner" style="width:24px;height:24px;border-width:2px;margin:0 auto;"></div>
+    </div>
+
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script src="navbar.js"></script>
+<script>
+var currentUser = null;
+var myGroups = [];
+
+async function init() {
+  currentUser = await requireAuth();
+  if (!currentUser) return;
+
+  if (typeof renderNav === "function") renderNav("home.html");
+  if (typeof loadSidebarProfile === "function") loadSidebarProfile();
+
+  // Vérifier si l'user a au moins un groupe
+  try {
+    var { data: memberships } = await db
+      .from('group_members')
+      .select('group_id')
+      .eq('user_id', currentUser.id);
+
+    var hasGroups = memberships && memberships.length > 0;
+    document.getElementById("loading-existing").style.display = 'none';
+    if (hasGroups) {
+      document.getElementById("existing-card").style.display = 'block';
+    }
+  } catch(e) {
+    console.error("check groups:", e);
+    document.getElementById("loading-existing").style.display = 'none';
+  }
+}
+
+function goExistingGroup() {
+  // Va vers la page de sélection de groupe
+  window.location.href = 'pick-group.html';
+}
+
+init();
+</script>
+</body>
+</html>

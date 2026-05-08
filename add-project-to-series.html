@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeauOuPas — Ajouter un projet</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.project-tile {
+  background: #151515;
+  border: 2px solid #292929;
+  border-radius: 14px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.project-tile:hover { border-color: rgba(233,30,140,0.4); }
+.project-tile.disabled { opacity: 0.4; cursor: not-allowed; }
+.project-tile.disabled:hover { border-color: #292929; }
+
+.project-tile img {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  object-fit: cover;
+  background: #111;
+}
+.project-tile .name { font-size: 13px; font-weight: 700; line-height: 1.3; }
+.project-tile .meta { font-size: 11px; color: #888; }
+
+.upload-area {
+  border: 2px dashed #292929;
+  border-radius: 14px;
+  padding: 30px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-bottom: 14px;
+}
+.upload-area:hover { border-color: #E91E8C; background: rgba(233,30,140,0.04); }
+.upload-area.dragover { border-color: #E91E8C; background: rgba(233,30,140,0.08); }
+
+.upload-icon { font-size: 40px; margin-bottom: 6px; opacity: 0.4; }
+.upload-text { font-weight: 700; margin-bottom: 4px; }
+.upload-sub { font-size: 12px; color: #888; }
+
+.preview {
+  display: none;
+  text-align: center;
+  margin-bottom: 14px;
+}
+.preview img {
+  max-width: 100%;
+  max-height: 240px;
+  border-radius: 14px;
+}
+.preview .change-btn {
+  display: inline-block;
+  margin-top: 10px;
+  background: transparent;
+  border: 1px solid #292929;
+  color: #888;
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: Arial;
+}
+
+.tab-row {
+  display: flex;
+  gap: 6px;
+  background: #111;
+  padding: 4px;
+  border-radius: 12px;
+  margin-bottom: 18px;
+}
+.tab-btn {
+  flex: 1;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  color: #888;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 8px;
+  font-family: Arial;
+}
+.tab-btn.active { background: #E91E8C; color: white; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">BeauOuPas</div>
+  <nav id="sidebar-nav"></nav>
+  <div class="sidebar-footer">
+    <a href="create-group.html" class="btn btn-primary btn-full" style="margin-bottom:14px;text-decoration:none;">➕ Nouveau groupe</a>
+    <div id="sidebar-user"></div>
+  </div>
+</aside>
+<nav class="bottom-nav" id="bottom-nav"></nav>
+
+<main class="main-content">
+  <div style="max-width:680px;margin:0 auto;">
+
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+      <a href="javascript:history.back()" style="color:#888;text-decoration:none;font-size:24px;">←</a>
+      <h1 style="font-size:22px;font-weight:900;">📸 Ajouter un projet</h1>
+    </div>
+
+    <div id="series-banner" style="display:none;margin-bottom:18px;padding:12px 16px;background:rgba(233,30,140,0.08);border:1px solid rgba(233,30,140,0.2);border-radius:12px;font-size:13px;">
+      <span style="color:#E91E8C;font-weight:800;">Série :</span>
+      <span id="series-name" style="color:white;font-weight:700;"></span>
+      <span id="series-quota" style="color:#888;float:right;"></span>
+    </div>
+
+    <div class="alert alert-error" id="error-msg"></div>
+    <div class="alert alert-success" id="success-msg"></div>
+
+    <!-- 2 onglets : Réutiliser un projet existant / Créer nouveau -->
+    <div class="tab-row">
+      <button class="tab-btn active" data-tab="existing" onclick="switchTab('existing')">📚 Mes projets</button>
+      <button class="tab-btn" data-tab="new" onclick="switchTab('new')">✨ Nouveau projet</button>
+    </div>
+
+    <!-- Tab : Réutiliser un projet existant -->
+    <div class="tab-content active" id="tab-existing">
+      <p style="color:#888;font-size:13px;margin-bottom:14px;">
+        Sélectionne un de tes projets photos pour l'ajouter à la série.
+      </p>
+      <div id="my-projects-grid">
+        <div class="spinner" style="margin:30px auto;"></div>
+      </div>
+    </div>
+
+    <!-- Tab : Créer un nouveau projet rapide -->
+    <div class="tab-content" id="tab-new">
+      <p style="color:#888;font-size:13px;margin-bottom:14px;">
+        Upload une photo et donne-lui un titre. Elle sera ajoutée à la série en tant que <b>vote photo</b>.
+      </p>
+
+      <!-- Zone d'upload -->
+      <div class="upload-area" id="upload-area" onclick="document.getElementById('file-input').click()">
+        <div class="upload-icon">📷</div>
+        <div class="upload-text">Clique pour choisir une photo</div>
+        <div class="upload-sub">JPG / PNG, max 10 MB</div>
+      </div>
+      <input type="file" id="file-input" accept="image/jpeg,image/png" style="display:none;" onchange="onFilePicked(event)">
+
+      <!-- Aperçu -->
+      <div class="preview" id="preview">
+        <img id="preview-img" src="" alt="">
+        <div>
+          <button class="change-btn" type="button" onclick="document.getElementById('file-input').click()">
+            🔄 Changer la photo
+          </button>
+        </div>
+      </div>
+
+      <label class="input-label">Titre du projet *</label>
+      <input type="text" class="input" id="project-title"
+             placeholder="Ex. Mon burger gourmet"
+             maxlength="80"
+             style="margin-bottom:14px;">
+
+      <label class="input-label">Description (optionnelle)</label>
+      <input type="text" class="input" id="project-description"
+             placeholder="..."
+             maxlength="200"
+             style="margin-bottom:18px;">
+
+      <button class="btn btn-primary btn-full" id="btn-upload" onclick="uploadAndAttach()" disabled>
+        ➕ Ajouter à la série
+      </button>
+    </div>
+
+  </div>
+</main>
+
+<div id="toast" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#151515;border:1px solid #292929;color:white;padding:14px 22px;border-radius:14px;font-weight:700;z-index:200;"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script src="navbar.js"></script>
+<script>
+var seriesId = null;
+var seriesData = null;
+var currentUser = null;
+var alreadyAttachedProjectIds = new Set();
+var myProjectsCount = 0;
+var maxPerMember = 2;
+var maxProjects = 10;
+var pickedFile = null;
+
+async function init() {
+  seriesId = new URLSearchParams(window.location.search).get('series_id');
+  if (!seriesId) {
+    window.location.href = 'groups.html';
+    return;
+  }
+
+  currentUser = await requireAuth();
+  if (!currentUser) return;
+
+  if (typeof renderNav === "function") renderNav("home.html");
+  if (typeof loadSidebarProfile === "function") loadSidebarProfile();
+
+  await loadSeries();
+  await loadMyProjects();
+}
+
+async function loadSeries() {
+  var { data: s } = await db.from('series').select('*').eq('id', seriesId).maybeSingle();
+  if (!s) {
+    showError("error-msg", "Série introuvable");
+    return;
+  }
+  seriesData = s;
+  maxPerMember = s.max_per_member || 2;
+  maxProjects = s.max_projects || 10;
+  if (s.is_quiz) {
+    showError("error-msg", "Les quiz n'utilisent pas de projets. Va éditer les questions à la place.");
+    return;
+  }
+  if (s.status !== 'preparing') {
+    showError("error-msg", "La série a déjà démarré, impossible d'ajouter des projets.");
+    return;
+  }
+
+  document.getElementById("series-banner").style.display = 'block';
+  document.getElementById("series-name").textContent = s.title;
+
+  // Charger les projets déjà attachés à la série
+  var { data: existing } = await db
+    .from('series_projects')
+    .select('project_id, added_by')
+    .eq('series_id', seriesId);
+
+  alreadyAttachedProjectIds = new Set((existing || []).map(function(sp) { return sp.project_id; }));
+  myProjectsCount = (existing || []).filter(function(sp) { return sp.added_by === currentUser.id; }).length;
+
+  document.getElementById("series-quota").textContent =
+    myProjectsCount + ' / ' + (maxPerMember === 999 ? '∞' : maxPerMember);
+
+  if (myProjectsCount >= maxPerMember) {
+    showError("error-msg", "⚠️ Tu as déjà atteint ta limite (" + maxPerMember + " projet(s) max par membre)");
+  }
+  if ((existing || []).length >= maxProjects) {
+    showError("error-msg", "⚠️ La série est complète (" + maxProjects + " projets max)");
+  }
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(function(b) {
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+  document.querySelectorAll('.tab-content').forEach(function(c) {
+    c.classList.toggle('active', c.id === 'tab-' + tab);
+  });
+}
+
+// ─── Tab existant : liste de mes projets ──────────────────
+async function loadMyProjects() {
+  var grid = document.getElementById("my-projects-grid");
+  try {
+    var { data: rawProjects } = await db
+      .from('projects')
+      .select('id, title, type, created_at, project_photos(url, side)')
+      .eq('owner_id', currentUser.id)
+      .eq('type', 'photo_vote')
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    if (!rawProjects || !rawProjects.length) {
+      grid.innerHTML =
+        '<div style="text-align:center;padding:30px;color:#666;font-size:13px;">' +
+          'Tu n\'as pas encore de projet photo.<br>' +
+          'Utilise l\'onglet "Nouveau projet" pour en créer un.' +
+        '</div>';
+      return;
+    }
+
+    grid.style.display = 'grid';
+    grid.style.gridTemplateColumns = 'repeat(2, 1fr)';
+    grid.style.gap = '10px';
+
+    grid.innerHTML = rawProjects.map(function(p) {
+      var photo = (p.project_photos || []).find(function(ph) { return ph.side === 'single' || ph.side === 'left'; });
+      var photoUrl = photo ? photo.url : '';
+
+      var attached = alreadyAttachedProjectIds.has(p.id);
+      var blocked = attached || myProjectsCount >= maxPerMember;
+
+      return (
+        '<div class="project-tile ' + (blocked ? 'disabled' : '') + '" ' +
+             (blocked ? '' : 'onclick="attachExisting(\'' + p.id + '\')"') + '>' +
+          (photoUrl
+            ? '<img src="' + escapeHtml(photoUrl) + '" alt="">'
+            : '<div style="width:100%;aspect-ratio:1;background:#222;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:36px;opacity:0.4;">📸</div>') +
+          '<div class="name">' + escapeHtml(p.title || 'Sans titre') + '</div>' +
+          (attached
+            ? '<div class="meta" style="color:#4CAF50;">✅ Déjà ajouté</div>'
+            : '<div class="meta">' + formatDate(p.created_at) + '</div>') +
+        '</div>'
+      );
+    }).join('');
+  } catch (e) {
+    console.error("loadMyProjects:", e);
+    grid.innerHTML = '<div style="color:#888;text-align:center;padding:20px;">Impossible de charger tes projets</div>';
+  }
+}
+
+async function attachExisting(projectId) {
+  try {
+    // Vérifier qu'on n'a pas explosé la limite entre temps
+    if (myProjectsCount >= maxPerMember) {
+      showError("error-msg", "⚠️ Limite atteinte");
+      return;
+    }
+
+    // Compter les projets actuels pour la position
+    var { data: allProjects } = await db
+      .from('series_projects')
+      .select('id, project_id')
+      .eq('series_id', seriesId);
+
+    if ((allProjects || []).length >= maxProjects) {
+      showError("error-msg", "⚠️ La série est complète");
+      return;
+    }
+
+    var { error } = await db.from('series_projects').insert({
+      series_id: seriesId,
+      project_id: projectId,
+      added_by: currentUser.id,
+      is_revealed: !seriesData.projects_hidden,
+      position: (allProjects || []).length
+    });
+
+    if (error) {
+      console.error("attach:", error);
+      throw new Error(error.message);
+    }
+
+    showToast("✅ Projet ajouté à la série !");
+    setTimeout(function() {
+      window.location.href = 'series-detail.html?id=' + encodeURIComponent(seriesId);
+    }, 800);
+  } catch (e) {
+    console.error("attachExisting:", e);
+    showError("error-msg", "❌ " + (e.message || "Erreur"));
+  }
+}
+
+// ─── Tab nouveau : upload + attach ────────────────────────
+function onFilePicked(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 10 * 1024 * 1024) {
+    showToast("⚠️ Fichier trop gros (max 10 MB)");
+    return;
+  }
+  pickedFile = file;
+  var url = URL.createObjectURL(file);
+  document.getElementById("preview-img").src = url;
+  document.getElementById("preview").style.display = 'block';
+  document.getElementById("upload-area").style.display = 'none';
+  refreshUploadButton();
+}
+
+document.getElementById("project-title").addEventListener('input', refreshUploadButton);
+
+function refreshUploadButton() {
+  var title = document.getElementById("project-title").value.trim();
+  document.getElementById("btn-upload").disabled = !pickedFile || !title;
+}
+
+async function uploadAndAttach() {
+  var title = document.getElementById("project-title").value.trim();
+  var description = document.getElementById("project-description").value.trim();
+
+  if (!pickedFile || !title) return;
+
+  document.getElementById("error-msg").style.display = 'none';
+  document.getElementById("success-msg").style.display = 'none';
+  setLoading("btn-upload", true, "➕ Ajouter à la série");
+
+  try {
+    // 1. Upload de la photo dans le bucket "photos"
+    var ext = pickedFile.type === 'image/png' ? 'png' : 'jpg';
+    var path = 'display/' + currentUser.id + '/' + Date.now() + '.' + ext;
+    var { data: upload, error: upErr } = await db.storage
+      .from('photos')
+      .upload(path, pickedFile, { contentType: pickedFile.type, cacheControl: '3600', upsert: false });
+    if (upErr) {
+      console.error("upload:", upErr);
+      throw new Error("Upload échoué : " + upErr.message);
+    }
+    // URL publique
+    var { data: urlData } = db.storage.from('photos').getPublicUrl(path);
+    var photoUrl = urlData.publicUrl;
+
+    // 2. Créer le projet via la RPC insert_project (comme le mobile)
+    var { data: projectId, error: insErr } = await db.rpc('insert_project', {
+      p_owner_id: currentUser.id,
+      p_type: 'photo_vote',
+      p_title: title,
+      p_description: description || '',
+      p_gender_filter: 'all',
+      p_min_age: 0,
+      p_max_age: 99,
+      p_closes_at: '',
+      p_ip_address: '',
+      p_latitude: null,
+      p_longitude: null,
+      p_city: '',
+      p_country: '',
+      p_is_private: false
+    });
+
+    if (insErr || !projectId) {
+      console.error("insert_project:", insErr);
+      // Fallback : INSERT direct
+      var { data: fallbackProj, error: fbErr } = await db
+        .from('projects')
+        .insert({
+          owner_id: currentUser.id,
+          type: 'photo_vote',
+          title: title,
+          description: description || null,
+          gender_filter: 'all',
+          min_age: 0,
+          max_age: 99
+        })
+        .select()
+        .single();
+      if (fbErr) throw new Error("Impossible de créer le projet : " + (fbErr.message || ''));
+      projectId = fallbackProj.id;
+    }
+
+    // 3. Ajouter la photo via la RPC insert_project_photo
+    try {
+      await db.rpc('insert_project_photo', {
+        p_project_id: projectId,
+        p_url: photoUrl,
+        p_side: 'single'
+      });
+    } catch (e) {
+      // Fallback INSERT direct
+      await db.from('project_photos').insert({
+        project_id: projectId,
+        url: photoUrl,
+        side: 'single'
+      });
+    }
+
+    // 4. Attacher à la série
+    var { data: allProjects } = await db
+      .from('series_projects')
+      .select('id')
+      .eq('series_id', seriesId);
+    var position = (allProjects || []).length;
+
+    await db.from('series_projects').insert({
+      series_id: seriesId,
+      project_id: projectId,
+      added_by: currentUser.id,
+      is_revealed: !seriesData.projects_hidden,
+      position: position
+    });
+
+    showSuccess("success-msg", "✅ Projet créé et ajouté à la série !");
+    setTimeout(function() {
+      window.location.href = 'series-detail.html?id=' + encodeURIComponent(seriesId);
+    }, 1000);
+  } catch (e) {
+    console.error("uploadAndAttach:", e);
+    showError("error-msg", "❌ " + (e.message || "Erreur"));
+    setLoading("btn-upload", false, "➕ Ajouter à la série");
+  }
+}
+
+function showToast(msg) {
+  var t = document.getElementById("toast");
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(function() { t.style.display = 'none'; }, 2200);
+}
+
+function formatDate(iso) {
+  if (!iso) return '?';
+  try {
+    var d = new Date(iso);
+    return d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear();
+  } catch(e) { return '?'; }
+}
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+init();
+</script>
+</body>
+</html>

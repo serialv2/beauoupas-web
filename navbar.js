@@ -1,15 +1,13 @@
 function renderNav(activePage) {
+  // ⚡ Lot 4 : nouvel onglet "Accueil" 🏠 en premier (page home.html).
+  // Le "Feed" devient explicite (📷 photos publiques globales).
   var pages = [
-    { href: 'feed.html',     icon: '🏠', label: 'Feed' },
-    { href: 'projects.html', icon: '📸', label: 'Projets' },
+    { href: 'home.html',     icon: '🏠', label: 'Accueil' },
+    { href: 'feed.html',     icon: '📷', label: 'Feed' },
     { href: 'groups.html',   icon: '👥', label: 'Groupes' },
     { href: 'friends.html',  icon: '🤝', label: 'Amis' },
     { href: 'profile.html',  icon: '👤', label: 'Profil' },
   ];
-
-  // ⚡ NOUVEAU : "Groupes" ajouté entre Projets et Amis (Amis devient 🤝)
-  // Le label "groups.html" couvre aussi group-detail.html et create-group.html
-  // (la fonction reçoit l'argument exact, ces 2 pages forceront activePage = 'groups.html').
 
   // Sidebar desktop
   var sidebarHtml = pages.map(function(p) {

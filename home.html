@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeauOuPas — Accueil</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.hello-block {
+  text-align: center;
+  margin: 20px 0 24px;
+}
+.hello-label { font-size: 14px; color: #888; margin-bottom: 4px; }
+.hello-name { font-size: 28px; font-weight: 900; color: #E91E8C; }
+
+.code-card {
+  background: linear-gradient(135deg, #E91E8C 0%, #C4186F 100%);
+  border-radius: 18px;
+  padding: 18px;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 24px rgba(233,30,140,0.25);
+}
+.code-card-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: white;
+  opacity: 0.9;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+.code-card-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  border-radius: 12px;
+  padding: 4px 4px 4px 14px;
+}
+.code-card-row input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: #333;
+  outline: none;
+  font-family: monospace;
+  padding: 12px 0;
+}
+.code-card-row input::placeholder { color: #aaa; letter-spacing: 2px; }
+.code-card-row button {
+  background: #E91E8C;
+  color: white;
+  border: none;
+  padding: 11px 18px;
+  border-radius: 10px;
+  font-weight: 900;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: Arial;
+}
+.code-card-row button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.big-action-card {
+  display: block;
+  border-radius: 20px;
+  padding: 24px;
+  margin-bottom: 12px;
+  color: white;
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.big-action-card:hover { transform: translateY(-2px); }
+.big-action-card.vote {
+  background: linear-gradient(135deg, #E91E8C 0%, #C4186F 100%);
+  box-shadow: 0 8px 24px rgba(233,30,140,0.25);
+}
+.big-action-card.create {
+  background: linear-gradient(135deg, #6B46C1 0%, #4C1D95 100%);
+  box-shadow: 0 8px 24px rgba(107,70,193,0.25);
+}
+.big-action-card .emoji-bg {
+  position: absolute;
+  right: -10px;
+  bottom: -20px;
+  font-size: 110px;
+  opacity: 0.18;
+  pointer-events: none;
+}
+.big-action-card .title { font-size: 22px; font-weight: 900; margin-bottom: 4px; }
+.big-action-card .desc { font-size: 13px; opacity: 0.9; margin-bottom: 12px; }
+.big-action-card .arrow { font-size: 13px; font-weight: 700; }
+
+.section-label {
+  font-size: 11px;
+  font-weight: 900;
+  color: #888;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin: 20px 4px 10px;
+}
+
+.mini-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.mini-card {
+  display: block;
+  background: #151515;
+  border: 1px solid #292929;
+  border-radius: 14px;
+  padding: 16px;
+  text-decoration: none;
+  color: white;
+  text-align: center;
+  transition: all 0.15s;
+}
+.mini-card:hover {
+  border-color: rgba(233,30,140,0.4);
+  transform: translateY(-2px);
+}
+.mini-card .icon { font-size: 28px; margin-bottom: 4px; }
+.mini-card .label { font-size: 13px; font-weight: 800; }
+.mini-card .desc { font-size: 11px; color: #888; margin-top: 2px; }
+
+.error-toast {
+  display: none;
+  background: rgba(244,67,54,0.15);
+  border: 1px solid rgba(244,67,54,0.4);
+  color: #ef5350;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  margin-top: 8px;
+}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">BeauOuPas</div>
+  <nav id="sidebar-nav"></nav>
+  <div class="sidebar-footer">
+    <a href="create-group.html" class="btn btn-primary btn-full" style="margin-bottom:14px;text-decoration:none;">➕ Nouveau groupe</a>
+    <div id="sidebar-user"></div>
+  </div>
+</aside>
+<nav class="bottom-nav" id="bottom-nav"></nav>
+
+<main class="main-content">
+  <div style="max-width:600px;margin:0 auto;">
+
+    <div class="hello-block">
+      <div class="hello-label">👋 Bonjour</div>
+      <div class="hello-name" id="hello-username">…</div>
+    </div>
+
+    <!-- Carte code (saisie rejoindre) -->
+    <div class="code-card">
+      <div class="code-card-label">⚡ REJOINDRE UNE SÉRIE</div>
+      <div class="code-card-row">
+        <input type="text" id="join-code" placeholder="ABCDEF"
+               maxlength="6" autocomplete="off"
+               oninput="onCodeChange()"
+               onkeydown="if(event.key==='Enter') joinByCode()">
+        <button id="btn-join-code" disabled onclick="joinByCode()">OK</button>
+      </div>
+      <div class="error-toast" id="join-error"></div>
+    </div>
+
+    <!-- Big card : Voter (Feed) -->
+    <a href="feed.html" class="big-action-card vote">
+      <div class="emoji-bg">🗳️</div>
+      <div class="title">🗳️ Voter</div>
+      <div class="desc">Photos, duels, sondages dans tes groupes</div>
+      <div class="arrow">Voir mon feed →</div>
+    </a>
+
+    <!-- Big card : Créer -->
+    <a href="create-context.html" class="big-action-card create">
+      <div class="emoji-bg">✨</div>
+      <div class="title">✨ Créer un quiz ou une partie</div>
+      <div class="desc">Quiz ou série, dans un groupe ou non</div>
+      <div class="arrow">Choisir où →</div>
+    </a>
+
+    <!-- Plus d'options -->
+    <div class="section-label">Plus d'options</div>
+    <div class="mini-grid">
+      <a href="groups.html" class="mini-card">
+        <div class="icon">👥</div>
+        <div class="label">Mes groupes</div>
+        <div class="desc" id="count-groups">…</div>
+      </a>
+      <a href="my-series.html" class="mini-card">
+        <div class="icon">📋</div>
+        <div class="label">Mes séries</div>
+        <div class="desc" id="count-series">Toutes mes créas</div>
+      </a>
+      <a href="projects.html" class="mini-card">
+        <div class="icon">📸</div>
+        <div class="label">Mes projets</div>
+        <div class="desc" id="count-projects">…</div>
+      </a>
+      <a href="invitations.html" class="mini-card">
+        <div class="icon">📬</div>
+        <div class="label">Invitations</div>
+        <div class="desc" id="count-invitations">…</div>
+      </a>
+    </div>
+
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script src="navbar.js"></script>
+<script>
+var currentUser = null;
+
+async function init() {
+  currentUser = await requireAuth();
+  if (!currentUser) return;
+
+  if (typeof renderNav === "function") renderNav("home.html");
+  if (typeof loadSidebarProfile === "function") loadSidebarProfile();
+
+  // Charger le profil pour le "Bonjour @user"
+  var profile = await getProfile(currentUser.id);
+  if (profile) {
+    document.getElementById("hello-username").textContent = '@' + (profile.username || 'toi');
+  }
+
+  // Charger les compteurs en parallèle pour ne pas bloquer l'affichage
+  loadCounters();
+}
+
+async function loadCounters() {
+  // ⚡ On lance les 4 compteurs en parallèle pour éviter de bloquer
+  // l'affichage de la page si l'un d'eux est lent.
+  loadGroupsCount();
+  loadSeriesCount();
+  loadProjectsCount();
+  loadInvitationsCount();
+}
+
+async function loadGroupsCount() {
+  try {
+    var { count } = await db
+      .from('group_members')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', currentUser.id);
+    document.getElementById("count-groups").textContent =
+      (count || 0) + ' groupe' + ((count || 0) > 1 ? 's' : '');
+  } catch(e) {
+    document.getElementById("count-groups").textContent = '— groupes';
+  }
+}
+
+async function loadSeriesCount() {
+  // Compte des séries que je participe (créées par moi OU rejointes)
+  try {
+    var { count } = await db
+      .from('series_participants')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', currentUser.id);
+    document.getElementById("count-series").textContent =
+      (count || 0) + ' série' + ((count || 0) > 1 ? 's' : '');
+  } catch(e) {
+    document.getElementById("count-series").textContent = 'Toutes mes créas';
+  }
+}
+
+async function loadProjectsCount() {
+  try {
+    var { count } = await db
+      .from('projects')
+      .select('*', { count: 'exact', head: true })
+      .eq('owner_id', currentUser.id);
+    document.getElementById("count-projects").textContent =
+      (count || 0) + ' projet' + ((count || 0) > 1 ? 's' : '');
+  } catch(e) {
+    document.getElementById("count-projects").textContent = '— projets';
+  }
+}
+
+async function loadInvitationsCount() {
+  try {
+    // Invitations en attente (status = 'pending')
+    var { count } = await db
+      .from('series_invitations')
+      .select('*', { count: 'exact', head: true })
+      .eq('invited_user_id', currentUser.id)
+      .eq('status', 'pending');
+    var n = count || 0;
+    document.getElementById("count-invitations").textContent =
+      n === 0 ? 'Aucune' : (n + ' en attente');
+  } catch(e) {
+    document.getElementById("count-invitations").textContent = '—';
+  }
+}
+
+// ─── Saisie code rejoindre ───────────────────────────────
+function onCodeChange() {
+  var input = document.getElementById("join-code");
+  var clean = input.value.toUpperCase().replace(/[^A-Z]/g, '');
+  if (clean !== input.value) input.value = clean;
+  document.getElementById("btn-join-code").disabled = clean.length !== 6;
+  document.getElementById("join-error").style.display = 'none';
+}
+
+async function joinByCode() {
+  var code = document.getElementById("join-code").value.trim().toUpperCase();
+  if (code.length !== 6) return;
+
+  var btn = document.getElementById("btn-join-code");
+  btn.disabled = true;
+  btn.textContent = '...';
+  document.getElementById("join-error").style.display = 'none';
+
+  try {
+    // Tenter la RPC, et faire le INSERT manuel en fallback (comme join-series.html)
+    try {
+      await db.rpc('join_series_by_code', { p_code: code });
+    } catch (e) { /* on continue */ }
+
+    var { data: series } = await db
+      .from('series')
+      .select('id, status, title')
+      .eq('access_code', code)
+      .maybeSingle();
+
+    if (!series) throw new Error("Code invalide ou série introuvable");
+    if (series.status === 'finished') throw new Error("Cette série est déjà terminée");
+
+    try {
+      await db.from('series_participants').insert({
+        series_id: series.id,
+        user_id: currentUser.id
+      });
+    } catch (e) { /* déjà participant */ }
+
+    window.location.href = 'series-detail.html?id=' + encodeURIComponent(series.id);
+  } catch (e) {
+    var err = document.getElementById("join-error");
+    err.textContent = "❌ " + (e.message || "Erreur");
+    err.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'OK';
+  }
+}
+
+init();
+</script>
+</body>
+</html>

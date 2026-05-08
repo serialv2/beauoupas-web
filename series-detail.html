@@ -398,6 +398,9 @@ function renderActions() {
       // Bouton spécifique aux quiz : éditer les questions avant de démarrer
       if (seriesData.is_quiz) {
         html += '<a href="edit-quiz-questions.html?id=' + encodeURIComponent(seriesId) + '" class="btn btn-secondary btn-full" style="text-decoration:none;margin-bottom:8px;">📝 Éditer les questions</a>';
+      } else {
+        // ⚡ Lot 4 : bouton ajouter un projet (créateur ET membres) si non-quiz
+        html += '<a href="add-project-to-series.html?series_id=' + encodeURIComponent(seriesId) + '" class="btn btn-secondary btn-full" style="text-decoration:none;margin-bottom:8px;">➕ Ajouter un projet</a>';
       }
       html += '<button class="btn btn-primary btn-full" style="margin-bottom:8px;" onclick="startSeries()">▶️ Démarrer la série</button>';
     } else if (seriesData.status === 'active') {
@@ -413,7 +416,10 @@ function renderActions() {
     html += '<button class="btn btn-ghost btn-full" style="border-color:rgba(244,67,54,0.4);color:#ef5350;" onclick="deleteSeries()">🗑️ Supprimer la série</button>';
   } else {
     // Non créateur
-    if (seriesData.status === 'active') {
+    if (seriesData.status === 'preparing' && !seriesData.is_quiz) {
+      // ⚡ Lot 4 : les membres peuvent aussi ajouter des projets en preparing (sauf pour les quiz)
+      html += '<a href="add-project-to-series.html?series_id=' + encodeURIComponent(seriesId) + '" class="btn btn-primary btn-full" style="text-decoration:none;margin-bottom:8px;">➕ Ajouter un projet</a>';
+    } else if (seriesData.status === 'active') {
       var voteUrl = seriesData.is_quiz
         ? 'quiz-play.html?id=' + encodeURIComponent(seriesId)
         : 'series-vote.html?id=' + encodeURIComponent(seriesId);
