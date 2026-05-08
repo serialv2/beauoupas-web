@@ -17,6 +17,7 @@
   cursor: pointer;
   transition: all 0.15s;
   margin-bottom: 8px;
+  user-select: none;
 }
 .friend-row:hover { border-color: rgba(233,30,140,0.3); }
 .friend-row.selected {
@@ -40,6 +41,19 @@
   border-color: #E91E8C;
   color: white;
 }
+.tool-btn {
+  background: transparent;
+  border: 1px solid #292929;
+  color: #888;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  transition: all 0.15s;
+  font-family: Arial;
+}
+.tool-btn:hover { border-color: #E91E8C; color: #E91E8C; }
 </style>
 </head>
 <body>
@@ -57,17 +71,14 @@
 <main class="main-content">
   <div style="max-width:600px;margin:0 auto;">
 
-    <!-- Header avec bouton retour -->
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:24px;">
       <a href="groups.html" style="color:#888;text-decoration:none;font-size:24px;">←</a>
       <h1 style="font-size:24px;font-weight:900;">➕ Nouveau groupe</h1>
     </div>
 
-    <!-- Alerts -->
     <div class="alert alert-error" id="error-msg"></div>
     <div class="alert alert-success" id="success-msg"></div>
 
-    <!-- Formulaire -->
     <div class="card" style="padding:20px;margin-bottom:18px;">
       <label class="input-label">Nom du groupe *</label>
       <input type="text" class="input" id="group-name" placeholder="Ex. Foodies Lyon" maxlength="50" autofocus>
@@ -78,18 +89,29 @@
       <input type="text" class="input" id="group-description" placeholder="À quoi sert ce groupe ?" maxlength="200">
     </div>
 
-    <!-- Sélection d'amis -->
     <div class="card" style="padding:20px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
         <h2 style="font-size:16px;font-weight:800;">Inviter des amis</h2>
         <span id="selected-count" style="font-size:13px;color:#888;">0 sélectionné</span>
       </div>
+
+      <!-- Recherche + tout sélectionner -->
+      <div id="friends-tools" style="display:none;margin-bottom:12px;">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <input type="text" class="input" id="search-input" placeholder="🔎 Rechercher un ami…"
+                 style="flex:1;min-width:180px;padding:10px 14px;font-size:14px;"
+                 oninput="renderFriends()">
+          <button type="button" class="tool-btn" onclick="toggleAll()">
+            <span id="select-all-label">✓ Tous</span>
+          </button>
+        </div>
+      </div>
+
       <div id="friends-list">
         <div class="spinner" style="margin:30px auto;"></div>
       </div>
     </div>
 
-    <!-- CTA -->
     <button class="btn btn-primary btn-full" style="margin-top:20px;" id="btn-create" onclick="createGroup()">
       Créer le groupe
     </button>
@@ -102,12 +124,8 @@
 <script src="navbar.js"></script>
 <script>
 var currentUser = null;
-var friends = [];        // tous les amis
-var selected = new Set(); // user_ids sélectionnés
-// ⚡ Quand on arrive depuis HomePage avec ?chain=true, on enchaîne ensuite
-// sur la création de série. Pour l'instant, on retourne juste sur groups.html.
-// Lot 2 : on activera la chaîne vers create-series-type.html.
-var chainCreate = new URLSearchParams(window.location.search).get('chain') === 'true';
+var friends = [];        // tous les amis acceptés (profils)
+var selected = new Set(); // user_ids cochés
 
 async function init() {
   currentUser = await requireAuth();
@@ -123,33 +141,31 @@ async function loadFriends() {
   var listEl = document.getElementById("friends-list");
 
   try {
-    // Liste des amis acceptés (statut = 'accepted')
-    // On regarde les 2 directions car l'amitié peut être créée par l'un ou l'autre
-    var { data: rows1 } = await db
+    // ⚡ FIX BUG : la table 'friendships' utilise les colonnes
+    // `requester_id` + `receiver_id`, pas `addressee_id` (vérifié dans
+    // Models/FriendshipModel.cs côté mobile et dans friends.html du web).
+    // L'ancienne requête échouait silencieusement → la liste apparaissait vide.
+    var { data: rows1, error: e1 } = await db
       .from('friendships')
-      .select('addressee_id, profiles:addressee_id (id, username, avatar_url)')
+      .select('receiver_id')
       .eq('requester_id', currentUser.id)
       .eq('status', 'accepted');
 
-    var { data: rows2 } = await db
+    var { data: rows2, error: e2 } = await db
       .from('friendships')
-      .select('requester_id, profiles:requester_id (id, username, avatar_url)')
-      .eq('addressee_id', currentUser.id)
+      .select('requester_id')
+      .eq('receiver_id', currentUser.id)
       .eq('status', 'accepted');
 
-    var friendProfiles = [];
-    (rows1 || []).forEach(function(r) { if (r.profiles) friendProfiles.push(r.profiles); });
-    (rows2 || []).forEach(function(r) { if (r.profiles) friendProfiles.push(r.profiles); });
+    if (e1) console.warn("friendships sent:", e1);
+    if (e2) console.warn("friendships received:", e2);
 
-    // Dédupliquer par id (au cas où la BDD aurait des doublons)
-    var seen = new Set();
-    friends = friendProfiles.filter(function(p) {
-      if (seen.has(p.id)) return false;
-      seen.add(p.id);
-      return true;
-    });
+    var friendIds = [];
+    (rows1 || []).forEach(function(r) { if (r.receiver_id) friendIds.push(r.receiver_id); });
+    (rows2 || []).forEach(function(r) { if (r.requester_id) friendIds.push(r.requester_id); });
+    friendIds = Array.from(new Set(friendIds));
 
-    if (!friends.length) {
+    if (!friendIds.length) {
       listEl.innerHTML =
         '<div style="text-align:center;padding:30px 10px;color:#666;font-size:14px;">' +
           '👋 Tu n\'as pas encore d\'amis.<br>' +
@@ -159,6 +175,23 @@ async function loadFriends() {
       return;
     }
 
+    // 1 seule requête pour tous les profils (vs N+1 du mobile)
+    var { data: profiles, error: pErr } = await db
+      .from('profiles')
+      .select('id, username, avatar_url')
+      .in('id', friendIds);
+
+    if (pErr) {
+      console.error("profiles:", pErr);
+      listEl.innerHTML = '<div style="color:#888;text-align:center;padding:20px;">Impossible de charger les profils</div>';
+      return;
+    }
+
+    friends = (profiles || []).sort(function(a, b) {
+      return (a.username || '').toLowerCase().localeCompare((b.username || '').toLowerCase());
+    });
+
+    document.getElementById("friends-tools").style.display = 'block';
     renderFriends();
   } catch (e) {
     console.error("loadFriends:", e);
@@ -168,28 +201,54 @@ async function loadFriends() {
 
 function renderFriends() {
   var listEl = document.getElementById("friends-list");
-  listEl.innerHTML = friends.map(function(f) {
-    var isSelected = selected.has(f.id);
-    var firstLetter = (f.username || '?')[0].toUpperCase();
-    var avatarContent = f.avatar_url
-      ? '<img src="' + escapeHtml(f.avatar_url) + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">'
-      : firstLetter;
+  var search = (document.getElementById("search-input").value || '').trim().toLowerCase();
 
-    return (
-      '<div class="friend-row ' + (isSelected ? 'selected' : '') + '" onclick="toggleFriend(\'' + f.id + '\')">' +
-        '<div class="avatar" style="width:38px;height:38px;font-size:14px;">' + avatarContent + '</div>' +
-        '<div style="flex:1;font-weight:700;">@' + escapeHtml(f.username) + '</div>' +
-        '<div class="check">' + (isSelected ? '✓' : '') + '</div>' +
-      '</div>'
-    );
-  }).join('');
+  var filtered = friends.filter(function(f) {
+    if (!search) return true;
+    return (f.username || '').toLowerCase().indexOf(search) !== -1;
+  });
 
-  document.getElementById("selected-count").textContent = selected.size + ' sélectionné' + (selected.size > 1 ? 's' : '');
+  if (!filtered.length) {
+    listEl.innerHTML = '<div style="color:#666;font-size:13px;text-align:center;padding:20px;">Aucun ami ne correspond</div>';
+  } else {
+    listEl.innerHTML = filtered.map(function(f) {
+      var isSelected = selected.has(f.id);
+      var firstLetter = (f.username || '?')[0].toUpperCase();
+      var avatarContent = f.avatar_url
+        ? '<img src="' + escapeHtml(f.avatar_url) + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">'
+        : firstLetter;
+
+      // ⚡ ATTENTION : pas de <a> ici. La div est cliquable mais ne navigue
+      // nulle part. event.stopPropagation+preventDefault au cas où un parent
+      // aurait un handler global de redirection.
+      return (
+        '<div class="friend-row ' + (isSelected ? 'selected' : '') + '" ' +
+             'onclick="event.preventDefault();event.stopPropagation();toggleFriend(\'' + f.id + '\');return false;">' +
+          '<div class="avatar" style="width:38px;height:38px;font-size:14px;">' + avatarContent + '</div>' +
+          '<div style="flex:1;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@' + escapeHtml(f.username) + '</div>' +
+          '<div class="check">' + (isSelected ? '✓' : '') + '</div>' +
+        '</div>'
+      );
+    }).join('');
+  }
+
+  document.getElementById("selected-count").textContent =
+    selected.size + ' sélectionné' + (selected.size > 1 ? 's' : '');
+
+  var allSelected = friends.length > 0 && friends.every(function(f) { return selected.has(f.id); });
+  document.getElementById("select-all-label").textContent = allSelected ? '🚫 Aucun' : '✓ Tous';
 }
 
 function toggleFriend(userId) {
   if (selected.has(userId)) selected.delete(userId);
   else selected.add(userId);
+  renderFriends();
+}
+
+function toggleAll() {
+  var allSelected = friends.length > 0 && friends.every(function(f) { return selected.has(f.id); });
+  if (allSelected) selected.clear();
+  else friends.forEach(function(f) { selected.add(f.id); });
   renderFriends();
 }
 
@@ -208,7 +267,6 @@ async function createGroup() {
   setLoading("btn-create", true, "Créer le groupe");
 
   try {
-    // ⚡ Étape 1 : insert dans 'groups'
     var { data: createdGroups, error: insertErr } = await db
       .from('groups')
       .insert({
@@ -220,12 +278,11 @@ async function createGroup() {
 
     if (insertErr || !createdGroups || !createdGroups.length) {
       console.error("INSERT groups:", insertErr);
-      throw new Error("Impossible de créer le groupe");
+      throw new Error("Impossible de créer le groupe : " + (insertErr ? insertErr.message : 'erreur inconnue'));
     }
 
     var newGroup = createdGroups[0];
 
-    // ⚡ Étape 2 : insert moi-même comme admin dans group_members
     var { error: memberErr } = await db
       .from('group_members')
       .insert({
@@ -233,27 +290,18 @@ async function createGroup() {
         user_id: currentUser.id,
         role: 'admin'
       });
+    if (memberErr) console.error("INSERT group_members owner:", memberErr);
 
-    if (memberErr) {
-      console.error("INSERT group_members owner:", memberErr);
-      // Pas fatal — on continue, l'owner peut quand même voir son groupe
-    }
-
-    // ⚡ Étape 3 : insert chaque ami sélectionné
     if (selected.size > 0) {
       var memberInserts = Array.from(selected).map(function(uid) {
         return { group_id: newGroup.id, user_id: uid, role: 'member' };
       });
       var { error: addErr } = await db.from('group_members').insert(memberInserts);
-      if (addErr) {
-        console.error("INSERT group_members:", addErr);
-        // Pas fatal non plus
-      }
+      if (addErr) console.error("INSERT group_members:", addErr);
     }
 
     showSuccess("success-msg", "✅ Groupe \"" + name + "\" créé avec " + (selected.size + 1) + " membre(s) !");
 
-    // Lot 2 : si chainCreate, on enverrait vers create-series-type.html?group_id=...
     setTimeout(function() {
       window.location.href = 'group-detail.html?id=' + encodeURIComponent(newGroup.id);
     }, 1000);

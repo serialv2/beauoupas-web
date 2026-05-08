@@ -66,7 +66,6 @@
 .series-card-name { font-weight: 800; margin-bottom: 4px; }
 .series-card-meta { font-size: 12px; color: #888; display: flex; gap: 10px; }
 
-/* ─── Chat ─── */
 .chat-box {
   background: #0D0D0D;
   border: 1px solid #1A1A1A;
@@ -109,22 +108,91 @@
   color: white;
   border-bottom-left-radius: 4px;
 }
-.chat-msg .author {
-  font-size: 11px;
-  font-weight: 700;
-  margin-bottom: 2px;
-  opacity: 0.8;
+.chat-msg .author { font-size: 11px; font-weight: 700; margin-bottom: 2px; opacity: 0.8; }
+.chat-msg .time { font-size: 10px; opacity: 0.6; margin-top: 2px; }
+.chat-empty { color: #555; font-size: 13px; text-align: center; padding: 30px 20px; }
+
+/* ─── Modal invite ─── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
 }
-.chat-msg .time {
-  font-size: 10px;
-  opacity: 0.6;
-  margin-top: 2px;
+.modal-overlay.open { display: flex; }
+.modal {
+  background: #151515;
+  border: 1px solid #292929;
+  border-radius: 18px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
 }
-.chat-empty {
-  color: #555;
-  font-size: 13px;
-  text-align: center;
-  padding: 30px 20px;
+.modal-header {
+  padding: 18px 20px;
+  border-bottom: 1px solid #1A1A1A;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.modal-body {
+  padding: 16px 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+.modal-footer {
+  padding: 14px 20px;
+  border-top: 1px solid #1A1A1A;
+  display: flex;
+  gap: 10px;
+}
+.close-btn {
+  background: transparent;
+  border: none;
+  color: #888;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 0 6px;
+}
+.close-btn:hover { color: white; }
+
+.friend-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #111;
+  border: 2px solid #292929;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-bottom: 8px;
+  user-select: none;
+}
+.friend-row:hover { border-color: rgba(233,30,140,0.3); }
+.friend-row.selected { border-color: #E91E8C; background: rgba(233,30,140,0.06); }
+.friend-row .check {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid #444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.friend-row.selected .check {
+  background: #E91E8C;
+  border-color: #E91E8C;
+  color: white;
 }
 </style>
 </head>
@@ -143,23 +211,20 @@
 <main class="main-content">
   <div style="max-width:700px;margin:0 auto;">
 
-    <!-- Header -->
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
       <a href="groups.html" style="color:#888;text-decoration:none;font-size:24px;">←</a>
       <h1 id="group-title" style="font-size:22px;font-weight:900;flex:1;">Chargement…</h1>
     </div>
 
-    <!-- Carte groupe -->
     <div id="group-header"></div>
 
-    <!-- Tabs -->
     <div class="tab-row">
       <button class="tab-btn active" data-tab="series" onclick="switchTab('series')">📋 Séries</button>
       <button class="tab-btn" data-tab="members" onclick="switchTab('members')">👥 Membres</button>
       <button class="tab-btn" data-tab="chat" onclick="switchTab('chat')">💬 Chat</button>
     </div>
 
-    <!-- Tab : Séries -->
+    <!-- Séries -->
     <div class="tab-content active" id="tab-series">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <h2 style="font-size:15px;font-weight:800;color:#888;">Séries du groupe</h2>
@@ -168,13 +233,17 @@
       <div id="series-list"><div class="spinner" style="margin:30px auto;"></div></div>
     </div>
 
-    <!-- Tab : Membres -->
+    <!-- Membres -->
     <div class="tab-content" id="tab-members">
-      <h2 style="font-size:15px;font-weight:800;color:#888;margin-bottom:12px;">Membres</h2>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h2 style="font-size:15px;font-weight:800;color:#888;">Membres</h2>
+        <!-- ⚡ NOUVEAU : ouvre le modal d'invitation -->
+        <button class="btn btn-sm btn-secondary" onclick="openInviteModal()">➕ Inviter</button>
+      </div>
       <div id="members-list"></div>
     </div>
 
-    <!-- Tab : Chat -->
+    <!-- Chat -->
     <div class="tab-content" id="tab-chat">
       <div class="chat-box">
         <div class="chat-messages" id="chat-messages">
@@ -187,13 +256,35 @@
       </div>
     </div>
 
-    <!-- Actions admin/quitter (en bas) -->
     <div id="group-actions" style="margin-top:24px;"></div>
 
   </div>
 </main>
 
-<!-- Alerts toast -->
+<!-- ⚡ MODAL INVITER -->
+<div class="modal-overlay" id="invite-modal" onclick="if(event.target===this) closeInviteModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 style="font-size:18px;font-weight:800;">➕ Inviter des amis</h3>
+      <button type="button" class="close-btn" onclick="closeInviteModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="text" class="input" id="invite-search" placeholder="🔎 Rechercher…"
+             style="margin-bottom:14px;font-size:14px;padding:10px 14px;"
+             oninput="renderInviteList()">
+      <div id="invite-friends-list">
+        <div class="spinner" style="margin:30px auto;"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" onclick="closeInviteModal()" style="flex:1;">Annuler</button>
+      <button type="button" class="btn btn-primary" id="btn-do-invite" onclick="inviteSelected()" style="flex:1;">
+        Inviter <span id="invite-count">0</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <div id="toast" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#151515;border:1px solid #292929;color:white;padding:14px 22px;border-radius:14px;font-weight:700;z-index:200;"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -208,8 +299,12 @@ var isAdmin = false;
 var members = [];
 var seriesList = [];
 var messages = [];
-var profilesById = {};      // user_id -> profile (pour afficher username/avatar dans chat)
-var chatChannel = null;     // realtime subscription
+var profilesById = {};
+var chatChannel = null;
+
+// ⚡ NOUVEAU : pour le modal d'invitation
+var availableFriends = [];        // amis non-encore-membres
+var inviteSelectedSet = new Set(); // user_ids cochés dans le modal
 
 async function init() {
   groupId = new URLSearchParams(window.location.search).get('id');
@@ -230,8 +325,6 @@ async function init() {
 }
 
 async function loadAll() {
-  // ⚡ Idéalement on appelle la RPC get_group_details qui fait tout en 1 coup.
-  // Si elle existe et marche, on l'utilise. Sinon, fallback à plusieurs requêtes.
   try {
     var { data, error } = await db.rpc('get_group_details', {
       p_group_id: groupId,
@@ -239,14 +332,12 @@ async function loadAll() {
     });
 
     if (!error && data) {
-      // La RPC peut retourner soit un objet, soit un tableau d'1 ligne
       var d = Array.isArray(data) ? data[0] : data;
       if (d && d.group) {
         applyGroupDetails(d);
         return;
       }
     }
-    // Sinon fallback
     console.warn("get_group_details indisponible, fallback manuel:", error);
     await loadAllFallback();
   } catch (e) {
@@ -256,14 +347,12 @@ async function loadAll() {
 }
 
 function applyGroupDetails(d) {
-  // d = { group: {...}, is_admin: bool, members: [...], series: [...], messages: [...] }
   groupData = d.group;
   isAdmin = !!d.is_admin;
   members = d.members || [];
   seriesList = d.series || [];
   messages = d.messages || [];
 
-  // Construire profilesById à partir des membres pour le chat
   members.forEach(function(m) {
     profilesById[m.user_id] = {
       username: m.username || 'Inconnu',
@@ -279,7 +368,6 @@ function applyGroupDetails(d) {
 }
 
 async function loadAllFallback() {
-  // Plan B : on fait nous-mêmes les requêtes
   var { data: g } = await db.from('groups').select('*').eq('id', groupId).single();
   if (!g) {
     document.getElementById("group-title").textContent = "Groupe introuvable";
@@ -287,7 +375,6 @@ async function loadAllFallback() {
   }
   groupData = g;
 
-  // Membres + jointure avec profiles
   var { data: rawMembers } = await db
     .from('group_members')
     .select('user_id, role, joined_at, profiles!inner(id, username, avatar_url)')
@@ -311,7 +398,6 @@ async function loadAllFallback() {
     return m.user_id === currentUser.id && m.role === 'admin';
   });
 
-  // Séries du groupe
   var { data: seriesRaw } = await db
     .from('series')
     .select('*')
@@ -319,14 +405,13 @@ async function loadAllFallback() {
     .order('created_at', { ascending: false });
   seriesList = seriesRaw || [];
 
-  // Messages (50 derniers, ordre asc pour affichage)
   var { data: msgRaw } = await db
     .from('group_messages')
     .select('*')
     .eq('group_id', groupId)
     .order('created_at', { ascending: false })
     .limit(50);
-  messages = (msgRaw || []).reverse(); // remettre dans l'ordre chronologique
+  messages = (msgRaw || []).reverse();
 
   renderHeader();
   renderSeries();
@@ -365,10 +450,7 @@ function renderHeader() {
 function renderSeries() {
   var listEl = document.getElementById("series-list");
   if (!seriesList.length) {
-    listEl.innerHTML =
-      '<div style="text-align:center;padding:30px 10px;color:#666;font-size:13px;">' +
-        'Aucune série pour l\'instant.' +
-      '</div>';
+    listEl.innerHTML = '<div style="text-align:center;padding:30px 10px;color:#666;font-size:13px;">Aucune série pour l\'instant.</div>';
     return;
   }
   listEl.innerHTML = seriesList.map(function(s) {
@@ -379,7 +461,6 @@ function renderSeries() {
     var icon = isQuiz ? '🧠' : '🗳️';
 
     return (
-      // Lot 2/3 : remplacer par series-detail.html?id=...
       '<a href="javascript:void(0)" onclick="alert(\'Ouverture des séries dans le Lot 2 du web\')" class="series-card">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">' +
           '<div style="flex:1;min-width:0;">' +
@@ -462,7 +543,6 @@ function switchTab(tab) {
     c.classList.toggle('active', c.id === 'tab-' + tab);
   });
   if (tab === 'chat') {
-    // Auto-scroll bas + focus input
     setTimeout(function() {
       var box = document.getElementById("chat-messages");
       box.scrollTop = box.scrollHeight;
@@ -490,8 +570,6 @@ async function sendMessage() {
       return;
     }
     input.value = '';
-    // Le realtime ramènera le message dans la liste — pas besoin de reload manuel.
-    // Mais si le realtime est down, on append nous-mêmes en local pour feedback :
     var localMsg = {
       id: 'local-' + Date.now(),
       group_id: groupId,
@@ -513,9 +591,6 @@ async function sendMessage() {
 }
 
 function startRealtime() {
-  // Realtime sur les nouveaux messages du groupe.
-  // Note : Postgres Realtime applique les RLS, donc seuls les membres
-  // recevront les événements (cf. policies de group_messages).
   try {
     if (chatChannel) chatChannel.unsubscribe();
     chatChannel = db.channel('group-msg-' + groupId)
@@ -527,7 +602,6 @@ function startRealtime() {
       }, function(payload) {
         var newMsg = payload.new;
         if (!newMsg) return;
-        // Évite doublon si on l'a déjà ajouté localement
         if (messages.some(function(m) { return m.id === newMsg.id; })) return;
         messages.push(newMsg);
         renderMessages();
@@ -535,6 +609,153 @@ function startRealtime() {
       .subscribe();
   } catch (e) {
     console.error("realtime:", e);
+  }
+}
+
+// ─── ⚡ MODAL INVITER ─────────────────────────────────────
+async function openInviteModal() {
+  inviteSelectedSet.clear();
+  document.getElementById("invite-search").value = '';
+  document.getElementById("invite-modal").classList.add("open");
+  document.getElementById("invite-friends-list").innerHTML = '<div class="spinner" style="margin:30px auto;"></div>';
+
+  try {
+    // 1. Récupérer mes amis acceptés (mêmes 2 requêtes que create-group)
+    var { data: rows1, error: e1 } = await db
+      .from('friendships')
+      .select('receiver_id')
+      .eq('requester_id', currentUser.id)
+      .eq('status', 'accepted');
+    var { data: rows2, error: e2 } = await db
+      .from('friendships')
+      .select('requester_id')
+      .eq('receiver_id', currentUser.id)
+      .eq('status', 'accepted');
+    if (e1) console.warn("friendships sent:", e1);
+    if (e2) console.warn("friendships received:", e2);
+
+    var friendIds = [];
+    (rows1 || []).forEach(function(r) { if (r.receiver_id) friendIds.push(r.receiver_id); });
+    (rows2 || []).forEach(function(r) { if (r.requester_id) friendIds.push(r.requester_id); });
+    friendIds = Array.from(new Set(friendIds));
+
+    // 2. Filtrer ceux qui sont DÉJÀ membres du groupe
+    var memberIds = new Set(members.map(function(m) { return m.user_id; }));
+    var inviteIds = friendIds.filter(function(id) { return !memberIds.has(id); });
+
+    if (!inviteIds.length) {
+      document.getElementById("invite-friends-list").innerHTML =
+        '<div style="text-align:center;padding:30px 10px;color:#666;font-size:14px;">' +
+          'Tous tes amis sont déjà membres ! 🎉<br>' +
+          '<a href="friends.html" style="color:#E91E8C;text-decoration:none;font-weight:700;">Ajoute d\'autres amis</a>' +
+        '</div>';
+      availableFriends = [];
+      updateInviteCount();
+      return;
+    }
+
+    var { data: profiles, error: pErr } = await db
+      .from('profiles')
+      .select('id, username, avatar_url')
+      .in('id', inviteIds);
+
+    if (pErr) {
+      console.error("profiles:", pErr);
+      document.getElementById("invite-friends-list").innerHTML =
+        '<div style="color:#888;text-align:center;padding:20px;">Impossible de charger les profils</div>';
+      return;
+    }
+
+    availableFriends = (profiles || []).sort(function(a, b) {
+      return (a.username || '').toLowerCase().localeCompare((b.username || '').toLowerCase());
+    });
+    renderInviteList();
+  } catch (e) {
+    console.error("openInviteModal:", e);
+    document.getElementById("invite-friends-list").innerHTML =
+      '<div style="color:#888;text-align:center;padding:20px;">Erreur de chargement</div>';
+  }
+}
+
+function closeInviteModal() {
+  document.getElementById("invite-modal").classList.remove("open");
+}
+
+function renderInviteList() {
+  var listEl = document.getElementById("invite-friends-list");
+  var search = (document.getElementById("invite-search").value || '').trim().toLowerCase();
+
+  var filtered = availableFriends.filter(function(f) {
+    if (!search) return true;
+    return (f.username || '').toLowerCase().indexOf(search) !== -1;
+  });
+
+  if (!filtered.length) {
+    listEl.innerHTML = '<div style="color:#666;font-size:13px;text-align:center;padding:20px;">Aucun ami ne correspond</div>';
+  } else {
+    listEl.innerHTML = filtered.map(function(f) {
+      var isSelected = inviteSelectedSet.has(f.id);
+      var firstLetter = (f.username || '?')[0].toUpperCase();
+      var avatarContent = f.avatar_url
+        ? '<img src="' + escapeHtml(f.avatar_url) + '" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">'
+        : firstLetter;
+
+      return (
+        '<div class="friend-row ' + (isSelected ? 'selected' : '') + '" ' +
+             'onclick="event.preventDefault();event.stopPropagation();toggleInvite(\'' + f.id + '\');return false;">' +
+          '<div class="avatar" style="width:36px;height:36px;font-size:13px;">' + avatarContent + '</div>' +
+          '<div style="flex:1;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@' + escapeHtml(f.username) + '</div>' +
+          '<div class="check">' + (isSelected ? '✓' : '') + '</div>' +
+        '</div>'
+      );
+    }).join('');
+  }
+  updateInviteCount();
+}
+
+function toggleInvite(userId) {
+  if (inviteSelectedSet.has(userId)) inviteSelectedSet.delete(userId);
+  else inviteSelectedSet.add(userId);
+  renderInviteList();
+}
+
+function updateInviteCount() {
+  document.getElementById("invite-count").textContent = inviteSelectedSet.size;
+  var btn = document.getElementById("btn-do-invite");
+  btn.disabled = inviteSelectedSet.size === 0;
+}
+
+async function inviteSelected() {
+  if (inviteSelectedSet.size === 0) return;
+
+  var btn = document.getElementById("btn-do-invite");
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Invitation…';
+
+  try {
+    var inserts = Array.from(inviteSelectedSet).map(function(uid) {
+      return { group_id: groupId, user_id: uid, role: 'member' };
+    });
+    var { error } = await db.from('group_members').insert(inserts);
+
+    if (error) {
+      console.error("invite:", error);
+      showToast("❌ Erreur : " + error.message);
+      return;
+    }
+
+    var n = inviteSelectedSet.size;
+    showToast("✅ " + n + " ami" + (n > 1 ? 's' : '') + " ajouté" + (n > 1 ? 's' : '') + " au groupe");
+    closeInviteModal();
+
+    // Recharger la liste de membres pour refléter immédiatement
+    await loadAll();
+  } catch (e) {
+    console.error("invite:", e);
+    showToast("❌ Erreur technique");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Inviter <span id="invite-count">' + inviteSelectedSet.size + '</span>';
   }
 }
 
@@ -566,7 +787,6 @@ async function deleteGroup() {
   if (!confirm("⚠️ Supprimer DÉFINITIVEMENT le groupe \"" + groupData.name + "\" ?\n\nLes séries du groupe seront déplacées dans \"Mes séries\" (pas perdues), mais le groupe disparaîtra pour tous les membres.")) return;
 
   try {
-    // Utilise la RPC delete_group_safe qui gère les FK (séries, membres, messages)
     var { data, error } = await db.rpc('delete_group_safe', {
       p_group_id: groupId,
       p_user_id: currentUser.id
@@ -594,7 +814,6 @@ async function deleteGroup() {
 }
 
 function goCreateSeries() {
-  // Lot 2 : on activera la vraie redirection avec ?group_id=...
   alert("La création de séries arrivera dans le Lot 2 du web.\n\nEn attendant, utilise l'app mobile pour créer une série dans ce groupe.");
 }
 
@@ -626,7 +845,6 @@ function escapeHtml(s) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
-// Nettoyer la subscription quand on quitte la page
 window.addEventListener('beforeunload', function() {
   if (chatChannel) chatChannel.unsubscribe();
 });
