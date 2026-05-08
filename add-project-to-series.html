@@ -20,7 +20,6 @@
 .project-tile:hover { border-color: rgba(233,30,140,0.4); }
 .project-tile.disabled { opacity: 0.4; cursor: not-allowed; }
 .project-tile.disabled:hover { border-color: #292929; }
-
 .project-tile img {
   width: 100%;
   aspect-ratio: 1;
@@ -30,45 +29,142 @@
 }
 .project-tile .name { font-size: 13px; font-weight: 700; line-height: 1.3; }
 .project-tile .meta { font-size: 11px; color: #888; }
+.project-tile .type-badge {
+  display: inline-block;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 800;
+  margin-right: 4px;
+}
+.type-badge.photo { background: rgba(233,30,140,0.15); color: #E91E8C; }
+.type-badge.duel { background: rgba(255,152,0,0.15); color: #FF9800; }
+.type-badge.poll { background: rgba(107,70,193,0.15); color: #A78BFA; }
 
+/* Type selector pour nouveau projet */
+.type-selector {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.type-option {
+  padding: 14px 8px;
+  border-radius: 12px;
+  border: 2px solid #292929;
+  background: #111;
+  color: #888;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+  font-family: Arial;
+  font-weight: 800;
+}
+.type-option:hover { border-color: rgba(233,30,140,0.4); }
+.type-option.selected {
+  border-color: #E91E8C;
+  background: rgba(233,30,140,0.1);
+  color: white;
+}
+.type-option .emoji { font-size: 28px; display: block; margin-bottom: 4px; }
+.type-option .label { font-size: 12px; }
+
+/* Upload area */
 .upload-area {
   border: 2px dashed #292929;
   border-radius: 14px;
-  padding: 30px 20px;
+  padding: 26px 18px;
   text-align: center;
   cursor: pointer;
   transition: all 0.15s;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 .upload-area:hover { border-color: #E91E8C; background: rgba(233,30,140,0.04); }
-.upload-area.dragover { border-color: #E91E8C; background: rgba(233,30,140,0.08); }
-
-.upload-icon { font-size: 40px; margin-bottom: 6px; opacity: 0.4; }
-.upload-text { font-weight: 700; margin-bottom: 4px; }
-.upload-sub { font-size: 12px; color: #888; }
+.upload-area .upload-icon { font-size: 36px; margin-bottom: 4px; opacity: 0.4; }
+.upload-area .upload-text { font-weight: 700; margin-bottom: 4px; font-size: 13px; }
+.upload-area .upload-sub { font-size: 11px; color: #888; }
 
 .preview {
   display: none;
   text-align: center;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 .preview img {
   max-width: 100%;
-  max-height: 240px;
-  border-radius: 14px;
+  max-height: 200px;
+  border-radius: 12px;
 }
 .preview .change-btn {
   display: inline-block;
-  margin-top: 10px;
+  margin-top: 8px;
   background: transparent;
   border: 1px solid #292929;
   color: #888;
-  padding: 8px 14px;
-  border-radius: 10px;
+  padding: 6px 12px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   font-family: Arial;
+}
+
+/* Duel : 2 zones d'upload côte à côte */
+.duel-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.duel-side .side-label {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: #888;
+  margin-bottom: 6px;
+  letter-spacing: 1px;
+}
+.duel-side .upload-area {
+  margin-bottom: 8px;
+  padding: 18px 8px;
+}
+.duel-side .preview img { max-height: 150px; }
+
+/* Sondage : options éditables */
+.poll-option-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.poll-option-row input {
+  flex: 1;
+  background: #111;
+  border: 2px solid #292929;
+  color: white;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  outline: none;
+  font-family: Arial;
+  min-width: 0;
+}
+.poll-option-row input:focus { border-color: #E91E8C; }
+.poll-option-row .remove-btn {
+  background: transparent;
+  border: 1px solid rgba(244,67,54,0.3);
+  color: #ef5350;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: Arial;
+  font-weight: 900;
+}
+.poll-option-row .remove-btn:hover { background: rgba(244,67,54,0.1); }
+.poll-option-row .position-num {
+  font-size: 12px;
+  font-weight: 800;
+  color: #555;
+  min-width: 22px;
 }
 
 .tab-row {
@@ -125,59 +221,108 @@
     <div class="alert alert-error" id="error-msg"></div>
     <div class="alert alert-success" id="success-msg"></div>
 
-    <!-- 2 onglets : Réutiliser un projet existant / Créer nouveau -->
+    <!-- 2 onglets -->
     <div class="tab-row">
       <button class="tab-btn active" data-tab="existing" onclick="switchTab('existing')">📚 Mes projets</button>
       <button class="tab-btn" data-tab="new" onclick="switchTab('new')">✨ Nouveau projet</button>
     </div>
 
-    <!-- Tab : Réutiliser un projet existant -->
+    <!-- Tab : Réutiliser ─────────────────────────────────── -->
     <div class="tab-content active" id="tab-existing">
       <p style="color:#888;font-size:13px;margin-bottom:14px;">
-        Sélectionne un de tes projets photos pour l'ajouter à la série.
+        Sélectionne un de tes projets pour l'ajouter à la série.
       </p>
-      <div id="my-projects-grid">
-        <div class="spinner" style="margin:30px auto;"></div>
-      </div>
+      <div id="my-projects-grid"><div class="spinner" style="margin:30px auto;"></div></div>
     </div>
 
-    <!-- Tab : Créer un nouveau projet rapide -->
+    <!-- Tab : Nouveau projet ─────────────────────────────── -->
     <div class="tab-content" id="tab-new">
-      <p style="color:#888;font-size:13px;margin-bottom:14px;">
-        Upload une photo et donne-lui un titre. Elle sera ajoutée à la série en tant que <b>vote photo</b>.
-      </p>
 
-      <!-- Zone d'upload -->
-      <div class="upload-area" id="upload-area" onclick="document.getElementById('file-input').click()">
-        <div class="upload-icon">📷</div>
-        <div class="upload-text">Clique pour choisir une photo</div>
-        <div class="upload-sub">JPG / PNG, max 10 MB</div>
-      </div>
-      <input type="file" id="file-input" accept="image/jpeg,image/png" style="display:none;" onchange="onFilePicked(event)">
-
-      <!-- Aperçu -->
-      <div class="preview" id="preview">
-        <img id="preview-img" src="" alt="">
-        <div>
-          <button class="change-btn" type="button" onclick="document.getElementById('file-input').click()">
-            🔄 Changer la photo
-          </button>
+      <!-- Sélecteur de type -->
+      <label class="input-label">Type de projet</label>
+      <div class="type-selector" id="type-selector">
+        <div class="type-option selected" data-type="photo_vote" onclick="selectType('photo_vote')">
+          <span class="emoji">📸</span>
+          <span class="label">Photo</span>
+        </div>
+        <div class="type-option" data-type="duel" onclick="selectType('duel')">
+          <span class="emoji">⚔️</span>
+          <span class="label">Duel</span>
+        </div>
+        <div class="type-option" data-type="poll" onclick="selectType('poll')">
+          <span class="emoji">📊</span>
+          <span class="label">Sondage</span>
         </div>
       </div>
 
-      <label class="input-label">Titre du projet *</label>
+      <!-- Champ commun : titre + description -->
+      <label class="input-label">Titre *</label>
       <input type="text" class="input" id="project-title"
-             placeholder="Ex. Mon burger gourmet"
-             maxlength="80"
-             style="margin-bottom:14px;">
-
+             placeholder="Ex. Mon burger gourmet" maxlength="80" style="margin-bottom:12px;">
       <label class="input-label">Description (optionnelle)</label>
       <input type="text" class="input" id="project-description"
-             placeholder="..."
-             maxlength="200"
-             style="margin-bottom:18px;">
+             placeholder="..." maxlength="200" style="margin-bottom:18px;">
 
-      <button class="btn btn-primary btn-full" id="btn-upload" onclick="uploadAndAttach()" disabled>
+      <!-- ─── Mode PHOTO ─── -->
+      <div id="form-photo" class="form-mode">
+        <div class="upload-area" id="upload-area-photo" onclick="document.getElementById('file-photo').click()">
+          <div class="upload-icon">📷</div>
+          <div class="upload-text">Choisis une photo</div>
+          <div class="upload-sub">JPG / PNG, max 10 MB</div>
+        </div>
+        <input type="file" id="file-photo" accept="image/jpeg,image/png" style="display:none;" onchange="onPhotoPicked(event)">
+        <div class="preview" id="preview-photo">
+          <img id="preview-photo-img" src="" alt="">
+          <div><button class="change-btn" type="button" onclick="document.getElementById('file-photo').click()">🔄 Changer</button></div>
+        </div>
+      </div>
+
+      <!-- ─── Mode DUEL ─── -->
+      <div id="form-duel" class="form-mode" style="display:none;">
+        <p style="color:#888;font-size:12px;margin-bottom:8px;">Upload 2 photos qui s'affronteront en duel A vs B.</p>
+        <div class="duel-grid">
+
+          <div class="duel-side">
+            <div class="side-label">A — GAUCHE</div>
+            <div class="upload-area" id="upload-area-duel-a" onclick="document.getElementById('file-duel-a').click()">
+              <div class="upload-icon">📷</div>
+              <div class="upload-text">Photo A</div>
+            </div>
+            <input type="file" id="file-duel-a" accept="image/jpeg,image/png" style="display:none;" onchange="onDuelPicked(event,'a')">
+            <div class="preview" id="preview-duel-a">
+              <img id="preview-duel-a-img" src="" alt="">
+              <div><button class="change-btn" type="button" onclick="document.getElementById('file-duel-a').click()">🔄</button></div>
+            </div>
+          </div>
+
+          <div class="duel-side">
+            <div class="side-label">B — DROITE</div>
+            <div class="upload-area" id="upload-area-duel-b" onclick="document.getElementById('file-duel-b').click()">
+              <div class="upload-icon">📷</div>
+              <div class="upload-text">Photo B</div>
+            </div>
+            <input type="file" id="file-duel-b" accept="image/jpeg,image/png" style="display:none;" onchange="onDuelPicked(event,'b')">
+            <div class="preview" id="preview-duel-b">
+              <img id="preview-duel-b-img" src="" alt="">
+              <div><button class="change-btn" type="button" onclick="document.getElementById('file-duel-b').click()">🔄</button></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ─── Mode SONDAGE ─── -->
+      <div id="form-poll" class="form-mode" style="display:none;">
+        <p style="color:#888;font-size:12px;margin-bottom:10px;">
+          Pose une question et propose des réponses parmi lesquelles les votants choisiront. <b>Min 2, max 6 options.</b>
+        </p>
+        <div id="poll-options-list"></div>
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-add-option" onclick="addPollOption()" style="margin-top:6px;">
+          ➕ Ajouter une option
+        </button>
+      </div>
+
+      <button class="btn btn-primary btn-full" style="margin-top:18px;" id="btn-create" onclick="createProject()" disabled>
         ➕ Ajouter à la série
       </button>
     </div>
@@ -198,7 +343,13 @@ var alreadyAttachedProjectIds = new Set();
 var myProjectsCount = 0;
 var maxPerMember = 2;
 var maxProjects = 10;
-var pickedFile = null;
+
+// ⚡ État de la création d'un nouveau projet
+var currentType = 'photo_vote';      // 'photo_vote' | 'duel' | 'poll'
+var pickedPhoto = null;              // pour mode photo
+var pickedDuelA = null;              // pour mode duel
+var pickedDuelB = null;
+var pollOptions = ['', ''];          // pour mode sondage : array de strings
 
 async function init() {
   seriesId = new URLSearchParams(window.location.search).get('series_id');
@@ -206,15 +357,18 @@ async function init() {
     window.location.href = 'groups.html';
     return;
   }
-
   currentUser = await requireAuth();
   if (!currentUser) return;
 
   if (typeof renderNav === "function") renderNav("home.html");
   if (typeof loadSidebarProfile === "function") loadSidebarProfile();
 
+  // Listeners titre/description pour activer le bouton
+  document.getElementById("project-title").addEventListener('input', refreshButton);
+
   await loadSeries();
   await loadMyProjects();
+  renderPollOptions();
 }
 
 async function loadSeries() {
@@ -238,7 +392,6 @@ async function loadSeries() {
   document.getElementById("series-banner").style.display = 'block';
   document.getElementById("series-name").textContent = s.title;
 
-  // Charger les projets déjà attachés à la série
   var { data: existing } = await db
     .from('series_projects')
     .select('project_id, added_by')
@@ -267,22 +420,23 @@ function switchTab(tab) {
   });
 }
 
-// ─── Tab existant : liste de mes projets ──────────────────
+// ─── Tab existant ────────────────────────────────────────
 async function loadMyProjects() {
   var grid = document.getElementById("my-projects-grid");
   try {
+    // ⚡ On charge MAINTENANT tous les types (photo_vote, duel, poll), pas juste photo
     var { data: rawProjects } = await db
       .from('projects')
       .select('id, title, type, created_at, project_photos(url, side)')
       .eq('owner_id', currentUser.id)
-      .eq('type', 'photo_vote')
+      .in('type', ['photo_vote', 'duel', 'poll'])
       .order('created_at', { ascending: false })
       .limit(50);
 
     if (!rawProjects || !rawProjects.length) {
       grid.innerHTML =
         '<div style="text-align:center;padding:30px;color:#666;font-size:13px;">' +
-          'Tu n\'as pas encore de projet photo.<br>' +
+          'Tu n\'as pas encore de projet.<br>' +
           'Utilise l\'onglet "Nouveau projet" pour en créer un.' +
         '</div>';
       return;
@@ -293,19 +447,27 @@ async function loadMyProjects() {
     grid.style.gap = '10px';
 
     grid.innerHTML = rawProjects.map(function(p) {
-      var photo = (p.project_photos || []).find(function(ph) { return ph.side === 'single' || ph.side === 'left'; });
+      var photo = (p.project_photos || []).find(function(ph) {
+        return ph.side === 'single' || ph.side === 'left';
+      });
       var photoUrl = photo ? photo.url : '';
 
       var attached = alreadyAttachedProjectIds.has(p.id);
       var blocked = attached || myProjectsCount >= maxPerMember;
+
+      var typeBadge = '';
+      var iconFallback = '📸';
+      if (p.type === 'photo_vote') { typeBadge = '<span class="type-badge photo">PHOTO</span>'; iconFallback = '📸'; }
+      else if (p.type === 'duel') { typeBadge = '<span class="type-badge duel">DUEL</span>'; iconFallback = '⚔️'; }
+      else if (p.type === 'poll') { typeBadge = '<span class="type-badge poll">SONDAGE</span>'; iconFallback = '📊'; }
 
       return (
         '<div class="project-tile ' + (blocked ? 'disabled' : '') + '" ' +
              (blocked ? '' : 'onclick="attachExisting(\'' + p.id + '\')"') + '>' +
           (photoUrl
             ? '<img src="' + escapeHtml(photoUrl) + '" alt="">'
-            : '<div style="width:100%;aspect-ratio:1;background:#222;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:36px;opacity:0.4;">📸</div>') +
-          '<div class="name">' + escapeHtml(p.title || 'Sans titre') + '</div>' +
+            : '<div style="width:100%;aspect-ratio:1;background:#222;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:36px;opacity:0.4;">' + iconFallback + '</div>') +
+          '<div class="name">' + typeBadge + escapeHtml(p.title || 'Sans titre') + '</div>' +
           (attached
             ? '<div class="meta" style="color:#4CAF50;">✅ Déjà ajouté</div>'
             : '<div class="meta">' + formatDate(p.created_at) + '</div>') +
@@ -320,13 +482,11 @@ async function loadMyProjects() {
 
 async function attachExisting(projectId) {
   try {
-    // Vérifier qu'on n'a pas explosé la limite entre temps
     if (myProjectsCount >= maxPerMember) {
       showError("error-msg", "⚠️ Limite atteinte");
       return;
     }
 
-    // Compter les projets actuels pour la position
     var { data: allProjects } = await db
       .from('series_projects')
       .select('id, project_id')
@@ -360,58 +520,235 @@ async function attachExisting(projectId) {
   }
 }
 
-// ─── Tab nouveau : upload + attach ────────────────────────
-function onFilePicked(event) {
+// ─── Tab nouveau : type selector ─────────────────────────
+function selectType(type) {
+  currentType = type;
+  document.querySelectorAll('.type-option').forEach(function(o) {
+    o.classList.toggle('selected', o.dataset.type === type);
+  });
+  document.querySelectorAll('.form-mode').forEach(function(f) {
+    f.style.display = 'none';
+  });
+  if (type === 'photo_vote') document.getElementById("form-photo").style.display = 'block';
+  else if (type === 'duel') document.getElementById("form-duel").style.display = 'block';
+  else if (type === 'poll') document.getElementById("form-poll").style.display = 'block';
+  refreshButton();
+}
+
+// ─── Mode PHOTO ──────────────────────────────────────────
+function onPhotoPicked(event) {
   var file = event.target.files[0];
   if (!file) return;
-  if (file.size > 10 * 1024 * 1024) {
-    showToast("⚠️ Fichier trop gros (max 10 MB)");
+  if (file.size > 10 * 1024 * 1024) { showToast("⚠️ Trop gros (max 10 MB)"); return; }
+  pickedPhoto = file;
+  document.getElementById("preview-photo-img").src = URL.createObjectURL(file);
+  document.getElementById("preview-photo").style.display = 'block';
+  document.getElementById("upload-area-photo").style.display = 'none';
+  refreshButton();
+}
+
+// ─── Mode DUEL ───────────────────────────────────────────
+function onDuelPicked(event, side) {
+  var file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 10 * 1024 * 1024) { showToast("⚠️ Trop gros (max 10 MB)"); return; }
+  if (side === 'a') {
+    pickedDuelA = file;
+    document.getElementById("preview-duel-a-img").src = URL.createObjectURL(file);
+    document.getElementById("preview-duel-a").style.display = 'block';
+    document.getElementById("upload-area-duel-a").style.display = 'none';
+  } else {
+    pickedDuelB = file;
+    document.getElementById("preview-duel-b-img").src = URL.createObjectURL(file);
+    document.getElementById("preview-duel-b").style.display = 'block';
+    document.getElementById("upload-area-duel-b").style.display = 'none';
+  }
+  refreshButton();
+}
+
+// ─── Mode SONDAGE ────────────────────────────────────────
+function renderPollOptions() {
+  var listEl = document.getElementById("poll-options-list");
+  listEl.innerHTML = pollOptions.map(function(opt, i) {
+    return (
+      '<div class="poll-option-row">' +
+        '<span class="position-num">' + (i + 1) + '.</span>' +
+        '<input type="text" placeholder="Réponse ' + (i + 1) + '..." ' +
+               'maxlength="80" ' +
+               'value="' + escapeAttr(opt) + '" ' +
+               'oninput="updatePollOption(' + i + ', this.value)">' +
+        (pollOptions.length > 2
+          ? '<button type="button" class="remove-btn" onclick="removePollOption(' + i + ')">✕</button>'
+          : '') +
+      '</div>'
+    );
+  }).join('');
+
+  // Limite max = 6 options
+  document.getElementById("btn-add-option").style.display = pollOptions.length >= 6 ? 'none' : 'inline-flex';
+  refreshButton();
+}
+
+function updatePollOption(idx, value) {
+  pollOptions[idx] = value;
+  refreshButton();
+}
+
+function addPollOption() {
+  if (pollOptions.length >= 6) return;
+  pollOptions.push('');
+  renderPollOptions();
+  // Focus sur la nouvelle option
+  setTimeout(function() {
+    var inputs = document.querySelectorAll('#poll-options-list input');
+    if (inputs.length) inputs[inputs.length - 1].focus();
+  }, 50);
+}
+
+function removePollOption(idx) {
+  if (pollOptions.length <= 2) return;
+  pollOptions.splice(idx, 1);
+  renderPollOptions();
+}
+
+// ─── Validation et activation du bouton ──────────────────
+function refreshButton() {
+  var title = document.getElementById("project-title").value.trim();
+  var btn = document.getElementById("btn-create");
+  var ready = false;
+
+  if (!title) {
+    btn.disabled = true;
     return;
   }
-  pickedFile = file;
-  var url = URL.createObjectURL(file);
-  document.getElementById("preview-img").src = url;
-  document.getElementById("preview").style.display = 'block';
-  document.getElementById("upload-area").style.display = 'none';
-  refreshUploadButton();
+
+  if (currentType === 'photo_vote') {
+    ready = !!pickedPhoto;
+  } else if (currentType === 'duel') {
+    ready = !!pickedDuelA && !!pickedDuelB;
+  } else if (currentType === 'poll') {
+    var nonEmpty = pollOptions.filter(function(o) { return o && o.trim(); });
+    ready = nonEmpty.length >= 2;
+  }
+  btn.disabled = !ready;
 }
 
-document.getElementById("project-title").addEventListener('input', refreshUploadButton);
-
-function refreshUploadButton() {
-  var title = document.getElementById("project-title").value.trim();
-  document.getElementById("btn-upload").disabled = !pickedFile || !title;
+// ─── Upload helper ───────────────────────────────────────
+async function uploadPhoto(file) {
+  var ext = file.type === 'image/png' ? 'png' : 'jpg';
+  var path = 'display/' + currentUser.id + '/' + Date.now() + '_' + Math.random().toString(36).slice(2, 6) + '.' + ext;
+  var { error: upErr } = await db.storage
+    .from('photos')
+    .upload(path, file, { contentType: file.type, cacheControl: '3600', upsert: false });
+  if (upErr) {
+    throw new Error("Upload échoué : " + upErr.message);
+  }
+  var { data: urlData } = db.storage.from('photos').getPublicUrl(path);
+  return urlData.publicUrl;
 }
 
-async function uploadAndAttach() {
+// ─── Création du projet selon le type ────────────────────
+async function createProject() {
   var title = document.getElementById("project-title").value.trim();
   var description = document.getElementById("project-description").value.trim();
 
-  if (!pickedFile || !title) return;
-
   document.getElementById("error-msg").style.display = 'none';
   document.getElementById("success-msg").style.display = 'none';
-  setLoading("btn-upload", true, "➕ Ajouter à la série");
+  setLoading("btn-create", true, "➕ Ajouter à la série");
 
   try {
-    // 1. Upload de la photo dans le bucket "photos"
-    var ext = pickedFile.type === 'image/png' ? 'png' : 'jpg';
-    var path = 'display/' + currentUser.id + '/' + Date.now() + '.' + ext;
-    var { data: upload, error: upErr } = await db.storage
-      .from('photos')
-      .upload(path, pickedFile, { contentType: pickedFile.type, cacheControl: '3600', upsert: false });
-    if (upErr) {
-      console.error("upload:", upErr);
-      throw new Error("Upload échoué : " + upErr.message);
-    }
-    // URL publique
-    var { data: urlData } = db.storage.from('photos').getPublicUrl(path);
-    var photoUrl = urlData.publicUrl;
+    var projectId = null;
 
-    // 2. Créer le projet via la RPC insert_project (comme le mobile)
-    var { data: projectId, error: insErr } = await db.rpc('insert_project', {
+    if (currentType === 'photo_vote') {
+      projectId = await createPhotoProject(title, description);
+    } else if (currentType === 'duel') {
+      projectId = await createDuelProject(title, description);
+    } else if (currentType === 'poll') {
+      projectId = await createPollProject(title, description);
+    }
+
+    if (!projectId) throw new Error("Création du projet échouée");
+
+    // Attacher à la série
+    var { data: allProjects } = await db
+      .from('series_projects')
+      .select('id')
+      .eq('series_id', seriesId);
+    var position = (allProjects || []).length;
+
+    var { error: attachErr } = await db.from('series_projects').insert({
+      series_id: seriesId,
+      project_id: projectId,
+      added_by: currentUser.id,
+      is_revealed: !seriesData.projects_hidden,
+      position: position
+    });
+    if (attachErr) throw new Error(attachErr.message);
+
+    showSuccess("success-msg", "✅ Projet créé et ajouté à la série !");
+    setTimeout(function() {
+      window.location.href = 'series-detail.html?id=' + encodeURIComponent(seriesId);
+    }, 1000);
+  } catch (e) {
+    console.error("createProject:", e);
+    showError("error-msg", "❌ " + (e.message || "Erreur"));
+    setLoading("btn-create", false, "➕ Ajouter à la série");
+  }
+}
+
+// ─── Création PHOTO ──────────────────────────────────────
+async function createPhotoProject(title, description) {
+  var photoUrl = await uploadPhoto(pickedPhoto);
+  var projectId = await insertProject('photo_vote', title, description);
+  await insertProjectPhoto(projectId, photoUrl, 'single');
+  return projectId;
+}
+
+// ─── Création DUEL ───────────────────────────────────────
+async function createDuelProject(title, description) {
+  // Upload des 2 photos en parallèle (gain de temps)
+  var [urlA, urlB] = await Promise.all([
+    uploadPhoto(pickedDuelA),
+    uploadPhoto(pickedDuelB)
+  ]);
+  var projectId = await insertProject('duel', title, description);
+  // Inserts en série pour respecter l'ordre des positions (le mobile fait pareil)
+  await insertProjectPhoto(projectId, urlA, 'left');
+  await insertProjectPhoto(projectId, urlB, 'right');
+  return projectId;
+}
+
+// ─── Création SONDAGE ────────────────────────────────────
+async function createPollProject(title, description) {
+  // Filtrer les options vides
+  var validOpts = pollOptions
+    .map(function(o) { return (o || '').trim(); })
+    .filter(function(o) { return !!o; });
+
+  if (validOpts.length < 2) throw new Error("Au moins 2 options requises");
+
+  var projectId = await insertProject('poll', title, description);
+
+  // ⚡ La table poll_options a `text` (pas `label`). Vérifié dans le modèle mobile.
+  // On insère en parallèle pour aller vite, position 0..N-1.
+  var inserts = validOpts.map(function(opt, i) {
+    return db.from('poll_options').insert({
+      project_id: projectId,
+      text: opt,
+      position: i
+    });
+  });
+  await Promise.all(inserts);
+  return projectId;
+}
+
+// ─── insert_project (avec fallback) ──────────────────────
+async function insertProject(type, title, description) {
+  // Tenter la RPC insert_project
+  try {
+    var { data: projectId, error } = await db.rpc('insert_project', {
       p_owner_id: currentUser.id,
-      p_type: 'photo_vote',
+      p_type: type,
       p_title: title,
       p_description: description || '',
       p_gender_filter: 'all',
@@ -425,67 +762,46 @@ async function uploadAndAttach() {
       p_country: '',
       p_is_private: false
     });
-
-    if (insErr || !projectId) {
-      console.error("insert_project:", insErr);
-      // Fallback : INSERT direct
-      var { data: fallbackProj, error: fbErr } = await db
-        .from('projects')
-        .insert({
-          owner_id: currentUser.id,
-          type: 'photo_vote',
-          title: title,
-          description: description || null,
-          gender_filter: 'all',
-          min_age: 0,
-          max_age: 99
-        })
-        .select()
-        .single();
-      if (fbErr) throw new Error("Impossible de créer le projet : " + (fbErr.message || ''));
-      projectId = fallbackProj.id;
-    }
-
-    // 3. Ajouter la photo via la RPC insert_project_photo
-    try {
-      await db.rpc('insert_project_photo', {
-        p_project_id: projectId,
-        p_url: photoUrl,
-        p_side: 'single'
-      });
-    } catch (e) {
-      // Fallback INSERT direct
-      await db.from('project_photos').insert({
-        project_id: projectId,
-        url: photoUrl,
-        side: 'single'
-      });
-    }
-
-    // 4. Attacher à la série
-    var { data: allProjects } = await db
-      .from('series_projects')
-      .select('id')
-      .eq('series_id', seriesId);
-    var position = (allProjects || []).length;
-
-    await db.from('series_projects').insert({
-      series_id: seriesId,
-      project_id: projectId,
-      added_by: currentUser.id,
-      is_revealed: !seriesData.projects_hidden,
-      position: position
-    });
-
-    showSuccess("success-msg", "✅ Projet créé et ajouté à la série !");
-    setTimeout(function() {
-      window.location.href = 'series-detail.html?id=' + encodeURIComponent(seriesId);
-    }, 1000);
+    if (!error && projectId) return projectId;
+    if (error) console.warn("insert_project RPC:", error);
   } catch (e) {
-    console.error("uploadAndAttach:", e);
-    showError("error-msg", "❌ " + (e.message || "Erreur"));
-    setLoading("btn-upload", false, "➕ Ajouter à la série");
+    console.warn("insert_project threw:", e);
   }
+
+  // Fallback INSERT direct
+  var { data, error: fbErr } = await db.from('projects').insert({
+    owner_id: currentUser.id,
+    type: type,
+    title: title,
+    description: description || null,
+    gender_filter: 'all',
+    min_age: 0,
+    max_age: 99
+  }).select().single();
+  if (fbErr) throw new Error("Création projet échouée : " + fbErr.message);
+  return data.id;
+}
+
+// ─── insert_project_photo (avec fallback) ────────────────
+async function insertProjectPhoto(projectId, url, side) {
+  try {
+    var { error } = await db.rpc('insert_project_photo', {
+      p_project_id: projectId,
+      p_url: url,
+      p_side: side
+    });
+    if (!error) return;
+    console.warn("insert_project_photo RPC:", error);
+  } catch (e) {
+    console.warn("insert_project_photo threw:", e);
+  }
+  // Fallback INSERT direct
+  var { error: fbErr } = await db.from('project_photos').insert({
+    project_id: projectId,
+    url: url,
+    side: side
+  });
+  if (fbErr) throw new Error("Insertion photo échouée : " + fbErr.message);
 }
 
 function showToast(msg) {
@@ -507,6 +823,10 @@ function escapeHtml(s) {
   if (s == null) return '';
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function escapeAttr(s) {
+  if (s == null) return '';
+  return String(s).replace(/"/g, '&quot;').replace(/&/g, '&amp;');
 }
 
 init();

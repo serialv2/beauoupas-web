@@ -164,7 +164,7 @@ var seriesData = null;
 var projects = [];           // [{ id, project_id, position, project: {...} }]
 var currentIndex = 0;
 var myVotes = {};            // seriesProjectId -> voteValue
-var pollOptionsById = {};    // projectId -> [{id, label, ...}]
+var pollOptionsById = {};    // projectId -> [{id, text, position, ...}]
 
 async function init() {
   seriesId = new URLSearchParams(window.location.search).get('id');
@@ -232,7 +232,7 @@ async function loadAll() {
     if (pollIds.length) {
       var { data: pollOpts } = await db
         .from('poll_options')
-        .select('id, project_id, label, position')
+        .select('id, project_id, text, position')
         .in('project_id', pollIds)
         .order('position', { ascending: true });
       (pollOpts || []).forEach(function(opt) {
@@ -326,7 +326,7 @@ function renderProject() {
         var voted = myVote === opt.id;
         return '<button type="button" class="poll-option ' + (voted ? 'voted' : '') + '" ' +
                'onclick="vote(\'' + sp.id + '\',\'' + opt.id + '\')">' +
-                 (voted ? '✓ ' : '') + escapeHtml(opt.label) +
+                 (voted ? '✓ ' : '') + escapeHtml(opt.text) +
                '</button>';
       }).join('');
     }
@@ -378,7 +378,7 @@ function formatVoteLabel(v, voteType) {
     var p = sp.projects || {};
     var opts = pollOptionsById[p.id] || [];
     var match = opts.find(function(o) { return o.id === v; });
-    if (match) return match.label;
+    if (match) return match.text;
   }
   return v;
 }
