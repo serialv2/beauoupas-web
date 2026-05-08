@@ -395,17 +395,32 @@ function renderActions() {
 
   if (isCreator) {
     if (seriesData.status === 'preparing') {
+      // Bouton spécifique aux quiz : éditer les questions avant de démarrer
+      if (seriesData.is_quiz) {
+        html += '<a href="edit-quiz-questions.html?id=' + encodeURIComponent(seriesId) + '" class="btn btn-secondary btn-full" style="text-decoration:none;margin-bottom:8px;">📝 Éditer les questions</a>';
+      }
       html += '<button class="btn btn-primary btn-full" style="margin-bottom:8px;" onclick="startSeries()">▶️ Démarrer la série</button>';
     } else if (seriesData.status === 'active') {
+      // Pour les quiz, le créateur peut aussi aller jouer (voir l'écran joueur en parallèle de la TV)
+      if (seriesData.is_quiz) {
+        html += '<a href="quiz-play.html?id=' + encodeURIComponent(seriesId) + '" class="btn btn-primary btn-full" style="text-decoration:none;margin-bottom:8px;">🧠 Voir l\'écran joueur</a>';
+      }
       html += '<button class="btn btn-secondary btn-full" style="margin-bottom:8px;" onclick="stopSeries()">⏹️ Arrêter la série</button>';
     } else if (seriesData.status === 'finished') {
+      html += '<a href="series-results.html?id=' + encodeURIComponent(seriesId) + '" class="btn btn-primary btn-full" style="text-decoration:none;margin-bottom:8px;">🏆 Voir les résultats</a>';
       html += '<button class="btn btn-secondary btn-full" style="margin-bottom:8px;" onclick="resetSeries()">🔄 Repréparer</button>';
     }
     html += '<button class="btn btn-ghost btn-full" style="border-color:rgba(244,67,54,0.4);color:#ef5350;" onclick="deleteSeries()">🗑️ Supprimer la série</button>';
   } else {
     // Non créateur
     if (seriesData.status === 'active') {
-      html += '<a href="series-vote.html?id=' + encodeURIComponent(seriesId) + '" class="btn btn-primary btn-full" style="text-decoration:none;margin-bottom:8px;">🗳️ Aller voter</a>';
+      var voteUrl = seriesData.is_quiz
+        ? 'quiz-play.html?id=' + encodeURIComponent(seriesId)
+        : 'series-vote.html?id=' + encodeURIComponent(seriesId);
+      var voteLabel = seriesData.is_quiz ? '🧠 Jouer le quiz' : '🗳️ Aller voter';
+      html += '<a href="' + voteUrl + '" class="btn btn-primary btn-full" style="text-decoration:none;margin-bottom:8px;">' + voteLabel + '</a>';
+    } else if (seriesData.status === 'finished') {
+      html += '<a href="series-results.html?id=' + encodeURIComponent(seriesId) + '" class="btn btn-primary btn-full" style="text-decoration:none;margin-bottom:8px;">🏆 Voir les résultats</a>';
     }
     html += '<button class="btn btn-ghost btn-full" style="border-color:rgba(244,67,54,0.4);color:#ef5350;" onclick="leaveSeries()">🚪 Quitter la série</button>';
   }

@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeauOuPas — Quiz</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.quiz-arena {
+  background: linear-gradient(135deg, #6B46C1 0%, #5B21B6 50%, #4C1D95 100%);
+  border-radius: 24px;
+  padding: 28px 22px;
+  text-align: center;
+  margin-bottom: 18px;
+  position: relative;
+  overflow: hidden;
+}
+.quiz-arena::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top right, rgba(255,255,255,0.1), transparent 60%);
+  pointer-events: none;
+}
+.q-meta {
+  font-size: 12px;
+  color: rgba(255,255,255,0.7);
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.q-category {
+  display: inline-block;
+  background: rgba(255,255,255,0.18);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  margin-top: 8px;
+}
+.q-text {
+  font-size: 22px;
+  font-weight: 900;
+  color: white;
+  line-height: 1.4;
+  margin: 14px 0 6px;
+}
+
+.q-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.q-option {
+  padding: 18px 14px;
+  background: white;
+  color: #333;
+  border: 3px solid white;
+  border-radius: 16px;
+  cursor: pointer;
+  font-weight: 900;
+  font-size: 15px;
+  transition: all 0.15s;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: Arial;
+  word-break: break-word;
+}
+.q-option:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+.q-option:disabled { opacity: 0.6; cursor: not-allowed; transform: none; box-shadow: none; }
+.q-option .letter {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+.q-option:nth-child(1) .letter { background: #EF4444; }
+.q-option:nth-child(2) .letter { background: #3B82F6; }
+.q-option:nth-child(3) .letter { background: #F59E0B; }
+.q-option:nth-child(4) .letter { background: #10B981; }
+
+.q-option.selected {
+  border-color: #E91E8C;
+  box-shadow: 0 0 0 3px rgba(233,30,140,0.3);
+}
+.q-option.locked-correct {
+  border-color: #4CAF50;
+  background: #E8F5E9;
+}
+.q-option.locked-wrong {
+  border-color: #ef5350;
+  background: #FFEBEE;
+}
+
+.timer-bar {
+  height: 6px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 14px 0;
+}
+.timer-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4CAF50, #FFC107, #ef5350);
+  width: 100%;
+  transition: width 0.3s linear;
+}
+
+.waiting {
+  text-align: center;
+  padding: 60px 20px;
+  color: #888;
+}
+.waiting .icon { font-size: 64px; margin-bottom: 14px; }
+.waiting .title { font-size: 18px; font-weight: 800; color: white; margin-bottom: 6px; }
+.waiting .desc { font-size: 13px; line-height: 1.5; }
+
+.score-pill {
+  display: inline-block;
+  background: rgba(76,175,80,0.15);
+  color: #4CAF50;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 800;
+  border: 1px solid rgba(76,175,80,0.4);
+  margin-top: 14px;
+}
+.score-pill.wrong {
+  background: rgba(244,67,54,0.15);
+  color: #ef5350;
+  border-color: rgba(244,67,54,0.4);
+}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">BeauOuPas</div>
+  <nav id="sidebar-nav"></nav>
+  <div class="sidebar-footer">
+    <a href="create-group.html" class="btn btn-primary btn-full" style="margin-bottom:14px;text-decoration:none;">➕ Nouveau groupe</a>
+    <div id="sidebar-user"></div>
+  </div>
+</aside>
+<nav class="bottom-nav" id="bottom-nav"></nav>
+
+<main class="main-content">
+  <div style="max-width:600px;margin:0 auto;">
+
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+      <a href="javascript:history.back()" style="color:#888;text-decoration:none;font-size:24px;">←</a>
+      <h1 id="series-title" style="font-size:20px;font-weight:900;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Chargement…</h1>
+    </div>
+
+    <div id="loading"><div class="spinner"></div></div>
+
+    <!-- Container principal -->
+    <div id="content" style="display:none;"></div>
+
+  </div>
+</main>
+
+<div id="toast" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#151515;border:1px solid #292929;color:white;padding:14px 22px;border-radius:14px;font-weight:700;z-index:200;"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script src="navbar.js"></script>
+<script>
+var seriesId = null;
+var seriesData = null;
+var currentUser = null;
+
+// État courant
+var currentQuestion = null;        // { id, title, question_text, position, options: [{id, position, option_text}], started_at, vote_duration_seconds }
+var selectedOptionIds = new Set(); // pour multi-correct
+var answeredQuestionIds = new Set(); // questions auxquelles j'ai déjà répondu
+var lastResult = null;             // { is_correct, score } après dernière soumission
+
+// Polling de l'état + realtime pour réagir vite quand l'animateur change la question
+var realtimeChannel = null;
+var pollInterval = null;
+var timerInterval = null;
+var startedAtMs = null;            // quand la question a démarré (pour timer + response_time)
+
+async function init() {
+  seriesId = new URLSearchParams(window.location.search).get('id');
+  if (!seriesId) { window.location.href = 'groups.html'; return; }
+
+  currentUser = await requireAuth();
+  if (!currentUser) return;
+
+  if (typeof renderNav === "function") renderNav("groups.html");
+  if (typeof loadSidebarProfile === "function") loadSidebarProfile();
+
+  await loadSeries();
+  startSeriesRealtime();
+  // Polling de secours toutes les 5s au cas où le realtime soit indispo
+  pollInterval = setInterval(refreshState, 5000);
+}
+
+async function loadSeries() {
+  try {
+    var { data: s } = await db.from('series').select('*').eq('id', seriesId).maybeSingle();
+    if (!s) throw new Error("Série introuvable");
+    seriesData = s;
+    document.getElementById("series-title").textContent = s.title;
+
+    if (!s.is_quiz) {
+      // Renvoyer vers la page de vote standard
+      window.location.href = 'series-vote.html?id=' + encodeURIComponent(seriesId);
+      return;
+    }
+
+    document.getElementById("loading").style.display = 'none';
+    document.getElementById("content").style.display = 'block';
+
+    await refreshState();
+  } catch (e) {
+    console.error("loadSeries:", e);
+    document.getElementById("loading").innerHTML =
+      '<div class="alert alert-error" style="display:block;">❌ ' + escapeHtml(e.message || 'Erreur') + '</div>';
+  }
+}
+
+async function refreshState() {
+  // Recharger la série pour avoir status + current_project_index à jour
+  var { data: s } = await db.from('series').select('*').eq('id', seriesId).maybeSingle();
+  if (!s) return;
+
+  // Détection de changement
+  var statusChanged = !seriesData || seriesData.status !== s.status;
+  var indexChanged = !seriesData || seriesData.current_project_index !== s.current_project_index;
+  seriesData = s;
+
+  if (s.status === 'preparing') {
+    renderWaiting('preparing');
+    return;
+  }
+  if (s.status === 'finished') {
+    renderFinished();
+    return;
+  }
+  // status = 'active' → charger la question courante
+  if (statusChanged || indexChanged || !currentQuestion) {
+    selectedOptionIds.clear();
+    lastResult = null;
+    await loadCurrentQuestion();
+  } else {
+    // Juste rafraîchir le timer
+    renderQuestion();
+  }
+}
+
+async function loadCurrentQuestion() {
+  try {
+    var rpcWorked = false;
+    var rpcQuestion = null;
+
+    // Tenter la RPC get_quiz_question_for_tv qui ne retourne pas is_correct
+    try {
+      var { data, error } = await db.rpc('get_quiz_question_for_tv', { p_series_id: seriesId });
+      if (!error && data) {
+        var d = Array.isArray(data) ? data[0] : data;
+        if (typeof d === 'string') { try { d = JSON.parse(d); } catch(e) {} }
+        if (d && (d.id || d.question_id)) {
+          rpcQuestion = normalizeRpcQuestion(d);
+          rpcWorked = true;
+        }
+      }
+    } catch (e) {
+      console.warn("RPC get_quiz_question_for_tv:", e);
+    }
+
+    if (!rpcWorked) {
+      // Fallback : on lit directement quiz_questions par position.
+      // ATTENTION : on lit aussi options sans is_correct (sécurité côté client).
+      var pos = seriesData.current_project_index || 0;
+      var { data: rawQ } = await db
+        .from('quiz_questions')
+        .select('id, position, title, question_text, photo_url, started_at')
+        .eq('series_id', seriesId)
+        .eq('position', pos)
+        .maybeSingle();
+      if (!rawQ) {
+        currentQuestion = null;
+        renderWaiting('between');
+        return;
+      }
+      // On lit les options SANS le flag is_correct (le client ne doit pas voir
+      // les bonnes réponses avant le reveal).
+      var { data: rawOpts } = await db
+        .from('quiz_question_options')
+        .select('id, position, option_text')
+        .eq('question_id', rawQ.id)
+        .order('position', { ascending: true });
+      rpcQuestion = {
+        id: rawQ.id,
+        title: rawQ.title,
+        question_text: rawQ.question_text,
+        photo_url: rawQ.photo_url,
+        position: rawQ.position,
+        started_at: rawQ.started_at,
+        vote_duration_seconds: seriesData.vote_duration_seconds || 20,
+        options: rawOpts || []
+      };
+    }
+
+    currentQuestion = rpcQuestion;
+
+    // Vérifier si j'ai déjà répondu à cette question
+    if (currentQuestion && currentQuestion.id) {
+      var { data: ans } = await db
+        .from('quiz_answers')
+        .select('id, selected_option_ids, is_correct')
+        .eq('question_id', currentQuestion.id)
+        .eq('user_id', currentUser.id)
+        .maybeSingle();
+      if (ans) {
+        answeredQuestionIds.add(currentQuestion.id);
+        lastResult = { is_correct: ans.is_correct };
+      }
+    }
+
+    // Démarrer le timer si la question a un started_at
+    if (currentQuestion && currentQuestion.started_at) {
+      startedAtMs = new Date(currentQuestion.started_at).getTime();
+    } else {
+      startedAtMs = null;
+    }
+
+    renderQuestion();
+
+    // Lancer le timer visuel
+    if (timerInterval) clearInterval(timerInterval);
+    if (startedAtMs && currentQuestion.vote_duration_seconds) {
+      timerInterval = setInterval(updateTimer, 200);
+    }
+  } catch (e) {
+    console.error("loadCurrentQuestion:", e);
+  }
+}
+
+function normalizeRpcQuestion(d) {
+  // La RPC peut retourner soit { id, options:[...] }, soit { question_id, ..., options: [...] }
+  // On normalise vers { id, ..., options: [{id, position, option_text}] }
+  return {
+    id: d.id || d.question_id,
+    title: d.title || d.question_title || '',
+    question_text: d.question_text || d.text || '',
+    photo_url: d.photo_url || null,
+    position: d.position || 0,
+    started_at: d.started_at || null,
+    vote_duration_seconds: d.vote_duration_seconds || (seriesData ? seriesData.vote_duration_seconds : 20) || 20,
+    options: (d.options || []).map(function(o) {
+      return {
+        id: o.id || o.option_id,
+        position: o.position || 0,
+        option_text: o.option_text || o.text || ''
+      };
+    })
+  };
+}
+
+function renderWaiting(reason) {
+  var icon = '⏳';
+  var title = 'En attente du démarrage…';
+  var desc = 'Le créateur va lancer le quiz.';
+  if (reason === 'between') {
+    icon = '✅';
+    title = 'Question terminée';
+    desc = 'Patiente, la prochaine arrive bientôt.';
+  }
+  document.getElementById("content").innerHTML =
+    '<div class="quiz-arena">' +
+      '<div class="waiting">' +
+        '<div class="icon">' + icon + '</div>' +
+        '<div class="title">' + title + '</div>' +
+        '<div class="desc">' + desc + '</div>' +
+      '</div>' +
+    '</div>';
+}
+
+function renderFinished() {
+  if (timerInterval) clearInterval(timerInterval);
+  document.getElementById("content").innerHTML =
+    '<div class="quiz-arena">' +
+      '<div class="waiting">' +
+        '<div class="icon">🏆</div>' +
+        '<div class="title">Quiz terminé !</div>' +
+        '<div class="desc">Va voir les résultats finaux.</div>' +
+        '<a href="series-results.html?id=' + encodeURIComponent(seriesId) + '" class="btn btn-primary" style="margin-top:18px;text-decoration:none;background:white;color:#6B46C1;">' +
+          'Voir le classement →' +
+        '</a>' +
+      '</div>' +
+    '</div>';
+}
+
+function renderQuestion() {
+  if (!currentQuestion) {
+    renderWaiting('between');
+    return;
+  }
+  var alreadyAnswered = answeredQuestionIds.has(currentQuestion.id);
+  var locked = alreadyAnswered;
+
+  var optionsHtml = (currentQuestion.options || []).map(function(opt, i) {
+    var letter = String.fromCharCode(65 + i);
+    var classes = ['q-option'];
+    if (selectedOptionIds.has(opt.id)) classes.push('selected');
+    return '<button type="button" class="' + classes.join(' ') + '" ' +
+            (locked ? 'disabled' : '') +
+            ' onclick="toggleOption(\'' + escapeAttr(opt.id) + '\')">' +
+      '<span class="letter">' + letter + '</span>' +
+      '<span>' + escapeHtml(opt.option_text) + '</span>' +
+    '</button>';
+  }).join('');
+
+  // Bouton submit visible UNIQUEMENT si on a sélectionné quelque chose ET pas encore répondu
+  var submitBtn = '';
+  if (!locked) {
+    var isReady = selectedOptionIds.size > 0;
+    submitBtn = '<button class="btn btn-primary btn-full" style="margin-top:14px;background:white;color:#6B46C1;" ' +
+                  (isReady ? '' : 'disabled') +
+                  ' onclick="submitAnswer()">Valider ma réponse</button>';
+  } else {
+    var resultPill = '';
+    if (lastResult) {
+      if (lastResult.is_correct) {
+        resultPill = '<div style="text-align:center;"><span class="score-pill">✅ Bonne réponse !</span></div>';
+      } else {
+        resultPill = '<div style="text-align:center;"><span class="score-pill wrong">❌ Pas la bonne</span></div>';
+      }
+    } else {
+      resultPill = '<div style="text-align:center;"><span class="score-pill">⏳ Réponse envoyée — en attente</span></div>';
+    }
+    submitBtn = resultPill;
+  }
+
+  // Timer
+  var timerHtml = '';
+  if (startedAtMs && currentQuestion.vote_duration_seconds && !locked) {
+    timerHtml =
+      '<div class="timer-bar"><div class="timer-fill" id="timer-fill"></div></div>' +
+      '<div style="text-align:center;font-size:13px;color:rgba(255,255,255,0.8);font-weight:700;" id="timer-text">⏱️ ...</div>';
+  }
+
+  document.getElementById("content").innerHTML =
+    '<div class="quiz-arena">' +
+      '<div class="q-meta">Question ' + ((currentQuestion.position || 0) + 1) + '</div>' +
+      (currentQuestion.title
+        ? '<div class="q-category">' + escapeHtml(currentQuestion.title) + '</div>'
+        : '') +
+      '<div class="q-text">' + escapeHtml(currentQuestion.question_text) + '</div>' +
+      timerHtml +
+    '</div>' +
+    '<div class="q-options">' + optionsHtml + '</div>' +
+    submitBtn;
+}
+
+function toggleOption(optId) {
+  // On suppose qu'une seule réponse correcte la plupart du temps,
+  // mais on permet la sélection multiple pour gérer les cas multi-correct.
+  // Si l'utilisateur clique sur la même option déjà sélectionnée, on désélectionne.
+  if (selectedOptionIds.has(optId)) {
+    selectedOptionIds.delete(optId);
+  } else {
+    selectedOptionIds.add(optId);
+  }
+  renderQuestion();
+}
+
+async function submitAnswer() {
+  if (!currentQuestion || answeredQuestionIds.has(currentQuestion.id)) return;
+  if (selectedOptionIds.size === 0) return;
+
+  var selected = Array.from(selectedOptionIds);
+  var responseTimeMs = startedAtMs ? Math.max(0, Date.now() - startedAtMs) : 0;
+
+  try {
+    var { data, error } = await db.rpc('submit_quiz_answer', {
+      p_user_id: currentUser.id,
+      p_question_id: currentQuestion.id,
+      p_selected_option_ids: selected,
+      p_response_time_ms: responseTimeMs
+    });
+
+    if (error) {
+      console.error("submit_quiz_answer:", error);
+      showToast("❌ " + (error.message || "Erreur d'envoi"));
+      return;
+    }
+
+    var resp = data;
+    if (typeof data === 'string') { try { resp = JSON.parse(data); } catch(e) {} }
+    if (Array.isArray(resp)) resp = resp[0];
+
+    if (resp && resp.success === false) {
+      showToast("❌ " + (resp.error || 'Échec'));
+      return;
+    }
+
+    answeredQuestionIds.add(currentQuestion.id);
+    lastResult = { is_correct: resp ? !!resp.is_correct : null };
+    showToast(lastResult.is_correct ? "✅ Bonne réponse !" : "✅ Réponse envoyée");
+    renderQuestion();
+  } catch (e) {
+    console.error("submitAnswer:", e);
+    showToast("❌ Erreur");
+  }
+}
+
+function updateTimer() {
+  if (!startedAtMs || !currentQuestion || !currentQuestion.vote_duration_seconds) return;
+  var totalMs = currentQuestion.vote_duration_seconds * 1000;
+  var elapsed = Date.now() - startedAtMs;
+  var remaining = Math.max(0, totalMs - elapsed);
+  var pct = (remaining / totalMs) * 100;
+
+  var fill = document.getElementById("timer-fill");
+  var txt = document.getElementById("timer-text");
+  if (fill) fill.style.width = pct + '%';
+  if (txt) txt.textContent = '⏱️ ' + Math.ceil(remaining / 1000) + 's';
+
+  if (remaining <= 0 && timerInterval) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+}
+
+function startSeriesRealtime() {
+  try {
+    if (realtimeChannel) realtimeChannel.unsubscribe();
+    realtimeChannel = db.channel('quiz-' + seriesId)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'series',
+        filter: 'id=eq.' + seriesId
+      }, function(payload) {
+        // Le créateur a changé le status ou l'index → on recharge
+        refreshState();
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'quiz_questions',
+        filter: 'series_id=eq.' + seriesId
+      }, function(payload) {
+        // started_at peut avoir été posé → on relance le timer
+        if (currentQuestion && payload.new && payload.new.id === currentQuestion.id) {
+          if (payload.new.started_at && !currentQuestion.started_at) {
+            currentQuestion.started_at = payload.new.started_at;
+            startedAtMs = new Date(payload.new.started_at).getTime();
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimer, 200);
+            renderQuestion();
+          }
+        }
+      })
+      .subscribe();
+  } catch (e) {
+    console.error("realtime:", e);
+  }
+}
+
+function showToast(msg) {
+  var t = document.getElementById("toast");
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(function() { t.style.display = 'none'; }, 1800);
+}
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function escapeAttr(s) {
+  if (s == null) return '';
+  return String(s).replace(/"/g, '&quot;').replace(/&/g, '&amp;');
+}
+
+window.addEventListener('beforeunload', function() {
+  if (realtimeChannel) realtimeChannel.unsubscribe();
+  if (pollInterval) clearInterval(pollInterval);
+  if (timerInterval) clearInterval(timerInterval);
+});
+
+init();
+</script>
+</body>
+</html>

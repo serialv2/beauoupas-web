@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeauOuPas — Nouveau quiz</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.style-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  margin-bottom: 18px;
+  color: white;
+  font-weight: 800;
+}
+.style-banner.kahoot { background: linear-gradient(135deg,#7C3AED,#5B21B6); }
+.style-banner.millionaire { background: linear-gradient(135deg,#1E40AF,#1E3A8A); }
+.style-banner.burger { background: linear-gradient(135deg,#F59E0B,#D97706); }
+.style-banner.weakest { background: linear-gradient(135deg,#1F2937,#111827); }
+.style-banner .emoji { font-size: 32px; }
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+}
+.toggle-info { flex: 1; padding-right: 12px; }
+.toggle-title { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+.toggle-desc { font-size: 12px; color: #888; line-height: 1.4; }
+
+.toggle {
+  width: 48px;
+  height: 28px;
+  background: #292929;
+  border-radius: 999px;
+  position: relative;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+.toggle.on { background: #E91E8C; }
+.toggle::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+.toggle.on::after { transform: translateX(20px); }
+
+/* Question card */
+.question-card {
+  background: #151515;
+  border: 1px solid #292929;
+  border-radius: 18px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.question-num {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #6B46C1;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+
+/* Option row */
+.option-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #111;
+  border: 2px solid #292929;
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+}
+.option-row.correct {
+  border-color: #4CAF50;
+  background: rgba(76,175,80,0.08);
+}
+.option-letter {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: #292929;
+  color: white;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.option-row.correct .option-letter {
+  background: #4CAF50;
+}
+.option-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 14px;
+  outline: none;
+  padding: 6px 0;
+  font-family: Arial;
+  min-width: 0;
+}
+.option-input::placeholder { color: #555; }
+.correct-toggle {
+  background: transparent;
+  border: 2px solid #292929;
+  color: #555;
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  flex-shrink: 0;
+  font-family: Arial;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.correct-toggle:hover { border-color: #4CAF50; }
+.correct-toggle.on {
+  background: #4CAF50;
+  border-color: #4CAF50;
+  color: white;
+}
+
+.delete-q-btn {
+  background: transparent;
+  border: 1px solid rgba(244,67,54,0.3);
+  color: #ef5350;
+  padding: 4px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: Arial;
+}
+.delete-q-btn:hover { border-color: #ef5350; background: rgba(244,67,54,0.08); }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">BeauOuPas</div>
+  <nav id="sidebar-nav"></nav>
+  <div class="sidebar-footer">
+    <a href="create-group.html" class="btn btn-primary btn-full" style="margin-bottom:14px;text-decoration:none;">➕ Nouveau groupe</a>
+    <div id="sidebar-user"></div>
+  </div>
+</aside>
+<nav class="bottom-nav" id="bottom-nav"></nav>
+
+<main class="main-content">
+  <div style="max-width:680px;margin:0 auto;">
+
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+      <a href="javascript:history.back()" style="color:#888;text-decoration:none;font-size:24px;">←</a>
+      <h1 style="font-size:22px;font-weight:900;">🧠 Nouveau quiz</h1>
+    </div>
+
+    <!-- Banner du style choisi -->
+    <div id="style-banner"></div>
+
+    <!-- Contexte (group ou standalone) -->
+    <div id="context-banner" style="display:none;margin-bottom:18px;padding:12px 16px;background:rgba(233,30,140,0.08);border:1px solid rgba(233,30,140,0.2);border-radius:12px;font-size:13px;">
+      <span style="color:#E91E8C;font-weight:800;">Dans :</span>
+      <span id="context-name" style="color:white;font-weight:700;"></span>
+    </div>
+
+    <div class="alert alert-error" id="error-msg"></div>
+    <div class="alert alert-success" id="success-msg"></div>
+
+    <!-- Bloc 1 : titre + description -->
+    <div class="card" style="padding:20px;margin-bottom:18px;">
+      <label class="input-label">Titre du quiz *</label>
+      <input type="text" class="input" id="quiz-title" placeholder="Ex. Cinéma années 90" maxlength="80" autofocus>
+
+      <div style="height:14px;"></div>
+
+      <label class="input-label">Description (optionnelle)</label>
+      <input type="text" class="input" id="quiz-description" placeholder="De quoi parle ton quiz ?" maxlength="200">
+    </div>
+
+    <!-- Bloc 2 : options -->
+    <div class="card" style="padding:6px 20px;margin-bottom:18px;">
+      <div class="toggle-row" onclick="toggleLeaderboard()">
+        <div class="toggle-info">
+          <div class="toggle-title">🏆 Classement complet</div>
+          <div class="toggle-desc">Afficher tous les joueurs en fin de quiz (sinon, juste le podium top 3).</div>
+        </div>
+        <div id="toggle-leaderboard" class="toggle on"></div>
+      </div>
+    </div>
+
+    <!-- Bloc 3 : questions -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <h2 style="font-size:18px;font-weight:900;">📝 Questions</h2>
+      <span id="question-count" style="font-size:13px;color:#888;font-weight:700;">0 question</span>
+    </div>
+
+    <div id="questions-container"></div>
+
+    <button type="button" class="btn btn-secondary btn-full" style="margin-bottom:18px;" onclick="addQuestion()">
+      ➕ Ajouter une question
+    </button>
+
+    <button class="btn btn-primary btn-full" id="btn-create" onclick="createQuiz()">
+      ✨ Créer le quiz
+    </button>
+
+  </div>
+</main>
+
+<div id="toast" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#151515;border:1px solid #292929;color:white;padding:14px 22px;border-radius:14px;font-weight:700;z-index:200;"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script src="navbar.js"></script>
+<script>
+var params = new URLSearchParams(window.location.search);
+var quizStyle = params.get('style') || 'kahoot';
+var groupId = params.get('group_id');
+var groupName = params.get('group_name');
+
+var currentUser = null;
+var showFullLeaderboard = true;
+
+// ─── Modèle de données pour une question ────────────────
+// Chaque question : { id (local), title, question_text, photo_url, options: [{text, is_correct}, ...] }
+// 4 options par défaut (positions 0-3 = A/B/C/D), au moins une doit être correcte.
+var questions = [];
+
+var STYLE_INFO = {
+  kahoot: { emoji: '🎨', name: 'Kahoot', desc: 'Coloré, énergique' },
+  millionaire: { emoji: '💰', name: 'Millionnaire', desc: 'Suspense, paliers' },
+  burger: { emoji: '🍔', name: 'Burger', desc: 'Fun, photos' },
+  weakest: { emoji: '⛓️', name: 'Maillon faible', desc: 'Élimination, tendu' }
+};
+
+async function init() {
+  currentUser = await requireAuth();
+  if (!currentUser) return;
+
+  if (typeof renderNav === "function") renderNav("groups.html");
+  if (typeof loadSidebarProfile === "function") loadSidebarProfile();
+
+  // Banner de style
+  var s = STYLE_INFO[quizStyle] || STYLE_INFO.kahoot;
+  document.getElementById("style-banner").innerHTML =
+    '<div class="style-banner ' + escapeHtml(quizStyle) + '">' +
+      '<div class="emoji">' + s.emoji + '</div>' +
+      '<div>' +
+        '<div style="font-size:16px;">Style : ' + escapeHtml(s.name) + '</div>' +
+        '<div style="font-size:12px;font-weight:400;opacity:0.9;">' + escapeHtml(s.desc) + '</div>' +
+      '</div>' +
+    '</div>';
+
+  // Banner de contexte
+  document.getElementById("context-banner").style.display = "block";
+  if (groupId && groupName) {
+    document.getElementById("context-name").textContent = "Groupe \"" + groupName + "\"";
+  } else {
+    document.getElementById("context-name").textContent = "Mes séries (sans groupe)";
+  }
+
+  // Première question pré-créée
+  addQuestion();
+}
+
+function toggleLeaderboard() {
+  showFullLeaderboard = !showFullLeaderboard;
+  document.getElementById("toggle-leaderboard").classList.toggle('on', showFullLeaderboard);
+}
+
+function addQuestion() {
+  questions.push({
+    id: 'q-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+    title: '',
+    question_text: '',
+    photo_url: '',
+    options: [
+      { text: '', is_correct: true },   // par défaut A est correcte
+      { text: '', is_correct: false },
+      { text: '', is_correct: false },
+      { text: '', is_correct: false }
+    ]
+  });
+  renderQuestions();
+}
+
+function deleteQuestion(qid) {
+  if (questions.length === 1) {
+    showToast("⚠️ Au moins 1 question requise");
+    return;
+  }
+  if (!confirm("Supprimer cette question ?")) return;
+  questions = questions.filter(function(q) { return q.id !== qid; });
+  renderQuestions();
+}
+
+function updateQuestionField(qid, field, value) {
+  var q = questions.find(function(x) { return x.id === qid; });
+  if (!q) return;
+  q[field] = value;
+}
+
+function updateOptionText(qid, idx, value) {
+  var q = questions.find(function(x) { return x.id === qid; });
+  if (!q) return;
+  q.options[idx].text = value;
+}
+
+function toggleOptionCorrect(qid, idx) {
+  var q = questions.find(function(x) { return x.id === qid; });
+  if (!q) return;
+  q.options[idx].is_correct = !q.options[idx].is_correct;
+
+  // Garantir qu'au moins UNE option reste cochée. Si toutes décochées,
+  // on remet celle qu'on vient de toggle.
+  var hasCorrect = q.options.some(function(o) { return o.is_correct; });
+  if (!hasCorrect) q.options[idx].is_correct = true;
+
+  renderQuestions(qid); // re-render uniquement cette question
+}
+
+function renderQuestions(focusQid) {
+  var container = document.getElementById("questions-container");
+  document.getElementById("question-count").textContent =
+    questions.length + ' question' + (questions.length > 1 ? 's' : '');
+
+  container.innerHTML = questions.map(function(q, qIdx) {
+    var optionsHtml = q.options.map(function(opt, oIdx) {
+      var letter = String.fromCharCode(65 + oIdx); // A, B, C, D
+      return (
+        '<div class="option-row ' + (opt.is_correct ? 'correct' : '') + '">' +
+          '<div class="option-letter">' + letter + '</div>' +
+          '<input type="text" class="option-input" placeholder="Réponse ' + letter + '…" ' +
+                 'maxlength="120" ' +
+                 'value="' + escapeAttr(opt.text || '') + '" ' +
+                 'oninput="updateOptionText(\'' + q.id + '\',' + oIdx + ',this.value)">' +
+          '<button type="button" class="correct-toggle ' + (opt.is_correct ? 'on' : '') + '" ' +
+                  'onclick="toggleOptionCorrect(\'' + q.id + '\',' + oIdx + ')" ' +
+                  'title="Marquer comme bonne réponse">✓</button>' +
+        '</div>'
+      );
+    }).join('');
+
+    return (
+      '<div class="question-card" data-qid="' + q.id + '">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">' +
+          '<span class="question-num">Question ' + (qIdx + 1) + '</span>' +
+          (questions.length > 1
+            ? '<button type="button" class="delete-q-btn" onclick="deleteQuestion(\'' + q.id + '\')">🗑️ Supprimer</button>'
+            : '') +
+        '</div>' +
+        '<input type="text" class="input" placeholder="Catégorie (ex: Géographie)" ' +
+               'maxlength="40" ' +
+               'value="' + escapeAttr(q.title || '') + '" ' +
+               'oninput="updateQuestionField(\'' + q.id + '\',\'title\',this.value)" ' +
+               'style="margin-bottom:8px;font-size:13px;padding:10px 14px;">' +
+        '<input type="text" class="input" placeholder="Énoncé de la question…" ' +
+               'maxlength="300" ' +
+               'value="' + escapeAttr(q.question_text || '') + '" ' +
+               'oninput="updateQuestionField(\'' + q.id + '\',\'question_text\',this.value)" ' +
+               'style="margin-bottom:12px;">' +
+        '<div style="font-size:12px;color:#888;margin-bottom:8px;">Réponses (clique sur ✓ pour cocher la/les bonne(s)) :</div>' +
+        optionsHtml +
+      '</div>'
+    );
+  }).join('');
+
+  // Si on a un focusQid, on remet le curseur sur le premier input vide
+  // (utile après un toggle correct)
+  if (focusQid) {
+    var card = container.querySelector('[data-qid="' + focusQid + '"]');
+    if (card) {
+      var emptyInput = card.querySelector('input[value=""]');
+      if (emptyInput) emptyInput.focus();
+    }
+  }
+}
+
+// ─── Validation et création ──────────────────────────────
+function validateBeforeSubmit() {
+  var title = document.getElementById("quiz-title").value.trim();
+  if (!title) return "⚠️ Le titre du quiz est obligatoire";
+
+  if (!questions.length) return "⚠️ Ajoute au moins 1 question";
+  if (questions.length > 50) return "⚠️ Trop de questions (max 50)";
+
+  for (var i = 0; i < questions.length; i++) {
+    var q = questions[i];
+    if (!q.question_text || !q.question_text.trim()) {
+      return "⚠️ La question " + (i + 1) + " n'a pas d'énoncé";
+    }
+    var validOpts = q.options.filter(function(o) { return o.text && o.text.trim(); });
+    if (validOpts.length < 2) {
+      return "⚠️ La question " + (i + 1) + " doit avoir au moins 2 réponses";
+    }
+    var correctOpts = validOpts.filter(function(o) { return o.is_correct; });
+    if (correctOpts.length === 0) {
+      return "⚠️ La question " + (i + 1) + " n'a aucune bonne réponse";
+    }
+  }
+  return null;
+}
+
+async function createQuiz() {
+  document.getElementById("error-msg").style.display = 'none';
+  document.getElementById("success-msg").style.display = 'none';
+
+  var err = validateBeforeSubmit();
+  if (err) {
+    showError("error-msg", err);
+    return;
+  }
+
+  var title = document.getElementById("quiz-title").value.trim();
+  var description = document.getElementById("quiz-description").value.trim();
+
+  setLoading("btn-create", true, "✨ Créer le quiz");
+
+  try {
+    // Préparer les questions au format que la RPC attend (cf. CreateQuizAsync mobile)
+    var questionsPayload = questions.map(function(q) {
+      var validOpts = q.options.filter(function(o) { return o.text && o.text.trim(); });
+      return {
+        title: q.title || '',
+        question_text: q.question_text.trim(),
+        options: validOpts.map(function(o) {
+          return { text: o.text.trim(), is_correct: !!o.is_correct };
+        })
+        // photo_url omise pour l'instant (Lot 4)
+      };
+    });
+
+    var rpcParams = {
+      p_user_id: currentUser.id,
+      p_title: title,
+      p_description: description || '',
+      p_quiz_style: quizStyle,
+      p_show_full_leaderboard: showFullLeaderboard,
+      p_questions: questionsPayload,
+      p_group_id: groupId || null
+    };
+
+    var { data, error } = await db.rpc('create_quiz_series', rpcParams);
+
+    if (error) {
+      console.error("create_quiz_series:", error);
+      throw new Error(error.message || "Erreur de création");
+    }
+
+    // La RPC retourne { success: bool, series_id, access_code, error? }
+    var resp = data;
+    if (typeof data === 'string') {
+      try { resp = JSON.parse(data); } catch(e) { /* */ }
+    }
+    if (Array.isArray(resp)) resp = resp[0];
+
+    if (!resp || !resp.success) {
+      var errCode = (resp && resp.error) ? resp.error : 'unknown';
+      throw new Error("Échec : " + errCode);
+    }
+
+    showSuccess("success-msg", "✅ Quiz \"" + title + "\" créé avec le code " + resp.access_code + " !");
+
+    setTimeout(function() {
+      window.location.href = 'series-detail.html?id=' + encodeURIComponent(resp.series_id);
+    }, 1200);
+
+  } catch (e) {
+    console.error("createQuiz:", e);
+    showError("error-msg", "❌ " + (e.message || "Erreur lors de la création"));
+    setLoading("btn-create", false, "✨ Créer le quiz");
+  }
+}
+
+function showToast(msg) {
+  var t = document.getElementById("toast");
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(function() { t.style.display = 'none'; }, 2200);
+}
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function escapeAttr(s) {
+  if (s == null) return '';
+  return String(s).replace(/"/g, '&quot;').replace(/&/g, '&amp;');
+}
+
+init();
+</script>
+</body>
+</html>

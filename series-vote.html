@@ -192,9 +192,8 @@ async function loadAll() {
     document.getElementById("series-title").textContent = s.title;
 
     if (s.is_quiz) {
-      // Pour le Lot 3, on bloque ici
-      document.getElementById("loading").innerHTML =
-        '<div class="alert alert-error" style="display:block;">Le mode quiz arrive dans le Lot 3. Utilise le mobile pour jouer pour l\'instant.</div>';
+      // Rediriger vers la page de jeu quiz dédiée
+      window.location.href = 'quiz-play.html?id=' + encodeURIComponent(seriesId);
       return;
     }
 

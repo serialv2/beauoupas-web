@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeauOuPas — Éditer les questions</title>
+<link rel="stylesheet" href="style.css">
+<style>
+.question-card {
+  background: #151515;
+  border: 1px solid #292929;
+  border-radius: 18px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+.question-num {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #6B46C1;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+.option-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #111;
+  border: 2px solid #292929;
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+}
+.option-row.correct {
+  border-color: #4CAF50;
+  background: rgba(76,175,80,0.08);
+}
+.option-letter {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: #292929;
+  color: white;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.option-row.correct .option-letter { background: #4CAF50; }
+.option-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 14px;
+  outline: none;
+  padding: 6px 0;
+  font-family: Arial;
+  min-width: 0;
+}
+.option-input::placeholder { color: #555; }
+.correct-toggle {
+  background: transparent;
+  border: 2px solid #292929;
+  color: #555;
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  flex-shrink: 0;
+  font-family: Arial;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.correct-toggle:hover { border-color: #4CAF50; }
+.correct-toggle.on { background: #4CAF50; border-color: #4CAF50; color: white; }
+
+.delete-q-btn {
+  background: transparent;
+  border: 1px solid rgba(244,67,54,0.3);
+  color: #ef5350;
+  padding: 4px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: Arial;
+}
+.delete-q-btn:hover { border-color: #ef5350; background: rgba(244,67,54,0.08); }
+
+.warning-banner {
+  background: rgba(255,152,0,0.1);
+  border: 1px solid rgba(255,152,0,0.4);
+  color: #FFB74D;
+  padding: 12px 16px;
+  border-radius: 12px;
+  margin-bottom: 18px;
+  font-size: 13px;
+}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-logo">BeauOuPas</div>
+  <nav id="sidebar-nav"></nav>
+  <div class="sidebar-footer">
+    <a href="create-group.html" class="btn btn-primary btn-full" style="margin-bottom:14px;text-decoration:none;">➕ Nouveau groupe</a>
+    <div id="sidebar-user"></div>
+  </div>
+</aside>
+<nav class="bottom-nav" id="bottom-nav"></nav>
+
+<main class="main-content">
+  <div style="max-width:680px;margin:0 auto;">
+
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+      <a href="javascript:history.back()" style="color:#888;text-decoration:none;font-size:24px;">←</a>
+      <h1 style="font-size:22px;font-weight:900;">📝 Éditer les questions</h1>
+    </div>
+
+    <div id="series-banner" style="display:none;margin-bottom:18px;padding:12px 16px;background:rgba(107,70,193,0.1);border:1px solid rgba(107,70,193,0.3);border-radius:12px;font-size:13px;">
+      <span style="color:#A78BFA;font-weight:800;">Quiz :</span>
+      <span id="series-name" style="color:white;font-weight:700;"></span>
+    </div>
+
+    <div class="warning-banner">
+      ⚠️ Tu peux modifier les questions <b>uniquement quand le quiz est en préparation</b>. Une fois démarré, c'est trop tard.
+    </div>
+
+    <div class="alert alert-error" id="error-msg"></div>
+    <div class="alert alert-success" id="success-msg"></div>
+
+    <div id="loading"><div class="spinner"></div></div>
+
+    <div id="content" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h2 style="font-size:18px;font-weight:900;">Questions</h2>
+        <span id="question-count" style="font-size:13px;color:#888;font-weight:700;">0 question</span>
+      </div>
+
+      <div id="questions-container"></div>
+
+      <button type="button" class="btn btn-secondary btn-full" style="margin-bottom:18px;" onclick="addQuestion()">
+        ➕ Ajouter une question
+      </button>
+
+      <button class="btn btn-primary btn-full" id="btn-save" onclick="saveQuestions()">
+        💾 Enregistrer les modifications
+      </button>
+    </div>
+
+  </div>
+</main>
+
+<div id="toast" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#151515;border:1px solid #292929;color:white;padding:14px 22px;border-radius:14px;font-weight:700;z-index:200;"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script src="navbar.js"></script>
+<script>
+var seriesId = null;
+var seriesData = null;
+var currentUser = null;
+var questions = [];
+
+async function init() {
+  seriesId = new URLSearchParams(window.location.search).get('id');
+  if (!seriesId) {
+    window.location.href = 'groups.html';
+    return;
+  }
+
+  currentUser = await requireAuth();
+  if (!currentUser) return;
+
+  if (typeof renderNav === "function") renderNav("groups.html");
+  if (typeof loadSidebarProfile === "function") loadSidebarProfile();
+
+  await loadAll();
+}
+
+async function loadAll() {
+  try {
+    // 1. Charger série pour vérifier qu'on est créateur + statut preparing
+    var { data: s } = await db.from('series').select('*').eq('id', seriesId).maybeSingle();
+    if (!s) throw new Error("Quiz introuvable");
+    if (!s.is_quiz) throw new Error("Cette série n'est pas un quiz");
+    if (s.creator_id !== currentUser.id) throw new Error("Seul le créateur peut éditer les questions");
+    if (s.status !== 'preparing') throw new Error("Le quiz a déjà démarré, édition impossible");
+
+    seriesData = s;
+    document.getElementById("series-banner").style.display = "block";
+    document.getElementById("series-name").textContent = s.title;
+
+    // 2. Charger les questions + options
+    var { data: rawQuestions } = await db
+      .from('quiz_questions')
+      .select('id, position, title, question_text, photo_url')
+      .eq('series_id', seriesId)
+      .order('position', { ascending: true });
+
+    if (!rawQuestions || !rawQuestions.length) {
+      questions = [];
+      addQuestion();
+    } else {
+      var questionIds = rawQuestions.map(function(q) { return q.id; });
+      var { data: rawOptions } = await db
+        .from('quiz_question_options')
+        .select('id, question_id, position, option_text, is_correct')
+        .in('question_id', questionIds)
+        .order('position', { ascending: true });
+
+      var optsByQ = {};
+      (rawOptions || []).forEach(function(opt) {
+        if (!optsByQ[opt.question_id]) optsByQ[opt.question_id] = [];
+        optsByQ[opt.question_id].push(opt);
+      });
+
+      questions = rawQuestions.map(function(q) {
+        var opts = optsByQ[q.id] || [];
+        // Compléter à 4 options si moins
+        while (opts.length < 4) {
+          opts.push({ option_text: '', is_correct: false });
+        }
+        return {
+          id: 'q-' + q.id, // ID local pour le rendu (préfixé pour éviter conflit avec UUID DB)
+          title: q.title || '',
+          question_text: q.question_text || '',
+          photo_url: q.photo_url || '',
+          options: opts.slice(0, 4).map(function(o) {
+            return { text: o.option_text || '', is_correct: !!o.is_correct };
+          })
+        };
+      });
+    }
+
+    document.getElementById("loading").style.display = 'none';
+    document.getElementById("content").style.display = 'block';
+    renderQuestions();
+  } catch (e) {
+    console.error("loadAll:", e);
+    document.getElementById("loading").innerHTML =
+      '<div class="alert alert-error" style="display:block;">❌ ' + escapeHtml(e.message || 'Erreur') + '</div>';
+  }
+}
+
+function addQuestion() {
+  questions.push({
+    id: 'q-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+    title: '',
+    question_text: '',
+    photo_url: '',
+    options: [
+      { text: '', is_correct: true },
+      { text: '', is_correct: false },
+      { text: '', is_correct: false },
+      { text: '', is_correct: false }
+    ]
+  });
+  renderQuestions();
+}
+
+function deleteQuestion(qid) {
+  if (questions.length === 1) {
+    showToast("⚠️ Au moins 1 question requise");
+    return;
+  }
+  if (!confirm("Supprimer cette question ?")) return;
+  questions = questions.filter(function(q) { return q.id !== qid; });
+  renderQuestions();
+}
+
+function updateQuestionField(qid, field, value) {
+  var q = questions.find(function(x) { return x.id === qid; });
+  if (q) q[field] = value;
+}
+
+function updateOptionText(qid, idx, value) {
+  var q = questions.find(function(x) { return x.id === qid; });
+  if (q) q.options[idx].text = value;
+}
+
+function toggleOptionCorrect(qid, idx) {
+  var q = questions.find(function(x) { return x.id === qid; });
+  if (!q) return;
+  q.options[idx].is_correct = !q.options[idx].is_correct;
+  var hasCorrect = q.options.some(function(o) { return o.is_correct; });
+  if (!hasCorrect) q.options[idx].is_correct = true;
+  renderQuestions();
+}
+
+function renderQuestions() {
+  var container = document.getElementById("questions-container");
+  document.getElementById("question-count").textContent =
+    questions.length + ' question' + (questions.length > 1 ? 's' : '');
+
+  container.innerHTML = questions.map(function(q, qIdx) {
+    var optionsHtml = q.options.map(function(opt, oIdx) {
+      var letter = String.fromCharCode(65 + oIdx);
+      return (
+        '<div class="option-row ' + (opt.is_correct ? 'correct' : '') + '">' +
+          '<div class="option-letter">' + letter + '</div>' +
+          '<input type="text" class="option-input" placeholder="Réponse ' + letter + '…" ' +
+                 'maxlength="120" ' +
+                 'value="' + escapeAttr(opt.text || '') + '" ' +
+                 'oninput="updateOptionText(\'' + q.id + '\',' + oIdx + ',this.value)">' +
+          '<button type="button" class="correct-toggle ' + (opt.is_correct ? 'on' : '') + '" ' +
+                  'onclick="toggleOptionCorrect(\'' + q.id + '\',' + oIdx + ')">✓</button>' +
+        '</div>'
+      );
+    }).join('');
+
+    return (
+      '<div class="question-card" data-qid="' + q.id + '">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">' +
+          '<span class="question-num">Question ' + (qIdx + 1) + '</span>' +
+          (questions.length > 1
+            ? '<button type="button" class="delete-q-btn" onclick="deleteQuestion(\'' + q.id + '\')">🗑️ Supprimer</button>'
+            : '') +
+        '</div>' +
+        '<input type="text" class="input" placeholder="Catégorie (ex: Géographie)" ' +
+               'maxlength="40" ' +
+               'value="' + escapeAttr(q.title || '') + '" ' +
+               'oninput="updateQuestionField(\'' + q.id + '\',\'title\',this.value)" ' +
+               'style="margin-bottom:8px;font-size:13px;padding:10px 14px;">' +
+        '<input type="text" class="input" placeholder="Énoncé de la question…" ' +
+               'maxlength="300" ' +
+               'value="' + escapeAttr(q.question_text || '') + '" ' +
+               'oninput="updateQuestionField(\'' + q.id + '\',\'question_text\',this.value)" ' +
+               'style="margin-bottom:12px;">' +
+        '<div style="font-size:12px;color:#888;margin-bottom:8px;">Réponses (clique sur ✓ pour cocher la/les bonne(s)) :</div>' +
+        optionsHtml +
+      '</div>'
+    );
+  }).join('');
+}
+
+function validateBeforeSubmit() {
+  if (!questions.length) return "⚠️ Ajoute au moins 1 question";
+  for (var i = 0; i < questions.length; i++) {
+    var q = questions[i];
+    if (!q.question_text.trim()) return "⚠️ La question " + (i+1) + " n'a pas d'énoncé";
+    var validOpts = q.options.filter(function(o) { return o.text && o.text.trim(); });
+    if (validOpts.length < 2) return "⚠️ La question " + (i+1) + " doit avoir au moins 2 réponses";
+    if (!validOpts.some(function(o) { return o.is_correct; }))
+      return "⚠️ La question " + (i+1) + " n'a aucune bonne réponse";
+  }
+  return null;
+}
+
+async function saveQuestions() {
+  document.getElementById("error-msg").style.display = 'none';
+  document.getElementById("success-msg").style.display = 'none';
+
+  var err = validateBeforeSubmit();
+  if (err) {
+    showError("error-msg", err);
+    return;
+  }
+
+  setLoading("btn-save", true, "💾 Enregistrer les modifications");
+
+  try {
+    var questionsPayload = questions.map(function(q) {
+      var validOpts = q.options.filter(function(o) { return o.text && o.text.trim(); });
+      return {
+        title: q.title || '',
+        question_text: q.question_text.trim(),
+        options: validOpts.map(function(o) {
+          return { text: o.text.trim(), is_correct: !!o.is_correct };
+        })
+      };
+    });
+
+    // Tenter la RPC replace_quiz_questions (transactionnelle, sécurisée)
+    var { data, error } = await db.rpc('replace_quiz_questions', {
+      p_user_id: currentUser.id,
+      p_series_id: seriesId,
+      p_questions: questionsPayload
+    });
+
+    if (error) {
+      console.error("replace_quiz_questions:", error);
+      throw new Error(error.message || "Erreur d'enregistrement");
+    }
+
+    var resp = data;
+    if (typeof data === 'string') {
+      try { resp = JSON.parse(data); } catch(e) { /* */ }
+    }
+    if (Array.isArray(resp)) resp = resp[0];
+
+    if (resp && resp.success === false) {
+      throw new Error("Échec : " + (resp.error || 'unknown'));
+    }
+
+    showSuccess("success-msg", "✅ Questions enregistrées !");
+    setTimeout(function() {
+      window.location.href = 'series-detail.html?id=' + encodeURIComponent(seriesId);
+    }, 1000);
+  } catch (e) {
+    console.error("saveQuestions:", e);
+    showError("error-msg", "❌ " + (e.message || "Erreur"));
+    setLoading("btn-save", false, "💾 Enregistrer les modifications");
+  }
+}
+
+function showToast(msg) {
+  var t = document.getElementById("toast");
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(function() { t.style.display = 'none'; }, 2000);
+}
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function escapeAttr(s) {
+  if (s == null) return '';
+  return String(s).replace(/"/g, '&quot;').replace(/&/g, '&amp;');
+}
+
+init();
+</script>
+</body>
+</html>
