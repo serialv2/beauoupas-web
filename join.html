@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeauOuPas — Rejoindre la session</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="auth-page">
+  <div class="auth-box fade-in">
+    <div class="auth-logo">BeauOuPas</div>
+    <div class="auth-sub">Rejoins la session 🎮</div>
+
+    <div class="card">
+
+      <!-- ─── BLOC 1 : Code manquant ─── -->
+      <div id="noCodeBlock" style="display:none;text-align:center;padding:20px 0;">
+        <div style="font-size:48px;margin-bottom:16px;">❓</div>
+        <h2 style="font-size:22px;font-weight:900;margin-bottom:12px;color:white;">
+          Code manquant
+        </h2>
+        <p style="color:#888;font-size:14px;line-height:22px;margin-bottom:24px;">
+          Ce lien n'a pas de code valide.<br>
+          Scanne à nouveau le QR code affiché sur la TV.
+        </p>
+      </div>
+
+      <!-- ─── BLOC 2 : Tentative ouverture app ─── -->
+      <div id="openingAppBlock" style="text-align:center;padding:20px 0;">
+        <div style="font-size:48px;margin-bottom:16px;">📱</div>
+        <h2 style="font-size:22px;font-weight:900;margin-bottom:12px;color:white;">
+          Ouverture de l'application...
+        </h2>
+        <p style="color:#888;font-size:14px;line-height:22px;">
+          On t'amène à la session
+          <span id="codeDisplay" style="color:#E91E8C;font-weight:bold;"></span>
+        </p>
+      </div>
+
+      <!-- ─── BLOC 3 : Fallback (app pas installée) ─── -->
+      <div id="successBlock" style="display:none;text-align:center;padding:20px 0;">
+        <div style="font-size:64px;margin-bottom:16px;">🎮</div>
+        <h2 style="font-size:24px;font-weight:900;margin-bottom:6px;color:white;">
+          Session
+        </h2>
+        <p style="font-size:28px;font-weight:900;color:#E91E8C;margin-bottom:20px;letter-spacing:4px;font-family:monospace;" id="codeDisplay2"></p>
+
+        <p style="color:#aaa;font-size:14px;line-height:22px;margin-bottom:28px;">
+          Pour rejoindre, il te faut l'application<br>
+          <strong style="color:white;">BeauOuPas</strong> sur ton téléphone.
+        </p>
+
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <!-- Bouton 1 : Re-tenter ouverture app -->
+          <button class="btn btn-primary btn-full" onclick="tryOpenApp(false)">
+            🚀 J'ai l'application
+          </button>
+
+          <!-- Bouton 2 : Play Store (visible si play_store_url configurée) -->
+          <a href="#" id="playStoreBtn" class="btn btn-full"
+             style="display:none;text-decoration:none;background:#1a1a1a;color:white;border:1px solid #333;">
+            📱 Télécharger sur Google Play
+          </a>
+
+          <!-- Bouton 3 : Se connecter sur le web -->
+          <a href="login.html" class="btn btn-full" style="text-decoration:none;background:transparent;color:#888;border:1px solid #333;">
+            🌐 Continuer sur le site
+          </a>
+        </div>
+
+        <p style="margin-top:24px;font-size:12px;color:#555;">
+          Une fois l'app installée, scanne à nouveau le QR code
+        </p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// Flow scan QR code TV :
+//
+// 1. Utilisateur scanne le QR sur la TV
+// 2. Atterrit ici avec ?code=ABC123 dans l'URL
+// 3. On tente automatiquement beauoupas://join?code=ABC123
+//    • Si app installée → s'ouvre direct, navigue vers la salle d'attente
+//    • Si app pas installée → fallback web avec boutons
+// 4. Sur desktop (PC), on ne tente pas le deep link mais on montre direct
+//    les boutons (Play Store + site web)
+// ═══════════════════════════════════════════════════════════════════
+
+// ─── Récupère le code depuis l'URL ───
+function getCode() {
+  var params = new URLSearchParams(window.location.search)
+  var code = (params.get('code') || '').toUpperCase().trim()
+  // Sécurité : on n'accepte que des codes alphanumériques 4-10 chars
+  if (!/^[A-Z0-9]{4,10}$/.test(code)) return ''
+  return code
+}
+
+// ─── Détection mobile ───
+function isMobile() {
+  var ua = navigator.userAgent || ''
+  return /android|iphone|ipad|ipod|mobile/i.test(ua)
+}
+
+// ─── Affichage des blocs ───
+function showBlock(blockId) {
+  var blocks = ['noCodeBlock', 'openingAppBlock', 'successBlock']
+  blocks.forEach(function(id) {
+    var el = document.getElementById(id)
+    if (el) el.style.display = (id === blockId) ? 'block' : 'none'
+  })
+}
+
+// ─── Charge l'URL Play Store depuis app_settings ───
+async function loadPlayStoreUrl() {
+  try {
+    var result = await db
+      .from('app_settings')
+      .select('value')
+      .eq('key', 'play_store_url')
+      .single()
+
+    if (result.error) {
+      console.warn('Lecture play_store_url:', result.error.message)
+      return
+    }
+
+    var url = result.data && result.data.value ? result.data.value.trim() : ''
+    if (url && url.length > 0 && url.indexOf('http') === 0) {
+      var btn = document.getElementById('playStoreBtn')
+      if (btn) {
+        btn.href = url
+        btn.style.display = 'inline-block'
+      }
+    }
+  } catch (err) {
+    console.warn('loadPlayStoreUrl:', err)
+  }
+}
+
+// ─── Tente d'ouvrir l'app via deep link ───
+function tryOpenApp(silentMode) {
+  var code = getCode()
+  if (!code) return
+
+  // ⚠️ Utilise ?code= (query) et pas #code= (hash) pour qu'Android
+  // ne strip pas le paramètre lors du passage au deep link custom.
+  var deepLinkUrl = 'beauoupas://join?code=' + encodeURIComponent(code)
+
+  console.log('Deep link URL:', deepLinkUrl)
+
+  if (!silentMode) {
+    showBlock('openingAppBlock')
+    setTimeout(function() {
+      showBlock('successBlock')
+    }, 2500)
+  }
+
+  try {
+    window.location.href = deepLinkUrl
+  } catch (err) {
+    console.warn('Deep link échoué:', err)
+    if (!silentMode) {
+      showBlock('successBlock')
+    }
+  }
+}
+
+// ─── Initialisation ───
+window.addEventListener('load', async function() {
+  var code = getCode()
+
+  if (!code) {
+    showBlock('noCodeBlock')
+    return
+  }
+
+  // Affiche le code dans les 2 emplacements
+  var d1 = document.getElementById('codeDisplay')
+  var d2 = document.getElementById('codeDisplay2')
+  if (d1) d1.textContent = code
+  if (d2) d2.textContent = code
+
+  // Pré-charge l'URL Play Store pour le fallback
+  loadPlayStoreUrl()
+
+  if (isMobile()) {
+    // Sur mobile : tentative auto d'ouverture de l'app
+    // Si l'app est installée → s'ouvre direct (on ne reviendra jamais ici)
+    // Sinon → après 2.5s on affiche le fallback
+    setTimeout(function() {
+      tryOpenApp(false)
+    }, 400)
+  } else {
+    // Sur desktop : on n'a pas d'app à ouvrir, direct le fallback
+    showBlock('successBlock')
+  }
+})
+</script>
+</body>
+</html>
