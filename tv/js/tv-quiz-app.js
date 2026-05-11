@@ -361,8 +361,35 @@ window.TVQuizApp = (function() {
     document.getElementById('screen-lobby').innerHTML = html;
 
     var qrEl = document.getElementById('lobby-qr');
-    if (qrEl) {
-      qrEl.innerHTML = '<div style="font-size: 11px; color: #888; padding: 8px; text-align: center;">QR Code<br>(à venir)</div>';
+    if (qrEl && typeof QRCode !== 'undefined') {
+      // ⚡ NOUVEAU : génération réelle du QR code
+      // Le QR pointe vers join.html?code=XXX qui :
+      //   - si app installée → ouvre l'app via deep link beauoupas://join?code=XXX
+      //   - si app pas installée → propose le Play Store
+      qrEl.innerHTML = ''; // Nettoie le placeholder
+
+      var baseUrl = window.location.protocol + '//' + window.location.host;
+      var pathParts = window.location.pathname.split('/');
+      pathParts.pop(); // tv-quiz.html
+      pathParts.pop(); // tv
+      var rootPath = pathParts.join('/');
+      var joinUrl = baseUrl + rootPath + '/join.html?code=' + encodeURIComponent(code);
+
+      try {
+        new QRCode(qrEl, {
+          text: joinUrl,
+          width: 256,
+          height: 256,
+          colorDark: '#000000',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } catch (err) {
+        console.warn('QR code generation failed:', err);
+        qrEl.innerHTML = '<div style="font-size: 11px; color: #888; padding: 8px; text-align: center;">QR Code<br>indisponible</div>';
+      }
+    } else if (qrEl) {
+      qrEl.innerHTML = '<div style="font-size: 11px; color: #888; padding: 8px; text-align: center;">QR Code<br>indisponible</div>';
     }
   }
 
