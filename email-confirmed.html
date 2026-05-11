@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeauOuPas — Email confirmé</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="auth-page">
+  <div class="auth-box fade-in">
+    <div class="auth-logo">BeauOuPas</div>
+    <div class="auth-sub">Bienvenue dans l'aventure 🚀</div>
+
+    <div class="card">
+
+      <!-- ─── BLOC 1 : Confirmation en cours ─── -->
+      <div id="confirmingBlock" style="text-align:center;padding:20px 0;">
+        <div style="font-size:48px;margin-bottom:16px;">⏳</div>
+        <h2 style="font-size:22px;font-weight:900;margin-bottom:12px;color:white;">
+          Confirmation en cours...
+        </h2>
+        <p style="color:#888;font-size:14px;margin:0;">
+          On valide ton compte BeauOuPas
+        </p>
+      </div>
+
+      <!-- ─── BLOC 2 : Lien invalide ─── -->
+      <div id="invalidBlock" style="display:none;text-align:center;padding:20px 0;">
+        <div style="font-size:48px;margin-bottom:16px;">⚠️</div>
+        <h2 style="font-size:22px;font-weight:900;margin-bottom:12px;color:white;">
+          Lien invalide ou expiré
+        </h2>
+        <p style="color:#888;font-size:14px;line-height:22px;margin-bottom:24px;">
+          Ce lien de confirmation n'est plus valide.<br>
+          Essaie de te connecter, et si besoin redemande un mail.
+        </p>
+        <a href="login.html" class="btn btn-primary btn-full" style="text-decoration:none;display:inline-block;">
+          🔐 Aller à la connexion
+        </a>
+      </div>
+
+      <!-- ─── BLOC 3 : Tentative ouverture app ─── -->
+      <div id="openingAppBlock" style="display:none;text-align:center;padding:20px 0;">
+        <div style="font-size:48px;margin-bottom:16px;">📱</div>
+        <h2 style="font-size:22px;font-weight:900;margin-bottom:12px;color:white;">
+          Ouverture de l'application...
+        </h2>
+        <p style="color:#888;font-size:14px;line-height:22px;">
+          On tente d'ouvrir BeauOuPas sur ton téléphone.<br>
+          Patiente quelques secondes.
+        </p>
+      </div>
+
+      <!-- ─── BLOC 4 : Succès + fallback (le plus important) ─── -->
+      <div id="successBlock" style="display:none;text-align:center;padding:20px 0;">
+        <div style="font-size:64px;margin-bottom:16px;">✅</div>
+        <h2 style="font-size:24px;font-weight:900;margin-bottom:12px;color:white;">
+          Email confirmé !
+        </h2>
+        <p style="color:#aaa;font-size:14px;line-height:22px;margin-bottom:28px;">
+          Ton compte BeauOuPas est activé.<br>
+          Choisis comment continuer 👇
+        </p>
+
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <!-- Bouton 1 : Ouvrir l'app (toujours visible, tente le deep link) -->
+          <button class="btn btn-primary btn-full" onclick="tryOpenApp()" id="openAppBtn">
+            🚀 Ouvrir l'application
+          </button>
+
+          <!-- Bouton 2 : Play Store (visible si play_store_url renseignée dans admin) -->
+          <a href="#" id="playStoreBtn" class="btn btn-full"
+             style="display:none;text-decoration:none;background:#1a1a1a;color:white;border:1px solid #333;">
+            📱 Télécharger sur Google Play
+          </a>
+
+          <!-- Bouton 3 : Se connecter sur le web (toujours visible) -->
+          <a href="login.html" class="btn btn-full" style="text-decoration:none;background:transparent;color:#888;border:1px solid #333;">
+            🌐 Se connecter sur le site
+          </a>
+        </div>
+
+        <p style="margin-top:24px;font-size:12px;color:#555;">
+          Tu peux fermer cette page après avoir ouvert l'application 👋
+        </p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// Flow confirmation email :
+//
+// 1. Supabase établit la session via le token du hash
+// 2. On la confirme côté JS (avec timeout pour les cas d'échec)
+// 3. On affiche le bloc succès avec :
+//    - Bouton "Ouvrir l'app" qui tente beauoupas://email-confirmed
+//    - Bouton "Play Store" (si URL configurée dans admin)
+//    - Bouton "Connexion web"
+// 4. Sur mobile, on tente AUSSI automatiquement le deep link au chargement
+//    (si l'app est installée → elle s'ouvre direct, sinon l'utilisateur
+//    voit le fallback web)
+// ═══════════════════════════════════════════════════════════════════
+
+let confirmedSuccessfully = false
+
+// ─── Vérification au chargement ───
+window.addEventListener('load', async function() {
+  try {
+    const hash = window.location.hash || ''
+    const search = window.location.search || ''
+    const hasToken =
+      hash.indexOf('access_token=') !== -1 ||
+      hash.indexOf('type=signup') !== -1 ||
+      search.indexOf('code=') !== -1
+
+    // Attendre l'extraction du token par Supabase JS
+    await new Promise(function(resolve) { setTimeout(resolve, 400) })
+
+    // Vérifier qu'on a bien une session
+    const { data: sessionData } = await db.auth.getSession()
+    const session = sessionData ? sessionData.session : null
+
+    if (session) {
+      // ✅ Session valide
+      confirmedSuccessfully = true
+
+      // Charge l'URL Play Store depuis app_settings
+      await loadPlayStoreUrl()
+
+      // Affiche le bloc succès
+      showBlock('successBlock')
+
+      // ⚡ Tentative automatique d'ouverture de l'app sur mobile
+      // Si l'app est installée → elle s'ouvre direct
+      // Sinon → l'utilisateur reste sur cette page et voit les boutons
+      if (isMobile()) {
+        // Petit délai pour laisser l'utilisateur voir le ✅ avant
+        setTimeout(function() {
+          tryOpenApp(true) // silentMode = true (pas d'affichage "ouverture...")
+        }, 800)
+      }
+    } else if (hasToken) {
+      // Token présent mais session pas établie : token expiré/invalide
+      showBlock('invalidBlock')
+    } else {
+      // Pas de token du tout dans l'URL
+      showBlock('invalidBlock')
+    }
+  } catch (err) {
+    console.error('Erreur confirmation:', err)
+    showBlock('invalidBlock')
+  }
+})
+
+// ─── Charge l'URL Play Store depuis app_settings ───
+async function loadPlayStoreUrl() {
+  try {
+    const { data, error } = await db
+      .from('app_settings')
+      .select('value')
+      .eq('key', 'play_store_url')
+      .single()
+
+    if (error) {
+      console.warn('Lecture play_store_url:', error.message)
+      return
+    }
+
+    const url = data && data.value ? data.value.trim() : ''
+    if (url && url.length > 0 && url.indexOf('http') === 0) {
+      const btn = document.getElementById('playStoreBtn')
+      if (btn) {
+        btn.href = url
+        btn.style.display = 'inline-block'
+      }
+    }
+  } catch (err) {
+    // Erreur silencieuse : le bouton reste juste caché
+    console.warn('loadPlayStoreUrl:', err)
+  }
+}
+
+// ─── Détection mobile ───
+function isMobile() {
+  const ua = navigator.userAgent || ''
+  return /android|iphone|ipad|ipod|mobile/i.test(ua)
+}
+
+// ─── Tentative d'ouverture de l'app via deep link ───
+// silentMode = true → on ne change pas l'écran (tentative auto au chargement)
+// silentMode = false → on affiche "Ouverture de l'application..." 2s puis on revient au succès
+function tryOpenApp(silentMode) {
+  // Construit l'URL deep link avec le hash (qui contient le token)
+  const hash = window.location.hash || ''
+  const deepLinkUrl = 'beauoupas://email-confirmed' + hash
+
+  if (!silentMode) {
+    showBlock('openingAppBlock')
+    // Revient au bloc succès après 3s si l'app ne s'est pas ouverte
+    setTimeout(function() {
+      showBlock('successBlock')
+    }, 3000)
+  }
+
+  // Tente d'ouvrir le deep link
+  // Sur mobile : si l'app est installée → bascule sur l'app
+  // Sur desktop ou si pas d'app : ne fait rien visible
+  try {
+    window.location.href = deepLinkUrl
+  } catch (err) {
+    console.warn('Deep link échoué:', err)
+    if (!silentMode) {
+      showBlock('successBlock')
+    }
+  }
+}
+
+// ─── Affichage des blocs ───
+function showBlock(blockId) {
+  const blocks = ['confirmingBlock', 'invalidBlock', 'openingAppBlock', 'successBlock']
+  blocks.forEach(function(id) {
+    const el = document.getElementById(id)
+    if (el) el.style.display = (id === blockId) ? 'block' : 'none'
+  })
+}
+</script>
+</body>
+</html>
