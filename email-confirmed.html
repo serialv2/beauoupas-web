@@ -195,22 +195,31 @@ function isMobile() {
 // ─── Tentative d'ouverture de l'app via deep link ───
 // silentMode = true → on ne change pas l'écran (tentative auto au chargement)
 // silentMode = false → on affiche "Ouverture de l'application..." 2s puis on revient au succès
+//
+// ⚠️ IMPORTANT : on doit convertir le hash en query params (?) car les
+// navigateurs Android stripent le hash (#) lors du passage au deep link
+// custom beauoupas://. Avec les query params, les tokens passent bien.
 function tryOpenApp(silentMode) {
-  // Construit l'URL deep link avec le hash (qui contient le token)
-  const hash = window.location.hash || ''
-  const deepLinkUrl = 'beauoupas://email-confirmed' + hash
+  // Récupère les tokens depuis le hash de l'URL
+  // Hash typique Supabase : #access_token=xxx&refresh_token=yyy&type=signup&...
+  const hash = window.location.hash.substring(1) // retire le #
+
+  // On reconstruit l'URL deep link en utilisant ? au lieu de #
+  // pour que les tokens soient préservés par Android
+  let deepLinkUrl = 'beauoupas://email-confirmed'
+  if (hash && hash.length > 0) {
+    deepLinkUrl += '?' + hash
+  }
+
+  console.log('Deep link URL:', deepLinkUrl)
 
   if (!silentMode) {
     showBlock('openingAppBlock')
-    // Revient au bloc succès après 3s si l'app ne s'est pas ouverte
     setTimeout(function() {
       showBlock('successBlock')
     }, 3000)
   }
 
-  // Tente d'ouvrir le deep link
-  // Sur mobile : si l'app est installée → bascule sur l'app
-  // Sur desktop ou si pas d'app : ne fait rien visible
   try {
     window.location.href = deepLinkUrl
   } catch (err) {
