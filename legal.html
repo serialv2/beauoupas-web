@@ -31,7 +31,7 @@
     margin: 0 0 10px 0;
     color: #ffffff;
     font-size: 28px;
-    background: linear-gradient(135deg, #ff2e9f 0%, #7b5cff 100%);
+    background: linear-gradient(135deg, #FF6B35 0%, #FFB627 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -41,6 +41,9 @@
     color: #888888;
     letter-spacing: 0.5px;
     text-transform: uppercase;
+  }
+  .header .brand-accent {
+    color: #FF6B35;
   }
   .header .updated {
     font-size: 12px;
@@ -53,12 +56,12 @@
     margin-top: 32px;
     margin-bottom: 12px;
     padding-left: 12px;
-    border-left: 3px solid #E91E8C;
+    border-left: 3px solid #FF6B35;
   }
   p { margin: 8px 0 12px 0; }
   strong { color: #ffffff; }
   a {
-    color: #E91E8C;
+    color: #FF6B35;
     text-decoration: none;
   }
   a:hover { text-decoration: underline; }
@@ -78,8 +81,8 @@
   }
   .footer a { color: #888888; margin: 0 8px; }
   .placeholder {
-    background-color: #ff2e9f33;
-    color: #ff2e9f;
+    background-color: #FF6B3533;
+    color: #FF6B35;
     padding: 2px 8px;
     border-radius: 4px;
     font-weight: bold;
@@ -97,7 +100,7 @@
 <div class="container">
 
   <div class="header">
-    <div class="brand">BeauOuPas</div>
+    <div class="brand">Beau<span class="brand-accent">Ou</span>Pas</div>
     <h1>Mentions légales</h1>
     <div class="updated">Dernière mise à jour : 11 mai 2026</div>
   </div>
@@ -170,7 +173,7 @@
     <a href="./privacy.html">Politique de confidentialité</a> ·
     <a href="./terms.html">CGU</a>
     <br><br>
-    © 2026 BeauOuPas — Tous droits réservés
+    © 2026 Beau<span class="brand-accent">Ou</span>Pas — Tous droits réservés
   </div>
 
 </div>
