@@ -37,7 +37,7 @@
 .podium-step.third {
   background: linear-gradient(135deg, #C2754C, #A0522D);
   border: 3px solid #C2754C;
-  color: white;
+  color:#3D2817;
   padding: 16px 8px;
 }
 .podium-rank {
@@ -201,7 +201,7 @@ async function loadQuizResults() {
     document.getElementById("content").innerHTML =
       '<div class="empty-results">' +
         '<div class="icon">🤷</div>' +
-        '<div style="font-size:16px;font-weight:700;color:white;">Pas de résultats</div>' +
+        '<div style="font-size:16px;font-weight:700;color: #3D2817;">Pas de résultats</div>' +
         '<div style="font-size:13px;margin-top:6px;">Personne n\'a participé à ce quiz.</div>' +
       '</div>';
     return;
@@ -271,7 +271,7 @@ async function loadVoteResults() {
 
   if (!rawProjects || !rawProjects.length) {
     document.getElementById("content").innerHTML =
-      '<div class="empty-results"><div class="icon">📊</div><div style="font-size:16px;font-weight:700;color:white;">Aucun projet</div></div>';
+      '<div class="empty-results"><div class="icon">📊</div><div style="font-size:16px;font-weight:700;color: #3D2817;">Aucun projet</div></div>';
     return;
   }
 
