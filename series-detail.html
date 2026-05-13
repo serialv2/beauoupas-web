@@ -197,9 +197,37 @@ async function loadAll() {
 
 function applyDetail(d) {
   seriesData = d.series;
+
+  // ⚡ FIX 13/05/2026 : la RPC renvoie `all_projects` et `participants`.
+  // Le créateur n'est pas inclus dans `participants` → on l'ajoute.
   participants = d.participants || [];
-  projects = d.projects || [];
-  isCreator = seriesData.creator_id === currentUser.id;
+  projects = d.all_projects || d.projects || [];
+
+  isCreator = d.is_creator === true || seriesData.creator_id === currentUser.id;
+
+  // Si le créateur n'est pas dans la liste participants (cas habituel),
+  // l'ajouter manuellement pour qu'il apparaisse aussi dans l'onglet Participants
+  if (isCreator && !participants.some(function(p) { return p.user_id === currentUser.id; })) {
+    participants.unshift({
+      user_id: currentUser.id,
+      username: currentUser.user_metadata && currentUser.user_metadata.username
+        ? currentUser.user_metadata.username
+        : (currentUser.email || 'Toi').split('@')[0],
+      avatar_url: currentUser.user_metadata ? currentUser.user_metadata.avatar_url : null,
+      project_count: 0
+    });
+  }
+
+  // Compteur de projets par membre (toujours utile)
+  var byMember = {};
+  projects.forEach(function(p) {
+    if (!byMember[p.added_by]) byMember[p.added_by] = 0;
+    byMember[p.added_by]++;
+  });
+  participants.forEach(function(p) {
+    p.project_count = byMember[p.user_id] || 0;
+  });
+
   renderAll();
 }
 
@@ -371,12 +399,22 @@ function renderProjects() {
   }
 
   listEl.innerHTML = projects.map(function(sp, i) {
+    // ⚡ FIX : la RPC renvoie les champs à plat (title, type, description),
+    //   pas dans un sous-objet sp.projects comme le fallback.
+    //   On supporte les 2 formes pour rester compatible.
     var p = sp.project || sp.projects || null;
-    var title = (p && p.title) || 'Projet sans titre';
-    var photo = p && p.photo_url ? p.photo_url : null;
+    var title = (p && p.title) || sp.title || 'Projet sans titre';
+    var photo = (p && p.photo_url) ? p.photo_url : null;
+
+    // Icône selon le type
+    var typeFallback = '📸';
+    var t = (p && p.type) || sp.type;
+    if (t === 'duel') typeFallback = '⚔️';
+    else if (t === 'poll') typeFallback = '📊';
+
     var thumb = photo
       ? '<img src="' + escapeHtml(photo) + '" alt="" style="width:54px;height:54px;border-radius:10px;object-fit:cover;">'
-      : '<div style="width:54px;height:54px;border-radius:10px;background:#E5DCC9;display:flex;align-items:center;justify-content:center;font-size:22px;">📸</div>';
+      : '<div style="width:54px;height:54px;border-radius:10px;background:#E5DCC9;display:flex;align-items:center;justify-content:center;font-size:22px;">' + typeFallback + '</div>';
 
     return (
       '<div class="row-card">' +
