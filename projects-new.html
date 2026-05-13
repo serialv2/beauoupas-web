@@ -8,25 +8,25 @@
 
 <style>
 .photo-slot {
-  border:2px dashed #292929; border-radius:12px; background:#111;
+  border:2px dashed #E5DCC9; border-radius:12px; background:#111;
   aspect-ratio:1; display:flex; flex-direction:column;
   align-items:center; justify-content:center; cursor:pointer;
   transition:border-color 0.15s; overflow:hidden; position:relative; max-height:160px;
 }
-.photo-slot:hover { border-color:#E91E8C; }
+.photo-slot:hover { border-color:#C2754C; }
 .photo-slot img { width:100%; height:100%; object-fit:cover; position:absolute; inset:0; }
-.photo-slot .slot-label { position:absolute; top:6px; left:6px; background:rgba(0,0,0,0.7); border-radius:6px; padding:3px 8px; font-weight:900; color:#E91E8C; font-size:13px; z-index:2; }
+.photo-slot .slot-label { position:absolute; top:6px; left:6px; background:rgba(0,0,0,0.7); border-radius:6px; padding:3px 8px; font-weight:900; color:#C2754C; font-size:13px; z-index:2; }
 .photo-slot .slot-remove { position:absolute; top:6px; right:6px; background:rgba(0,0,0,0.7); border:none; border-radius:50%; width:24px; height:24px; color:white; font-size:12px; cursor:pointer; z-index:2; display:none; align-items:center; justify-content:center; }
 .photo-slot.filled .slot-remove { display:flex; }
-.photo-slot .slot-placeholder { color:#444; text-align:center; font-size:12px; }
+.photo-slot .slot-placeholder { color:#8A6F4A; text-align:center; font-size:12px; }
 .photo-slot .slot-placeholder span { font-size:26px; display:block; margin-bottom:6px; }
 .poll-option { display:flex; gap:8px; align-items:center; margin-bottom:8px; }
 .poll-option input { flex:1; }
-.poll-option button { background:none; border:1px solid #292929; border-radius:8px; color:#555; width:32px; height:32px; cursor:pointer; font-size:16px; flex-shrink:0; transition:all 0.15s; }
-.poll-option button:hover { border-color:#ef5350; color:#ef5350; }
+.poll-option button { background:none; border:1px solid #E5DCC9; border-radius:8px; color:#6B5234; width:32px; height:32px; cursor:pointer; font-size:16px; flex-shrink:0; transition:all 0.15s; }
+.poll-option button:hover { border-color:#B5482F; color:#B5482F; }
 .type-btn { flex:1; padding:10px 6px; border-radius:10px; cursor:pointer; font-size:12px; font-family:Arial; transition:all 0.15s; }
-.type-btn.active { border:2px solid #E91E8C; background:rgba(233,30,140,0.1); color:#E91E8C; font-weight:800; }
-.type-btn.inactive { border:1px solid #292929; background:transparent; color:#888; font-weight:400; }
+.type-btn.active { border:2px solid #C2754C; background:rgba(194,117,76,0.1); color:#C2754C; font-weight:800; }
+.type-btn.inactive { border:1px solid #E5DCC9; background:transparent; color:#8A6F4A; font-weight:400; }
 </style>
 </head>
 
@@ -44,7 +44,7 @@
 
 <main class="main-content">
   <div style="max-width:560px;margin:0 auto;">
-    <button onclick="history.back()" style="background:none;border:none;color:#888;cursor:pointer;font-size:14px;margin-bottom:10px;">← Retour</button>
+    <button onclick="history.back()" style="background:none;border:none;color:#8A6F4A;cursor:pointer;font-size:14px;margin-bottom:10px;">← Retour</button>
 
     <h1 style="font-size:22px;font-weight:900;margin-bottom:16px;">➕ Nouveau projet</h1>
 
@@ -69,7 +69,7 @@
         </div>
 
         <div>
-          <label class="input-label" style="font-size:12px;">Description <span style="color:#444;">(optionnel)</span></label>
+          <label class="input-label" style="font-size:12px;">Description <span style="color:#8A6F4A;">(optionnel)</span></label>
           <textarea class="input" id="description" placeholder="Contexte..." rows="2" style="resize:none;padding:10px 14px;font-size:14px;"></textarea>
         </div>
 
@@ -85,12 +85,12 @@
         </div>
 
         <div id="poll-section" style="display:none;">
-          <label class="input-label" style="font-size:12px;">Options du sondage <span style="color:#666;">(2 minimum, 6 maximum)</span></label>
+          <label class="input-label" style="font-size:12px;">Options du sondage <span style="color:#6B5234;">(2 minimum, 6 maximum)</span></label>
           <div id="poll-options" style="margin-top:8px;"></div>
 
-          <button onclick="addPollOption()" style="background:none;border:1px dashed #292929;border-radius:10px;color:#888;padding:10px;width:100%;cursor:pointer;font-size:13px;margin-top:4px;transition:all 0.15s;"
-            onmouseover="this.style.borderColor='#E91E8C';this.style.color='#E91E8C'"
-            onmouseout="this.style.borderColor='#292929';this.style.color='#888'">
+          <button onclick="addPollOption()" style="background:none;border:1px dashed #E5DCC9;border-radius:10px;color:#8A6F4A;padding:10px;width:100%;cursor:pointer;font-size:13px;margin-top:4px;transition:all 0.15s;"
+            onmouseover="this.style.borderColor='#C2754C';this.style.color='#C2754C'"
+            onmouseout="this.style.borderColor='#E5DCC9';this.style.color='#8A6F4A'">
             ➕ Ajouter une option
           </button>
         </div>
@@ -107,10 +107,10 @@
             </div>
 
             <div>
-              <label class="input-label" style="font-size:12px;">Âge : <span id="age-display" style="color:#E91E8C;font-weight:800;">18–99</span></label>
+              <label class="input-label" style="font-size:12px;">Âge : <span id="age-display" style="color:#C2754C;font-weight:800;">18–99</span></label>
               <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;">
-                <input type="range" id="age-min" min="18" max="99" value="18" style="width:100%;accent-color:#E91E8C;" oninput="updateAgeDisplay()">
-                <input type="range" id="age-max" min="18" max="99" value="99" style="width:100%;accent-color:#E91E8C;" oninput="updateAgeDisplay()">
+                <input type="range" id="age-min" min="18" max="99" value="18" style="width:100%;accent-color:#C2754C;" oninput="updateAgeDisplay()">
+                <input type="range" id="age-max" min="18" max="99" value="99" style="width:100%;accent-color:#C2754C;" oninput="updateAgeDisplay()">
               </div>
             </div>
           </div>
@@ -201,14 +201,14 @@ function setType(type) {
     document.getElementById('photos-label').textContent = 'Photos du duel';
     document.getElementById('photos-grid').style.gridTemplateColumns = '1fr 1fr';
     document.getElementById('photos-grid').innerHTML =
-      '<div><div style="font-size:11px;color:#888;margin-bottom:4px;font-weight:700;">A — Gauche</div>' +
+      '<div><div style="font-size:11px;color:#8A6F4A;margin-bottom:4px;font-weight:700;">A — Gauche</div>' +
         '<div class="photo-slot" id="slot-left" onclick="triggerFile(\'file-left\')">' +
           '<div class="slot-placeholder"><span>📁</span>Photo A</div>' +
           '<div class="slot-label">A</div>' +
           '<button class="slot-remove" onclick="removePhoto(\'left\',event)">✕</button>' +
           '<input type="file" id="file-left" accept="image/*" style="display:none;" onchange="handleFile(this,\'left\')">' +
         '</div></div>' +
-      '<div><div style="font-size:11px;color:#888;margin-bottom:4px;font-weight:700;">B — Droite</div>' +
+      '<div><div style="font-size:11px;color:#8A6F4A;margin-bottom:4px;font-weight:700;">B — Droite</div>' +
         '<div class="photo-slot" id="slot-right" onclick="triggerFile(\'file-right\')">' +
           '<div class="slot-placeholder"><span>📁</span>Photo B</div>' +
           '<div class="slot-label">B</div>' +

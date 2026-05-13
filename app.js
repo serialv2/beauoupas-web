@@ -30,7 +30,7 @@ function showError(id, msg) {
 
 function showSuccess(id, msg) {
   const el = document.getElementById(id)
-  if (el) { el.textContent = msg; el.style.display = 'block'; el.style.background = 'rgba(76,175,80,0.15)'; el.style.borderColor = 'rgba(76,175,80,0.4)'; el.style.color = '#4CAF50' }
+  if (el) { el.textContent = msg; el.style.display = 'block'; el.style.background = 'rgba(74,122,82,0.15)'; el.style.borderColor = 'rgba(74,122,82,0.4)'; el.style.color = '#4A7A52' }
 }
 
 function setLoading(btnId, loading, text) {

@@ -22,9 +22,9 @@
   flex: 1;
   padding: 18px 8px;
   border-radius: 14px;
-  border: 2px solid #292929;
+  border: 2px solid #E5DCC9;
   background: transparent;
-  color: #888;
+  color: #8A6F4A;
   font-size: 26px;
   cursor: pointer;
   transition: all 0.15s;
@@ -34,35 +34,35 @@
   align-items: center;
   gap: 6px;
 }
-.vote-btn .label { font-size: 11px; color: #666; font-weight: 700; }
+.vote-btn .label { font-size: 11px; color: #6B5234; font-weight: 700; }
 .vote-btn.like:hover, .vote-btn.like.voted {
-  border-color: #4CAF50;
-  background: rgba(76,175,80,0.1);
-  color: #4CAF50;
+  border-color: #4A7A52;
+  background: rgba(74,122,82,0.1);
+  color: #4A7A52;
 }
-.vote-btn.like:hover .label, .vote-btn.like.voted .label { color: #4CAF50; }
+.vote-btn.like:hover .label, .vote-btn.like.voted .label { color: #4A7A52; }
 .vote-btn.meh:hover, .vote-btn.meh.voted {
-  border-color: #FF9800;
-  background: rgba(255,152,0,0.1);
-  color: #FF9800;
+  border-color: #C9943E;
+  background: rgba(201,148,62,0.1);
+  color: #C9943E;
 }
-.vote-btn.meh:hover .label, .vote-btn.meh.voted .label { color: #FF9800; }
+.vote-btn.meh:hover .label, .vote-btn.meh.voted .label { color: #C9943E; }
 .vote-btn.dislike:hover, .vote-btn.dislike.voted {
-  border-color: #ef5350;
-  background: rgba(244,67,54,0.1);
-  color: #ef5350;
+  border-color: #B5482F;
+  background: rgba(181,72,47,0.1);
+  color: #B5482F;
 }
-.vote-btn.dislike:hover .label, .vote-btn.dislike.voted .label { color: #ef5350; }
+.vote-btn.dislike:hover .label, .vote-btn.dislike.voted .label { color: #B5482F; }
 
 .voted-badge {
   display: inline-block;
-  background: rgba(76,175,80,0.15);
-  color: #4CAF50;
+  background: rgba(74,122,82,0.15);
+  color: #4A7A52;
   padding: 6px 14px;
   border-radius: 999px;
   font-size: 12px;
   font-weight: 800;
-  border: 1px solid rgba(76,175,80,0.4);
+  border: 1px solid rgba(74,122,82,0.4);
 }
 
 .nav-arrows {
@@ -72,8 +72,8 @@
   margin-top: 24px;
 }
 .nav-arrow {
-  background: #151515;
-  border: 1px solid #292929;
+  background: #FAF6EF;
+  border: 1px solid #E5DCC9;
   color: white;
   padding: 12px 18px;
   border-radius: 12px;
@@ -82,7 +82,7 @@
   font-size: 14px;
   font-family: Arial;
 }
-.nav-arrow:hover:not(:disabled) { border-color: #E91E8C; color: #E91E8C; }
+.nav-arrow:hover:not(:disabled) { border-color: #C2754C; color: #C2754C; }
 .nav-arrow:disabled { opacity: 0.3; cursor: not-allowed; }
 
 .poll-option {
@@ -91,7 +91,7 @@
   text-align: left;
   padding: 14px 16px;
   background: #111;
-  border: 2px solid #292929;
+  border: 2px solid #E5DCC9;
   border-radius: 12px;
   color: white;
   font-size: 14px;
@@ -101,8 +101,8 @@
   margin-bottom: 8px;
   font-family: Arial;
 }
-.poll-option:hover { border-color: rgba(233,30,140,0.4); }
-.poll-option.voted { border-color: #E91E8C; background: rgba(233,30,140,0.1); color: #E91E8C; }
+.poll-option:hover { border-color: rgba(194,117,76,0.4); }
+.poll-option.voted { border-color: #C2754C; background: rgba(194,117,76,0.1); color: #C2754C; }
 </style>
 </head>
 <body>
@@ -121,7 +121,7 @@
   <div style="max-width:600px;margin:0 auto;">
 
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
-      <a href="javascript:history.back()" style="color:#888;text-decoration:none;font-size:24px;">←</a>
+      <a href="javascript:history.back()" style="color:#8A6F4A;text-decoration:none;font-size:24px;">←</a>
       <h1 id="series-title" style="font-size:20px;font-weight:900;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Chargement…</h1>
     </div>
 
@@ -130,7 +130,7 @@
     <div id="content" style="display:none;">
 
       <!-- Indicateur "X / N" -->
-      <div id="progress" style="text-align:center;margin-bottom:14px;font-size:13px;color:#888;font-weight:700;"></div>
+      <div id="progress" style="text-align:center;margin-bottom:14px;font-size:13px;color:#8A6F4A;font-weight:700;"></div>
 
       <!-- Project card -->
       <div id="project-card"></div>
@@ -146,13 +146,13 @@
     <div id="empty" style="display:none;text-align:center;padding:60px 20px;">
       <div style="font-size:64px;opacity:0.3;margin-bottom:16px;">🤷</div>
       <div style="font-size:16px;font-weight:700;margin-bottom:6px;">Pas de projet à voter</div>
-      <div style="color:#888;font-size:13px;">Cette série n'a pas encore de projets visibles.</div>
+      <div style="color:#8A6F4A;font-size:13px;">Cette série n'a pas encore de projets visibles.</div>
     </div>
 
   </div>
 </main>
 
-<div id="toast" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#151515;border:1px solid #292929;color:white;padding:14px 22px;border-radius:14px;font-weight:700;z-index:200;"></div>
+<div id="toast" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#FAF6EF;border:1px solid #E5DCC9;color:#3D2817;padding:14px 22px;border-radius:14px;font-weight:700;z-index:200;"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
@@ -305,13 +305,13 @@ function renderProject() {
   } else if (voteType === 'duel') {
     voteHtml += '<div style="display:flex;gap:8px;margin-top:14px;">' +
       '<button type="button" class="vote-btn ' + (myVote === 'A' ? 'voted' : '') + '" ' +
-              'style="border-color:' + (myVote === 'A' ? '#E91E8C' : '#292929') + ';color:' + (myVote === 'A' ? '#E91E8C' : '#888') + ';" ' +
+              'style="border-color:' + (myVote === 'A' ? '#C2754C' : '#E5DCC9') + ';color:' + (myVote === 'A' ? '#C2754C' : '#8A6F4A') + ';" ' +
               'onclick="vote(\'' + sp.id + '\',\'A\')">' +
         '<div style="font-size:30px;">A</div>' +
         '<div class="label">Photo gauche</div>' +
       '</button>' +
       '<button type="button" class="vote-btn ' + (myVote === 'B' ? 'voted' : '') + '" ' +
-              'style="border-color:' + (myVote === 'B' ? '#E91E8C' : '#292929') + ';color:' + (myVote === 'B' ? '#E91E8C' : '#888') + ';" ' +
+              'style="border-color:' + (myVote === 'B' ? '#C2754C' : '#E5DCC9') + ';color:' + (myVote === 'B' ? '#C2754C' : '#8A6F4A') + ';" ' +
               'onclick="vote(\'' + sp.id + '\',\'B\')">' +
         '<div style="font-size:30px;">B</div>' +
         '<div class="label">Photo droite</div>' +
@@ -320,7 +320,7 @@ function renderProject() {
   } else if (voteType === 'poll') {
     var opts = pollOptionsById[p.id] || [];
     if (!opts.length) {
-      voteHtml += '<div style="text-align:center;color:#888;padding:20px;">Aucune option pour ce sondage</div>';
+      voteHtml += '<div style="text-align:center;color:#8A6F4A;padding:20px;">Aucune option pour ce sondage</div>';
     } else {
       voteHtml += opts.map(function(opt) {
         var voted = myVote === opt.id;
@@ -331,7 +331,7 @@ function renderProject() {
       }).join('');
     }
   } else {
-    voteHtml += '<div style="text-align:center;color:#888;padding:20px;">Type de vote inconnu : ' + escapeHtml(voteType) + '</div>';
+    voteHtml += '<div style="text-align:center;color:#8A6F4A;padding:20px;">Type de vote inconnu : ' + escapeHtml(voteType) + '</div>';
   }
 
   voteHtml += '</div>';

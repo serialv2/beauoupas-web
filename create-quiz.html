@@ -18,7 +18,7 @@
 }
 .style-banner.kahoot { background: linear-gradient(135deg,#7C3AED,#5B21B6); }
 .style-banner.millionaire { background: linear-gradient(135deg,#1E40AF,#1E3A8A); }
-.style-banner.burger { background: linear-gradient(135deg,#F59E0B,#D97706); }
+.style-banner.burger { background: linear-gradient(135deg,#C9943E,#D97706); }
 .style-banner.weakest { background: linear-gradient(135deg,#1F2937,#111827); }
 .style-banner .emoji { font-size: 32px; }
 
@@ -30,19 +30,19 @@
 }
 .toggle-info { flex: 1; padding-right: 12px; }
 .toggle-title { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
-.toggle-desc { font-size: 12px; color: #888; line-height: 1.4; }
+.toggle-desc { font-size: 12px; color: #8A6F4A; line-height: 1.4; }
 
 .toggle {
   width: 48px;
   height: 28px;
-  background: #292929;
+  background: #E5DCC9;
   border-radius: 999px;
   position: relative;
   cursor: pointer;
   flex-shrink: 0;
   transition: background 0.2s;
 }
-.toggle.on { background: #E91E8C; }
+.toggle.on { background: #C2754C; }
 .toggle::after {
   content: '';
   position: absolute;
@@ -58,8 +58,8 @@
 
 /* Question card */
 .question-card {
-  background: #151515;
-  border: 1px solid #292929;
+  background: #FAF6EF;
+  border: 1px solid #E5DCC9;
   border-radius: 18px;
   padding: 16px;
   margin-bottom: 14px;
@@ -68,7 +68,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: #6B46C1;
+  background: #6B7F5C;
   color: white;
   padding: 4px 12px;
   border-radius: 999px;
@@ -83,19 +83,19 @@
   align-items: center;
   gap: 10px;
   background: #111;
-  border: 2px solid #292929;
+  border: 2px solid #E5DCC9;
   border-radius: 12px;
   padding: 10px 12px;
   margin-bottom: 6px;
 }
 .option-row.correct {
-  border-color: #4CAF50;
-  background: rgba(76,175,80,0.08);
+  border-color: #4A7A52;
+  background: rgba(74,122,82,0.08);
 }
 .option-letter {
   width: 28px; height: 28px;
   border-radius: 50%;
-  background: #292929;
+  background: #E5DCC9;
   color: white;
   font-weight: 900;
   display: flex;
@@ -105,7 +105,7 @@
   flex-shrink: 0;
 }
 .option-row.correct .option-letter {
-  background: #4CAF50;
+  background: #4A7A52;
 }
 .option-input {
   flex: 1;
@@ -118,11 +118,11 @@
   font-family: Arial;
   min-width: 0;
 }
-.option-input::placeholder { color: #555; }
+.option-input::placeholder { color: #6B5234; }
 .correct-toggle {
   background: transparent;
-  border: 2px solid #292929;
-  color: #555;
+  border: 2px solid #E5DCC9;
+  color: #6B5234;
   width: 30px; height: 30px;
   border-radius: 8px;
   cursor: pointer;
@@ -135,17 +135,17 @@
   justify-content: center;
   transition: all 0.15s;
 }
-.correct-toggle:hover { border-color: #4CAF50; }
+.correct-toggle:hover { border-color: #4A7A52; }
 .correct-toggle.on {
-  background: #4CAF50;
-  border-color: #4CAF50;
+  background: #4A7A52;
+  border-color: #4A7A52;
   color: white;
 }
 
 .delete-q-btn {
   background: transparent;
-  border: 1px solid rgba(244,67,54,0.3);
-  color: #ef5350;
+  border: 1px solid rgba(181,72,47,0.3);
+  color: #B5482F;
   padding: 4px 10px;
   border-radius: 8px;
   cursor: pointer;
@@ -153,7 +153,7 @@
   font-weight: 700;
   font-family: Arial;
 }
-.delete-q-btn:hover { border-color: #ef5350; background: rgba(244,67,54,0.08); }
+.delete-q-btn:hover { border-color: #B5482F; background: rgba(181,72,47,0.08); }
 </style>
 </head>
 <body>
@@ -172,7 +172,7 @@
   <div style="max-width:680px;margin:0 auto;">
 
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
-      <a href="javascript:history.back()" style="color:#888;text-decoration:none;font-size:24px;">←</a>
+      <a href="javascript:history.back()" style="color:#8A6F4A;text-decoration:none;font-size:24px;">←</a>
       <h1 style="font-size:22px;font-weight:900;">🧠 Nouveau quiz</h1>
     </div>
 
@@ -180,8 +180,8 @@
     <div id="style-banner"></div>
 
     <!-- Contexte (group ou standalone) -->
-    <div id="context-banner" style="display:none;margin-bottom:18px;padding:12px 16px;background:rgba(233,30,140,0.08);border:1px solid rgba(233,30,140,0.2);border-radius:12px;font-size:13px;">
-      <span style="color:#E91E8C;font-weight:800;">Dans :</span>
+    <div id="context-banner" style="display:none;margin-bottom:18px;padding:12px 16px;background:rgba(194,117,76,0.08);border:1px solid rgba(194,117,76,0.2);border-radius:12px;font-size:13px;">
+      <span style="color:#C2754C;font-weight:800;">Dans :</span>
       <span id="context-name" style="color:white;font-weight:700;"></span>
     </div>
 
@@ -213,7 +213,7 @@
     <!-- Bloc 3 : questions -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
       <h2 style="font-size:18px;font-weight:900;">📝 Questions</h2>
-      <span id="question-count" style="font-size:13px;color:#888;font-weight:700;">0 question</span>
+      <span id="question-count" style="font-size:13px;color:#8A6F4A;font-weight:700;">0 question</span>
     </div>
 
     <div id="questions-container"></div>
@@ -229,7 +229,7 @@
   </div>
 </main>
 
-<div id="toast" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#151515;border:1px solid #292929;color:white;padding:14px 22px;border-radius:14px;font-weight:700;z-index:200;"></div>
+<div id="toast" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#FAF6EF;border:1px solid #E5DCC9;color:white;padding:14px 22px;border-radius:14px;font-weight:700;z-index:200;"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
@@ -381,7 +381,7 @@ function renderQuestions(focusQid) {
                'value="' + escapeAttr(q.question_text || '') + '" ' +
                'oninput="updateQuestionField(\'' + q.id + '\',\'question_text\',this.value)" ' +
                'style="margin-bottom:12px;">' +
-        '<div style="font-size:12px;color:#888;margin-bottom:8px;">Réponses (clique sur ✓ pour cocher la/les bonne(s)) :</div>' +
+        '<div style="font-size:12px;color:#8A6F4A;margin-bottom:8px;">Réponses (clique sur ✓ pour cocher la/les bonne(s)) :</div>' +
         optionsHtml +
       '</div>'
     );

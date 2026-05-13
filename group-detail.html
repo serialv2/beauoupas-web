@@ -19,7 +19,7 @@
   padding: 10px 12px;
   background: transparent;
   border: none;
-  color: #888;
+  color: #8A6F4A;
   font-weight: 700;
   font-size: 13px;
   cursor: pointer;
@@ -27,7 +27,7 @@
   transition: all 0.15s;
   font-family: Arial;
 }
-.tab-btn.active { background: #E91E8C; color: white; }
+.tab-btn.active { background: #C2754C; color: white; }
 .tab-content { display: none; }
 .tab-content.active { display: block; }
 
@@ -37,7 +37,7 @@
   gap: 12px;
   padding: 12px;
   background: #111;
-  border: 1px solid #222;
+  border: 1px solid #E5DCC9;
   border-radius: 12px;
   margin-bottom: 8px;
 }
@@ -48,27 +48,27 @@
   border-radius: 999px;
   font-weight: 700;
 }
-.role-admin { background: rgba(233,30,140,0.15); color: #ff4fb0; }
-.role-member { background: rgba(255,255,255,0.05); color: #888; }
+.role-admin { background: rgba(194,117,76,0.15); color: #D88A66; }
+.role-member { background: rgba(255,255,255,0.05); color: #8A6F4A; }
 
 .series-card {
   display: block;
   padding: 14px;
   background: #111;
-  border: 1px solid #222;
+  border: 1px solid #E5DCC9;
   border-radius: 12px;
   margin-bottom: 8px;
   text-decoration: none;
   color: white;
   transition: border-color 0.15s;
 }
-.series-card:hover { border-color: rgba(233,30,140,0.4); }
+.series-card:hover { border-color: rgba(194,117,76,0.4); }
 .series-card-name { font-weight: 800; margin-bottom: 4px; }
-.series-card-meta { font-size: 12px; color: #888; display: flex; gap: 10px; }
+.series-card-meta { font-size: 12px; color: #8A6F4A; display: flex; gap: 10px; }
 
 .chat-box {
-  background: #0D0D0D;
-  border: 1px solid #1A1A1A;
+  background: #FAF6EF;
+  border: 1px solid #E5DCC9;
   border-radius: 14px;
   height: 420px;
   display: flex;
@@ -86,7 +86,7 @@
   display: flex;
   gap: 8px;
   padding: 10px;
-  border-top: 1px solid #1A1A1A;
+  border-top: 1px solid #E5DCC9;
 }
 .chat-msg {
   max-width: 75%;
@@ -98,19 +98,19 @@
 }
 .chat-msg.mine {
   align-self: flex-end;
-  background: #E91E8C;
+  background: #C2754C;
   color: white;
   border-bottom-right-radius: 4px;
 }
 .chat-msg.theirs {
   align-self: flex-start;
-  background: #222;
+  background: #E5DCC9;
   color: white;
   border-bottom-left-radius: 4px;
 }
 .chat-msg .author { font-size: 11px; font-weight: 700; margin-bottom: 2px; opacity: 0.8; }
 .chat-msg .time { font-size: 10px; opacity: 0.6; margin-top: 2px; }
-.chat-empty { color: #555; font-size: 13px; text-align: center; padding: 30px 20px; }
+.chat-empty { color: #6B5234; font-size: 13px; text-align: center; padding: 30px 20px; }
 
 /* ─── Modal invite ─── */
 .modal-overlay {
@@ -125,8 +125,8 @@
 }
 .modal-overlay.open { display: flex; }
 .modal {
-  background: #151515;
-  border: 1px solid #292929;
+  background: #FAF6EF;
+  border: 1px solid #E5DCC9;
   border-radius: 18px;
   width: 100%;
   max-width: 480px;
@@ -136,7 +136,7 @@
 }
 .modal-header {
   padding: 18px 20px;
-  border-bottom: 1px solid #1A1A1A;
+  border-bottom: 1px solid #E5DCC9;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -148,14 +148,14 @@
 }
 .modal-footer {
   padding: 14px 20px;
-  border-top: 1px solid #1A1A1A;
+  border-top: 1px solid #E5DCC9;
   display: flex;
   gap: 10px;
 }
 .close-btn {
   background: transparent;
   border: none;
-  color: #888;
+  color: #8A6F4A;
   font-size: 22px;
   cursor: pointer;
   padding: 0 6px;
@@ -168,20 +168,20 @@
   gap: 12px;
   padding: 12px;
   background: #111;
-  border: 2px solid #292929;
+  border: 2px solid #E5DCC9;
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.15s;
   margin-bottom: 8px;
   user-select: none;
 }
-.friend-row:hover { border-color: rgba(233,30,140,0.3); }
-.friend-row.selected { border-color: #E91E8C; background: rgba(233,30,140,0.06); }
+.friend-row:hover { border-color: rgba(194,117,76,0.3); }
+.friend-row.selected { border-color: #C2754C; background: rgba(194,117,76,0.06); }
 .friend-row .check {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  border: 2px solid #444;
+  border: 2px solid #8A6F4A;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -190,8 +190,8 @@
   transition: all 0.15s;
 }
 .friend-row.selected .check {
-  background: #E91E8C;
-  border-color: #E91E8C;
+  background: #C2754C;
+  border-color: #C2754C;
   color: white;
 }
 </style>
@@ -212,7 +212,7 @@
   <div style="max-width:700px;margin:0 auto;">
 
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
-      <a href="groups.html" style="color:#888;text-decoration:none;font-size:24px;">←</a>
+      <a href="groups.html" style="color:#8A6F4A;text-decoration:none;font-size:24px;">←</a>
       <h1 id="group-title" style="font-size:22px;font-weight:900;flex:1;">Chargement…</h1>
     </div>
 
@@ -227,7 +227,7 @@
     <!-- Séries -->
     <div class="tab-content active" id="tab-series">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <h2 style="font-size:15px;font-weight:800;color:#888;">Séries du groupe</h2>
+        <h2 style="font-size:15px;font-weight:800;color:#8A6F4A;">Séries du groupe</h2>
         <button class="btn btn-sm btn-secondary" onclick="goCreateSeries()">➕ Créer</button>
       </div>
       <div id="series-list"><div class="spinner" style="margin:30px auto;"></div></div>
@@ -236,7 +236,7 @@
     <!-- Membres -->
     <div class="tab-content" id="tab-members">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <h2 style="font-size:15px;font-weight:800;color:#888;">Membres</h2>
+        <h2 style="font-size:15px;font-weight:800;color:#8A6F4A;">Membres</h2>
         <!-- ⚡ NOUVEAU : ouvre le modal d'invitation -->
         <button class="btn btn-sm btn-secondary" onclick="openInviteModal()">➕ Inviter</button>
       </div>
@@ -285,7 +285,7 @@
   </div>
 </div>
 
-<div id="toast" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#151515;border:1px solid #292929;color:white;padding:14px 22px;border-radius:14px;font-weight:700;z-index:200;"></div>
+<div id="toast" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#FAF6EF;border:1px solid #E5DCC9;color:white;padding:14px 22px;border-radius:14px;font-weight:700;z-index:200;"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
@@ -430,15 +430,15 @@ function renderHeader() {
 
   var html =
     '<div class="card" style="display:flex;gap:14px;align-items:center;margin-bottom:18px;padding:18px;">' +
-      '<div style="width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#E91E8C,#6B46C1);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;color:white;flex-shrink:0;overflow:hidden;">' +
+      '<div style="width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#C2754C,#6B7F5C);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:900;color:white;flex-shrink:0;overflow:hidden;">' +
         avatarHtml +
       '</div>' +
       '<div style="flex:1;min-width:0;">' +
         '<div style="font-size:18px;font-weight:800;">' + escapeHtml(groupData.name) + '</div>' +
         (groupData.description
-          ? '<div style="font-size:13px;color:#888;margin-top:2px;">' + escapeHtml(groupData.description) + '</div>'
+          ? '<div style="font-size:13px;color:#8A6F4A;margin-top:2px;">' + escapeHtml(groupData.description) + '</div>'
           : '') +
-        '<div style="font-size:12px;color:#666;margin-top:6px;">👥 ' + members.length + ' membre' + (members.length > 1 ? 's' : '') +
+        '<div style="font-size:12px;color:#6B5234;margin-top:6px;">👥 ' + members.length + ' membre' + (members.length > 1 ? 's' : '') +
         ' · 📋 ' + seriesList.length + ' série' + (seriesList.length > 1 ? 's' : '') +
         (isAdmin ? ' · <span class="badge badge-pink" style="padding:2px 8px;font-size:10px;">ADMIN</span>' : '') +
         '</div>' +
@@ -450,7 +450,7 @@ function renderHeader() {
 function renderSeries() {
   var listEl = document.getElementById("series-list");
   if (!seriesList.length) {
-    listEl.innerHTML = '<div style="text-align:center;padding:30px 10px;color:#666;font-size:13px;">Aucune série pour l\'instant.</div>';
+    listEl.innerHTML = '<div style="text-align:center;padding:30px 10px;color:#6B5234;font-size:13px;">Aucune série pour l\'instant.</div>';
     return;
   }
   listEl.innerHTML = seriesList.map(function(s) {
@@ -467,7 +467,7 @@ function renderSeries() {
             '<div class="series-card-name">' + icon + ' ' + escapeHtml(s.title || 'Sans titre') + '</div>' +
             '<div class="series-card-meta">' +
               '<span>' + (isQuiz ? 'Quiz' : 'Vote') + '</span>' +
-              (s.access_code ? '<span>Code: <b style="color:#E91E8C;">' + escapeHtml(s.access_code) + '</b></span>' : '') +
+              (s.access_code ? '<span>Code: <b style="color:#C2754C;">' + escapeHtml(s.access_code) + '</b></span>' : '') +
             '</div>' +
           '</div>' +
           statusBadge +
@@ -480,7 +480,7 @@ function renderSeries() {
 function renderMembers() {
   var listEl = document.getElementById("members-list");
   if (!members.length) {
-    listEl.innerHTML = '<div style="color:#666;font-size:13px;text-align:center;padding:20px;">Aucun membre</div>';
+    listEl.innerHTML = '<div style="color:#6B5234;font-size:13px;text-align:center;padding:20px;">Aucun membre</div>';
     return;
   }
   listEl.innerHTML = members.map(function(m) {
@@ -527,9 +527,9 @@ function renderMessages() {
 function renderActions() {
   var html = '';
   if (isAdmin) {
-    html += '<button class="btn btn-ghost btn-full" style="border-color:rgba(244,67,54,0.4);color:#ef5350;margin-bottom:8px;" onclick="deleteGroup()">🗑️ Supprimer le groupe</button>';
+    html += '<button class="btn btn-ghost btn-full" style="border-color:rgba(181,72,47,0.4);color:#B5482F;margin-bottom:8px;" onclick="deleteGroup()">🗑️ Supprimer le groupe</button>';
   } else {
-    html += '<button class="btn btn-ghost btn-full" style="border-color:rgba(244,67,54,0.4);color:#ef5350;" onclick="leaveGroup()">🚪 Quitter le groupe</button>';
+    html += '<button class="btn btn-ghost btn-full" style="border-color:rgba(181,72,47,0.4);color:#B5482F;" onclick="leaveGroup()">🚪 Quitter le groupe</button>';
   }
   document.getElementById("group-actions").innerHTML = html;
 }
@@ -645,9 +645,9 @@ async function openInviteModal() {
 
     if (!inviteIds.length) {
       document.getElementById("invite-friends-list").innerHTML =
-        '<div style="text-align:center;padding:30px 10px;color:#666;font-size:14px;">' +
+        '<div style="text-align:center;padding:30px 10px;color:#6B5234;font-size:14px;">' +
           'Tous tes amis sont déjà membres ! 🎉<br>' +
-          '<a href="friends.html" style="color:#E91E8C;text-decoration:none;font-weight:700;">Ajoute d\'autres amis</a>' +
+          '<a href="friends.html" style="color:#C2754C;text-decoration:none;font-weight:700;">Ajoute d\'autres amis</a>' +
         '</div>';
       availableFriends = [];
       updateInviteCount();
@@ -662,7 +662,7 @@ async function openInviteModal() {
     if (pErr) {
       console.error("profiles:", pErr);
       document.getElementById("invite-friends-list").innerHTML =
-        '<div style="color:#888;text-align:center;padding:20px;">Impossible de charger les profils</div>';
+        '<div style="color:#8A6F4A;text-align:center;padding:20px;">Impossible de charger les profils</div>';
       return;
     }
 
@@ -673,7 +673,7 @@ async function openInviteModal() {
   } catch (e) {
     console.error("openInviteModal:", e);
     document.getElementById("invite-friends-list").innerHTML =
-      '<div style="color:#888;text-align:center;padding:20px;">Erreur de chargement</div>';
+      '<div style="color:#8A6F4A;text-align:center;padding:20px;">Erreur de chargement</div>';
   }
 }
 
@@ -691,7 +691,7 @@ function renderInviteList() {
   });
 
   if (!filtered.length) {
-    listEl.innerHTML = '<div style="color:#666;font-size:13px;text-align:center;padding:20px;">Aucun ami ne correspond</div>';
+    listEl.innerHTML = '<div style="color:#6B5234;font-size:13px;text-align:center;padding:20px;">Aucun ami ne correspond</div>';
   } else {
     listEl.innerHTML = filtered.map(function(f) {
       var isSelected = inviteSelectedSet.has(f.id);

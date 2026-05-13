@@ -6,18 +6,18 @@
 <title>BeauOuPas — Feed</title>
 <link rel="stylesheet" href="style.css">
 <style>
-.vote-buttons { display:flex; gap:10px; padding:14px 18px; border-top:1px solid #1A1A1A; }
-.vote-btn { flex:1; padding:14px 8px; border-radius:12px; border:2px solid #292929; background:transparent; color:#888; font-size:22px; cursor:pointer; transition:all 0.15s; font-family:Arial; display:flex; flex-direction:column; align-items:center; gap:4px; }
-.vote-btn span.label { font-size:11px; color:#666; }
-.vote-btn.like:hover { border-color:#4CAF50; background:rgba(76,175,80,0.1); color:#4CAF50; }
-.vote-btn.bof:hover { border-color:#FF9800; background:rgba(255,152,0,0.1); color:#FF9800; }
-.vote-btn.dislike:hover { border-color:#ef5350; background:rgba(244,67,54,0.1); color:#ef5350; }
+.vote-buttons { display:flex; gap:10px; padding:14px 18px; border-top:1px solid #E5DCC9; }
+.vote-btn { flex:1; padding:14px 8px; border-radius:12px; border:2px solid #E5DCC9; background:transparent; color:#8A6F4A; font-size:22px; cursor:pointer; transition:all 0.15s; font-family:Arial; display:flex; flex-direction:column; align-items:center; gap:4px; }
+.vote-btn span.label { font-size:11px; color:#6B5234; }
+.vote-btn.like:hover { border-color:#4A7A52; background:rgba(74,122,82,0.1); color:#4A7A52; }
+.vote-btn.bof:hover { border-color:#C9943E; background:rgba(201,148,62,0.1); color:#C9943E; }
+.vote-btn.dislike:hover { border-color:#B5482F; background:rgba(181,72,47,0.1); color:#B5482F; }
 .duel-photo-btn { flex:1; padding:0; border:none; background:transparent; cursor:pointer; position:relative; overflow:hidden; }
-.duel-overlay { position:absolute; inset:0; background:rgba(233,30,140,0.35); display:flex; align-items:center; justify-content:center; font-size:36px; font-weight:900; color:white; opacity:0; transition:opacity 0.15s; }
+.duel-overlay { position:absolute; inset:0; background:rgba(194,117,76,0.35); display:flex; align-items:center; justify-content:center; font-size:36px; font-weight:900; color:white; opacity:0; transition:opacity 0.15s; }
 .duel-photo-btn:hover .duel-overlay { opacity:1; }
 .project-card { margin-bottom:24px; position:relative; }
 .voted-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.65); display:flex; align-items:center; justify-content:center; font-size:64px; z-index:10; border-radius:22px; pointer-events:none; }
-.poll-vote-btn:hover { border-color:#E91E8C !important; background:rgba(233,30,140,0.1) !important; color:#E91E8C !important; }
+.poll-vote-btn:hover { border-color:#C2754C !important; background:rgba(194,117,76,0.1) !important; color:#C2754C !important; }
 </style>
 </head>
 <body>
@@ -36,7 +36,7 @@
   <div style="max-width:600px;margin:0 auto;">
     <div style="margin-bottom:24px;">
       <h1 style="font-size:28px;font-weight:900;">📸 Feed</h1>
-      <p style="color:#666;margin-top:6px;font-size:14px;">Vote sur les projets de la communauté</p>
+      <p style="color:#6B5234;margin-top:6px;font-size:14px;">Vote sur les projets de la communauté</p>
     </div>
     <div id="feed-container"><div class="spinner"></div></div>
   </div>
@@ -122,7 +122,7 @@ function showCurrentProject() {
       '<div class="card" style="text-align:center;padding:60px;">' +
       '<div style="font-size:56px;margin-bottom:16px;">🎉</div>' +
       '<h3 style="font-size:20px;margin-bottom:10px;">Tout voté !</h3>' +
-      '<p style="color:#666;">Tu as voté sur tous les projets disponibles.<br>Reviens plus tard !</p>' +
+      '<p style="color:#6B5234;">Tu as voté sur tous les projets disponibles.<br>Reviens plus tard !</p>' +
       '</div>';
     return;
   }
@@ -156,18 +156,18 @@ function showCurrentProject() {
         '<div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;background:#000;">' +
           '<button class="duel-photo-btn" onclick="voteDuel(\'' + safeProjectId + '\', \'left\')">' +
             '<img src="' + escapeHtml(photoL.url) + '" style="width:100%;aspect-ratio:1;object-fit:contain;display:block;background:#000;" alt="Photo A">' +
-            '<div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.65);border-radius:8px;padding:4px 12px;font-size:14px;font-weight:900;color:#E91E8C;">A</div>' +
+            '<div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.65);border-radius:8px;padding:4px 12px;font-size:14px;font-weight:900;color:#C2754C;">A</div>' +
             '<div class="duel-overlay">✅ A</div>' +
           '</button>' +
           '<button class="duel-photo-btn" onclick="voteDuel(\'' + safeProjectId + '\', \'right\')">' +
             '<img src="' + escapeHtml(photoR.url) + '" style="width:100%;aspect-ratio:1;object-fit:contain;display:block;background:#000;" alt="Photo B">' +
-            '<div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.65);border-radius:8px;padding:4px 12px;font-size:14px;font-weight:900;color:#E91E8C;">B</div>' +
+            '<div style="position:absolute;top:8px;left:8px;background:rgba(0,0,0,0.65);border-radius:8px;padding:4px 12px;font-size:14px;font-weight:900;color:#C2754C;">B</div>' +
             '<div class="duel-overlay">✅ B</div>' +
           '</button>' +
         '</div>';
-      buttonsHtml = '<div style="padding:12px 18px;text-align:center;"><p style="color:#888;font-size:13px;">👆 Clique sur A ou B pour voter</p></div>';
+      buttonsHtml = '<div style="padding:12px 18px;text-align:center;"><p style="color:#8A6F4A;font-size:13px;">👆 Clique sur A ou B pour voter</p></div>';
     } else {
-      photosHtml = '<div style="padding:30px;text-align:center;color:#ef5350;">Photos du duel introuvables</div>';
+      photosHtml = '<div style="padding:30px;text-align:center;color:#B5482F;">Photos du duel introuvables</div>';
     }
 
   } else {
@@ -184,7 +184,7 @@ function showCurrentProject() {
           '<button class="vote-btn dislike" onclick="votePhoto(\'' + safeProjectId + '\', 1)">👎<span class="label">J\'aime pas</span></button>' +
         '</div>';
     } else {
-      photosHtml = '<div style="padding:30px;text-align:center;color:#ef5350;">Photo introuvable</div>';
+      photosHtml = '<div style="padding:30px;text-align:center;color:#B5482F;">Photo introuvable</div>';
     }
   }
 
@@ -196,17 +196,17 @@ function showCurrentProject() {
         '<div class="avatar" style="width:40px;height:40px;">' + avatarHtml + '</div>' +
         '<div style="flex:1;">' +
           '<div style="font-weight:800;font-size:14px;">@' + escapeHtml(username) + '</div>' +
-          '<div style="font-size:12px;color:#555;">' + new Date(p.created_at).toLocaleDateString("fr-FR") + '</div>' +
+          '<div style="font-size:12px;color:#6B5234;">' + new Date(p.created_at).toLocaleDateString("fr-FR") + '</div>' +
         '</div>' +
         '<span class="badge badge-pink">' + typeLabel + '</span>' +
-        '<span style="font-size:12px;color:#444;margin-left:8px;">' + remaining + ' restant' + (remaining > 1 ? "s" : "") + '</span>' +
+        '<span style="font-size:12px;color:#8A6F4A;margin-left:8px;">' + remaining + ' restant' + (remaining > 1 ? "s" : "") + '</span>' +
       '</div>' +
       (p.title ? '<div style="padding:0 18px 12px;font-weight:700;font-size:16px;">' + escapeHtml(p.title) + '</div>' : '') +
       (p.description ? '<div style="padding:0 18px 12px;font-size:14px;color:#777;">' + escapeHtml(p.description) + '</div>' : '') +
       photosHtml +
       buttonsHtml +
       '<div style="padding:8px 18px 14px;text-align:center;">' +
-        '<button onclick="skipProject()" style="background:none;border:none;color:#444;cursor:pointer;font-size:13px;padding:8px 16px;">Passer →</button>' +
+        '<button onclick="skipProject()" style="background:none;border:none;color:#8A6F4A;cursor:pointer;font-size:13px;padding:8px 16px;">Passer →</button>' +
       '</div>' +
     '</div>';
 
@@ -218,14 +218,14 @@ function renderPollButtons(project) {
     return (a.position || 0) - (b.position || 0);
   });
   if (options.length === 0) {
-    return '<div style="padding:16px;text-align:center;color:#555;">Aucune option pour ce sondage</div>';
+    return '<div style="padding:16px;text-align:center;color:#6B5234;">Aucune option pour ce sondage</div>';
   }
   var safeProjectId = escapeHtml(project.id);
   return '<div style="display:flex;flex-direction:column;gap:8px;padding:16px 18px;">' +
     options.map(function(opt) {
       var safeOptionId = escapeHtml(opt.id);
       return '<button class="poll-vote-btn" onclick="votePoll(\'' + safeProjectId + '\', \'' + safeOptionId + '\')" ' +
-        'style="padding:14px 18px;border-radius:12px;border:2px solid #292929;background:transparent;color:#EEEEEE;font-size:15px;cursor:pointer;text-align:left;transition:all 0.15s;font-family:Arial;">' +
+        'style="padding:14px 18px;border-radius:12px;border:2px solid #E5DCC9;background:transparent;color:#E5DCC9;font-size:15px;cursor:pointer;text-align:left;transition:all 0.15s;font-family:Arial;">' +
         escapeHtml(opt.text) + '</button>';
     }).join("") +
   '</div>';
@@ -381,7 +381,7 @@ function showFeedError(title, error) {
   console.error(title, error);
   document.getElementById("feed-container").innerHTML =
     '<div class="card" style="text-align:center;padding:40px;">' +
-    '<h3 style="color:#ef5350;margin-bottom:12px;">' + escapeHtml(title) + '</h3>' +
+    '<h3 style="color:#B5482F;margin-bottom:12px;">' + escapeHtml(title) + '</h3>' +
     '<p style="color:#999;font-size:14px;">' + escapeHtml(error && error.message ? error.message : String(error)) + '</p>' +
     '</div>';
 }

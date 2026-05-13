@@ -320,7 +320,7 @@ window.TVApp = (function() {
 
     var qrEl = document.getElementById('lobby-qr');
     if (qrEl) {
-      qrEl.innerHTML = '<div style="font-size: 11px; color: #888; padding: 8px; text-align: center;">QR Code<br>(à venir)</div>';
+      qrEl.innerHTML = '<div style="font-size: 11px; color: #8A6F4A; padding: 8px; text-align: center;">QR Code<br>(à venir)</div>';
     }
   }
 
@@ -393,7 +393,7 @@ window.TVApp = (function() {
       var photoR = photos.find(function(ph) { return ph.side === 'right' || ph.side === 'B'; }) || photos[1];
 
       if (!photoL || !photoR) {
-        return '<div class="tv-vote-photos"><div style="color: #ef5350;">Photos du duel introuvables</div></div>';
+        return '<div class="tv-vote-photos"><div style="color: #B5482F;">Photos du duel introuvables</div></div>';
       }
 
       return '<div class="tv-vote-photos duel">' +
@@ -414,7 +414,7 @@ window.TVApp = (function() {
       });
 
       if (options.length === 0) {
-        return '<div class="tv-vote-photos"><div style="color: #888;">Aucune option pour ce sondage</div></div>';
+        return '<div class="tv-vote-photos"><div style="color: #8A6F4A;">Aucune option pour ce sondage</div></div>';
       }
 
       return '<div class="tv-vote-photos poll">' +
@@ -428,7 +428,7 @@ window.TVApp = (function() {
 
     var photo = photos.find(function(ph) { return ph.side === 'single'; }) || photos[0];
     if (!photo) {
-      return '<div class="tv-vote-photos"><div style="color: #ef5350;">Photo introuvable</div></div>';
+      return '<div class="tv-vote-photos"><div style="color: #B5482F;">Photo introuvable</div></div>';
     }
 
     return '<div class="tv-vote-photos">' +
@@ -1006,7 +1006,7 @@ window.TVApp = (function() {
 
     var imgHtml = selfie && selfie.photo_url
       ? '<img src="' + escapeHtml(selfie.photo_url) + '" alt="">'
-      : '<div style="width:100%;aspect-ratio:1;background:#888;"></div>';
+      : '<div style="width:100%;aspect-ratio:1;background:#8A6F4A;"></div>';
 
     var captionHtml = (selfie && selfie.username)
       ? '<div class="tv-polaroid-caption">' + escapeHtml(selfie.username) + '</div>'

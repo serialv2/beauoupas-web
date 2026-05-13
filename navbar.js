@@ -13,23 +13,23 @@ function renderNav(activePage) {
   var sidebarHtml = pages.map(function(p) {
     var isActive = p.href === activePage;
     var style = isActive
-      ? 'display:flex;align-items:center;gap:12px;padding:13px 16px;border-radius:14px;color:#E91E8C;background:rgba(233,30,140,0.1);text-decoration:none;font-weight:800;font-size:15px;margin-bottom:4px;'
-      : 'display:flex;align-items:center;gap:12px;padding:13px 16px;border-radius:14px;color:#888;background:transparent;text-decoration:none;font-weight:400;font-size:15px;margin-bottom:4px;';
+      ? 'display:flex;align-items:center;gap:12px;padding:13px 16px;border-radius:14px;color:#C2754C;background:rgba(194,117,76,0.1);text-decoration:none;font-weight:800;font-size:15px;margin-bottom:4px;'
+      : 'display:flex;align-items:center;gap:12px;padding:13px 16px;border-radius:14px;color:#8A6F4A;background:transparent;text-decoration:none;font-weight:400;font-size:15px;margin-bottom:4px;';
     var href = isActive ? 'javascript:void(0)' : p.href;
     return '<a href="' + href + '" style="' + style + '"><span style="font-size:18px;">' + p.icon + '</span>' + p.label + '</a>';
   }).join('');
 
   // Bottom nav mobile
   var bottomHtml =
-    '<div style="display:flex;align-items:center;justify-content:center;padding:6px 0 5px;border-bottom:1px solid #1A1A1A;background:#0A0A0A;">' +
-      '<span id="credits-display-mobile" style="font-size:13px;color:#E91E8C;font-weight:800;">💰 ... crédits</span>' +
+    '<div style="display:flex;align-items:center;justify-content:center;padding:6px 0 5px;border-bottom:1px solid #E5DCC9;background:#F4EFE6;">' +
+      '<span id="credits-display-mobile" style="font-size:13px;color:#C2754C;font-weight:800;">💰 ... crédits</span>' +
     '</div>' +
     '<div style="display:flex;align-items:stretch;">' +
     pages.map(function(p) {
       var isActive = p.href === activePage;
-      var color = isActive ? '#E91E8C' : '#666';
+      var color = isActive ? '#C2754C' : '#6B5234';
       var fontWeight = isActive ? '800' : '400';
-      var bg = isActive ? 'rgba(233,30,140,0.08)' : 'transparent';
+      var bg = isActive ? 'rgba(194,117,76,0.08)' : 'transparent';
       var href = isActive ? 'javascript:void(0)' : p.href;
       return '<a href="' + href + '" style="' +
         'flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;' +
@@ -39,7 +39,7 @@ function renderNav(activePage) {
         'font-size:11px;' +
         'font-weight:' + fontWeight + ';' +
         'background:' + bg + ';' +
-        'border-top:' + (isActive ? '2px solid #E91E8C' : '2px solid transparent') + ';' +
+        'border-top:' + (isActive ? '2px solid #C2754C' : '2px solid transparent') + ';' +
         '">' +
         '<span style="font-size:24px;line-height:1;">' + p.icon + '</span>' +
         '<span>' + p.label + '</span>' +
@@ -76,9 +76,9 @@ function updateSidebarCredits(profile) {
         '<div class="avatar" style="width:36px;height:36px;">' + avatarHtml + '</div>' +
         '<div style="flex:1;overflow:hidden;">' +
           '<div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">@' + profile.username + '</div>' +
-          '<div id="credits-display" style="font-size:12px;color:#E91E8C;font-weight:800;margin-top:2px;">💰 ' + credits + ' crédits</div>' +
+          '<div id="credits-display" style="font-size:12px;color:#C2754C;font-weight:800;margin-top:2px;">💰 ' + credits + ' crédits</div>' +
         '</div>' +
-        '<button onclick="handleSignOut()" style="background:none;border:none;color:#555;cursor:pointer;font-size:16px;padding:4px;" title="Déconnexion">↩</button>' +
+        '<button onclick="handleSignOut()" style="background:none;border:none;color:#6B5234;cursor:pointer;font-size:16px;padding:4px;" title="Déconnexion">↩</button>' +
       '</div>';
   }
 

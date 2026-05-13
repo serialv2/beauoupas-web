@@ -12,23 +12,23 @@
   gap: 12px;
   padding: 12px 14px;
   background: #111;
-  border: 2px solid #292929;
+  border: 2px solid #E5DCC9;
   border-radius: 14px;
   cursor: pointer;
   transition: all 0.15s;
   margin-bottom: 8px;
   user-select: none;
 }
-.friend-row:hover { border-color: rgba(233,30,140,0.3); }
+.friend-row:hover { border-color: rgba(194,117,76,0.3); }
 .friend-row.selected {
-  border-color: #E91E8C;
-  background: rgba(233,30,140,0.06);
+  border-color: #C2754C;
+  background: rgba(194,117,76,0.06);
 }
 .friend-row .check {
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  border: 2px solid #444;
+  border: 2px solid #8A6F4A;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -37,14 +37,14 @@
   transition: all 0.15s;
 }
 .friend-row.selected .check {
-  background: #E91E8C;
-  border-color: #E91E8C;
+  background: #C2754C;
+  border-color: #C2754C;
   color: white;
 }
 .tool-btn {
   background: transparent;
-  border: 1px solid #292929;
-  color: #888;
+  border: 1px solid #E5DCC9;
+  color: #8A6F4A;
   padding: 6px 12px;
   border-radius: 8px;
   cursor: pointer;
@@ -53,7 +53,7 @@
   transition: all 0.15s;
   font-family: Arial;
 }
-.tool-btn:hover { border-color: #E91E8C; color: #E91E8C; }
+.tool-btn:hover { border-color: #C2754C; color: #C2754C; }
 </style>
 </head>
 <body>
@@ -72,7 +72,7 @@
   <div style="max-width:600px;margin:0 auto;">
 
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:24px;">
-      <a href="groups.html" style="color:#888;text-decoration:none;font-size:24px;">←</a>
+      <a href="groups.html" style="color:#8A6F4A;text-decoration:none;font-size:24px;">←</a>
       <h1 style="font-size:24px;font-weight:900;">➕ Nouveau groupe</h1>
     </div>
 
@@ -92,7 +92,7 @@
     <div class="card" style="padding:20px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
         <h2 style="font-size:16px;font-weight:800;">Inviter des amis</h2>
-        <span id="selected-count" style="font-size:13px;color:#888;">0 sélectionné</span>
+        <span id="selected-count" style="font-size:13px;color:#8A6F4A;">0 sélectionné</span>
       </div>
 
       <!-- Recherche + tout sélectionner -->
@@ -167,9 +167,9 @@ async function loadFriends() {
 
     if (!friendIds.length) {
       listEl.innerHTML =
-        '<div style="text-align:center;padding:30px 10px;color:#666;font-size:14px;">' +
+        '<div style="text-align:center;padding:30px 10px;color:#6B5234;font-size:14px;">' +
           '👋 Tu n\'as pas encore d\'amis.<br>' +
-          '<a href="friends.html" style="color:#E91E8C;text-decoration:none;font-weight:700;">Ajoute des amis ici</a><br>' +
+          '<a href="friends.html" style="color:#C2754C;text-decoration:none;font-weight:700;">Ajoute des amis ici</a><br>' +
           '<span style="font-size:12px;">Tu pourras quand même créer un groupe seul</span>' +
         '</div>';
       return;
@@ -183,7 +183,7 @@ async function loadFriends() {
 
     if (pErr) {
       console.error("profiles:", pErr);
-      listEl.innerHTML = '<div style="color:#888;text-align:center;padding:20px;">Impossible de charger les profils</div>';
+      listEl.innerHTML = '<div style="color:#8A6F4A;text-align:center;padding:20px;">Impossible de charger les profils</div>';
       return;
     }
 
@@ -195,7 +195,7 @@ async function loadFriends() {
     renderFriends();
   } catch (e) {
     console.error("loadFriends:", e);
-    listEl.innerHTML = '<div style="color:#888;font-size:13px;text-align:center;padding:20px;">Impossible de charger tes amis</div>';
+    listEl.innerHTML = '<div style="color:#8A6F4A;font-size:13px;text-align:center;padding:20px;">Impossible de charger tes amis</div>';
   }
 }
 
@@ -209,7 +209,7 @@ function renderFriends() {
   });
 
   if (!filtered.length) {
-    listEl.innerHTML = '<div style="color:#666;font-size:13px;text-align:center;padding:20px;">Aucun ami ne correspond</div>';
+    listEl.innerHTML = '<div style="color:#6B5234;font-size:13px;text-align:center;padding:20px;">Aucun ami ne correspond</div>';
   } else {
     listEl.innerHTML = filtered.map(function(f) {
       var isSelected = selected.has(f.id);

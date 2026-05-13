@@ -8,10 +8,10 @@
 
 <style>
 .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(90px,1fr)); gap:10px; margin-top:14px; }
-.stat-box { background:#1A1A1A; border:1px solid #292929; border-radius:12px; padding:12px; text-align:center; }
-.stat-value { font-size:22px; font-weight:900; color:#E91E8C; }
-.stat-label { font-size:11px; color:#666; margin-top:4px; }
-.stat-bar { height:6px; background:#222; border-radius:3px; margin-top:8px; overflow:hidden; }
+.stat-box { background:#E5DCC9; border:1px solid #E5DCC9; border-radius:12px; padding:12px; text-align:center; }
+.stat-value { font-size:22px; font-weight:900; color:#C2754C; }
+.stat-label { font-size:11px; color:#6B5234; margin-top:4px; }
+.stat-bar { height:6px; background:#E5DCC9; border-radius:3px; margin-top:8px; overflow:hidden; }
 .stat-bar-fill { height:100%; border-radius:3px; }
 .lightbox { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:1000; align-items:center; justify-content:center; padding:20px; }
 .lightbox.open { display:flex; }
@@ -38,7 +38,7 @@
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;">
       <div>
         <h1 style="font-size:28px;font-weight:900;">📸 Mes projets</h1>
-        <p id="count" style="color:#666;margin-top:6px;font-size:14px;"></p>
+        <p id="count" style="color:#6B5234;margin-top:6px;font-size:14px;"></p>
       </div>
       <a href="projects-new.html" class="btn btn-primary btn-sm" style="text-decoration:none;">➕ Nouveau</a>
     </div>
@@ -113,7 +113,7 @@ async function init() {
   } catch (error) {
     console.error("Erreur init :", error);
     document.getElementById("projects-container").innerHTML =
-      '<div class="card" style="text-align:center;padding:40px;color:#ef5350;">Erreur : ' + escapeHtml(error.message) + '</div>';
+      '<div class="card" style="text-align:center;padding:40px;color:#B5482F;">Erreur : ' + escapeHtml(error.message) + '</div>';
   }
 }
 
@@ -126,7 +126,7 @@ async function loadProjects() {
   if (result.error) {
     console.error(result.error);
     document.getElementById("projects-container").innerHTML =
-      '<div class="card" style="text-align:center;padding:40px;color:#ef5350;">Erreur chargement projets : ' + escapeHtml(result.error.message) + '</div>';
+      '<div class="card" style="text-align:center;padding:40px;color:#B5482F;">Erreur chargement projets : ' + escapeHtml(result.error.message) + '</div>';
     return;
   }
 
@@ -140,7 +140,7 @@ async function loadProjects() {
       '<div class="card" style="text-align:center;padding:60px;">' +
         '<div style="font-size:48px;margin-bottom:16px;">📸</div>' +
         '<h3 style="font-size:20px;margin-bottom:8px;">Aucun projet</h3>' +
-        '<p style="color:#666;margin-bottom:24px;">Crée ton premier projet !</p>' +
+        '<p style="color:#6B5234;margin-bottom:24px;">Crée ton premier projet !</p>' +
         '<a href="projects-new.html" class="btn btn-primary" style="text-decoration:none;">➕ Créer un projet</a>' +
       '</div>';
     return;
@@ -222,7 +222,7 @@ async function loadProjects() {
 
         statsHtml +=
           '<div style="margin-top:12px;">' +
-          '<div style="font-size:12px;color:#888;font-weight:700;margin-bottom:8px;">RÉSULTATS DU SONDAGE</div>';
+          '<div style="font-size:12px;color:#8A6F4A;font-weight:700;margin-bottom:8px;">RÉSULTATS DU SONDAGE</div>';
 
         pollOptions.forEach(function(opt) {
           var count = pollv.filter(function(v) {
@@ -234,42 +234,42 @@ async function loadProjects() {
           statsHtml +=
             '<div style="margin-bottom:10px;">' +
               '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;">' +
-                '<span style="color:#EEEEEE;font-weight:600;">' + escapeHtml(opt.text) + '</span>' +
-                '<span style="color:#E91E8C;font-weight:800;">' + count + ' (' + p2 + '%)</span>' +
+                '<span style="color:#E5DCC9;font-weight:600;">' + escapeHtml(opt.text) + '</span>' +
+                '<span style="color:#C2754C;font-weight:800;">' + count + ' (' + p2 + '%)</span>' +
               '</div>' +
               '<div class="stat-bar">' +
-                '<div class="stat-bar-fill" style="width:' + p2 + '%;background:#E91E8C;"></div>' +
+                '<div class="stat-bar-fill" style="width:' + p2 + '%;background:#C2754C;"></div>' +
               '</div>' +
             '</div>';
         });
 
         statsHtml +=
-          '<div style="font-size:12px;color:#555;margin-top:6px;">🗳️ ' +
+          '<div style="font-size:12px;color:#6B5234;margin-top:6px;">🗳️ ' +
           totalVotes + ' vote' + (totalVotes > 1 ? "s" : "") +
           '</div></div>';
 
       } else if (!isDuel) {
         statsHtml +=
           '<div style="margin-top:12px;">' +
-            '<div style="font-size:12px;color:#888;font-weight:700;margin-bottom:8px;">VOTES</div>' +
+            '<div style="font-size:12px;color:#8A6F4A;font-weight:700;margin-bottom:8px;">VOTES</div>' +
             '<div class="stats-grid">' +
 
               '<div class="stat-box">' +
-                '<div class="stat-value" style="color:#4CAF50;">' + likes + '</div>' +
+                '<div class="stat-value" style="color:#4A7A52;">' + likes + '</div>' +
                 '<div class="stat-label">❤️ J\'aime</div>' +
-                '<div class="stat-bar"><div class="stat-bar-fill" style="width:' + pct(likes, totalVotes) + '%;background:#4CAF50;"></div></div>' +
+                '<div class="stat-bar"><div class="stat-bar-fill" style="width:' + pct(likes, totalVotes) + '%;background:#4A7A52;"></div></div>' +
               '</div>' +
 
               '<div class="stat-box">' +
-                '<div class="stat-value" style="color:#FF9800;">' + bofs + '</div>' +
+                '<div class="stat-value" style="color:#C9943E;">' + bofs + '</div>' +
                 '<div class="stat-label">😐 Bof</div>' +
-                '<div class="stat-bar"><div class="stat-bar-fill" style="width:' + pct(bofs, totalVotes) + '%;background:#FF9800;"></div></div>' +
+                '<div class="stat-bar"><div class="stat-bar-fill" style="width:' + pct(bofs, totalVotes) + '%;background:#C9943E;"></div></div>' +
               '</div>' +
 
               '<div class="stat-box">' +
-                '<div class="stat-value" style="color:#ef5350;">' + dislikes + '</div>' +
+                '<div class="stat-value" style="color:#B5482F;">' + dislikes + '</div>' +
                 '<div class="stat-label">👎 J\'aime pas</div>' +
-                '<div class="stat-bar"><div class="stat-bar-fill" style="width:' + pct(dislikes, totalVotes) + '%;background:#ef5350;"></div></div>' +
+                '<div class="stat-bar"><div class="stat-bar-fill" style="width:' + pct(dislikes, totalVotes) + '%;background:#B5482F;"></div></div>' +
               '</div>' +
 
               '<div class="stat-box">' +
@@ -291,7 +291,7 @@ async function loadProjects() {
 
         statsHtml +=
           '<div style="margin-top:12px;">' +
-            '<div style="font-size:12px;color:#888;font-weight:700;margin-bottom:8px;">DUEL A vs B</div>' +
+            '<div style="font-size:12px;color:#8A6F4A;font-weight:700;margin-bottom:8px;">DUEL A vs B</div>' +
 
             (photoL && photoR
               ? '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">' +
@@ -301,32 +301,32 @@ async function loadProjects() {
               : '') +
 
             '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;">' +
-              '<span style="color:#E91E8C;font-weight:800;">A — ' + votesLeft + ' (' + pct(votesLeft, totalVotes) + '%)</span>' +
-              '<span style="color:#3F51B5;font-weight:800;">B — ' + votesRight + ' (' + pct(votesRight, totalVotes) + '%)</span>' +
+              '<span style="color:#C2754C;font-weight:800;">A — ' + votesLeft + ' (' + pct(votesLeft, totalVotes) + '%)</span>' +
+              '<span style="color:#5A7A8C;font-weight:800;">B — ' + votesRight + ' (' + pct(votesRight, totalVotes) + '%)</span>' +
             '</div>' +
 
             '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">' +
-              '<div class="stat-bar"><div class="stat-bar-fill" style="width:' + pct(votesLeft, totalVotes) + '%;background:#E91E8C;"></div></div>' +
-              '<div class="stat-bar"><div class="stat-bar-fill" style="width:' + pct(votesRight, totalVotes) + '%;background:#3F51B5;"></div></div>' +
+              '<div class="stat-bar"><div class="stat-bar-fill" style="width:' + pct(votesLeft, totalVotes) + '%;background:#C2754C;"></div></div>' +
+              '<div class="stat-bar"><div class="stat-bar-fill" style="width:' + pct(votesRight, totalVotes) + '%;background:#5A7A8C;"></div></div>' +
             '</div>' +
           '</div>';
       }
 
       statsHtml +=
         '<div style="margin-top:12px;">' +
-          '<div style="font-size:12px;color:#888;font-weight:700;margin-bottom:8px;">PAR GENRE</div>' +
+          '<div style="font-size:12px;color:#8A6F4A;font-weight:700;margin-bottom:8px;">PAR GENRE</div>' +
           '<div class="stats-grid">' +
 
             '<div class="stat-box">' +
-              '<div class="stat-value" style="color:#3F51B5;">' + menVotes + '</div>' +
+              '<div class="stat-value" style="color:#5A7A8C;">' + menVotes + '</div>' +
               '<div class="stat-label">👨 Hommes</div>' +
-              '<div class="stat-bar"><div class="stat-bar-fill" style="width:' + pct(menVotes, totalVotes) + '%;background:#3F51B5;"></div></div>' +
+              '<div class="stat-bar"><div class="stat-bar-fill" style="width:' + pct(menVotes, totalVotes) + '%;background:#5A7A8C;"></div></div>' +
             '</div>' +
 
             '<div class="stat-box">' +
-              '<div class="stat-value" style="color:#E91E8C;">' + womenVotes + '</div>' +
+              '<div class="stat-value" style="color:#C2754C;">' + womenVotes + '</div>' +
               '<div class="stat-label">👩 Femmes</div>' +
-              '<div class="stat-bar"><div class="stat-bar-fill" style="width:' + pct(womenVotes, totalVotes) + '%;background:#E91E8C;"></div></div>' +
+              '<div class="stat-bar"><div class="stat-bar-fill" style="width:' + pct(womenVotes, totalVotes) + '%;background:#C2754C;"></div></div>' +
             '</div>' +
 
           '</div>' +
@@ -334,7 +334,7 @@ async function loadProjects() {
 
     } else {
       statsHtml =
-        '<p style="color:#555;font-size:13px;margin-top:12px;text-align:center;">Aucun vote pour l\'instant</p>';
+        '<p style="color:#6B5234;font-size:13px;margin-top:12px;text-align:center;">Aucun vote pour l\'instant</p>';
     }
 
     return '' +
@@ -347,7 +347,7 @@ async function loadProjects() {
                 '<span class="badge ' + statusClass + '">' + escapeHtml(statusLabel) + '</span>' +
               '</div>' +
             '</div>'
-          : '<div style="height:120px;background:#1A1A1A;display:flex;align-items:center;justify-content:center;font-size:48px;">📸</div>') +
+          : '<div style="height:120px;background:#E5DCC9;display:flex;align-items:center;justify-content:center;font-size:48px;">📸</div>') +
 
         '<div style="padding:18px;">' +
 
@@ -356,7 +356,7 @@ async function loadProjects() {
             '<span class="badge badge-pink">' + (isPoll ? "📊 Sondage" : isDuel ? "⚖️ Duel" : "📸 Photo") + '</span>' +
           '</div>' +
 
-          '<div style="font-size:13px;color:#555;margin-bottom:4px;">' +
+          '<div style="font-size:13px;color:#6B5234;margin-bottom:4px;">' +
             new Date(p.created_at).toLocaleDateString("fr-FR") +
             ' · 🗳️ ' + totalVotes + ' vote' + (totalVotes !== 1 ? "s" : "") +
           '</div>' +

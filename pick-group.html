@@ -10,8 +10,8 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  background: #151515;
-  border: 1px solid #292929;
+  background: #FAF6EF;
+  border: 1px solid #E5DCC9;
   border-radius: 14px;
   padding: 14px;
   margin-bottom: 8px;
@@ -20,11 +20,11 @@
   color: white;
   transition: all 0.15s;
 }
-.group-row:hover { border-color: rgba(233,30,140,0.4); transform: translateY(-1px); }
+.group-row:hover { border-color: rgba(194,117,76,0.4); transform: translateY(-1px); }
 .group-avatar {
   width: 48px; height: 48px;
   border-radius: 14px;
-  background: linear-gradient(135deg,#E91E8C,#6B46C1);
+  background: linear-gradient(135deg,#C2754C,#6B7F5C);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -51,11 +51,11 @@
   <div style="max-width:600px;margin:0 auto;">
 
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
-      <a href="create-context.html" style="color:#888;text-decoration:none;font-size:24px;">←</a>
+      <a href="create-context.html" style="color:#8A6F4A;text-decoration:none;font-size:24px;">←</a>
       <h1 style="font-size:22px;font-weight:900;">👥 Dans quel groupe ?</h1>
     </div>
 
-    <p style="color:#666;font-size:13px;margin-bottom:18px;">
+    <p style="color:#6B5234;font-size:13px;margin-bottom:18px;">
       Sélectionne le groupe dans lequel créer ta nouvelle série.
     </p>
 
@@ -90,7 +90,7 @@ async function loadGroups() {
 
     if (!memberships || !memberships.length) {
       listEl.innerHTML =
-        '<div style="text-align:center;padding:40px 20px;color:#666;">' +
+        '<div style="text-align:center;padding:40px 20px;color:#6B5234;">' +
           '<div style="font-size:48px;margin-bottom:12px;opacity:0.3;">👥</div>' +
           '<div style="font-size:14px;margin-bottom:14px;">Tu n\'as pas encore de groupe.</div>' +
           '<a href="create-group.html?chain=true" class="btn btn-primary" style="text-decoration:none;">➕ Créer un groupe maintenant</a>' +
@@ -106,7 +106,7 @@ async function loadGroups() {
       .order('created_at', { ascending: false });
 
     if (!groups || !groups.length) {
-      listEl.innerHTML = '<div style="color:#666;text-align:center;padding:30px;">Aucun groupe trouvé</div>';
+      listEl.innerHTML = '<div style="color:#6B5234;text-align:center;padding:30px;">Aucun groupe trouvé</div>';
       return;
     }
 
@@ -122,10 +122,10 @@ async function loadGroups() {
           '<div style="flex:1;min-width:0;">' +
             '<div style="font-weight:800;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(g.name) + '</div>' +
             (g.description
-              ? '<div style="font-size:12px;color:#888;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(g.description) + '</div>'
+              ? '<div style="font-size:12px;color:#8A6F4A;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(g.description) + '</div>'
               : '') +
           '</div>' +
-          '<span style="color:#E91E8C;font-size:18px;">→</span>' +
+          '<span style="color:#C2754C;font-size:18px;">→</span>' +
         '</a>'
       );
     }).join('');

@@ -19,7 +19,7 @@
   padding: 10px 12px;
   background: transparent;
   border: none;
-  color: #888;
+  color: #8A6F4A;
   font-weight: 700;
   font-size: 13px;
   cursor: pointer;
@@ -27,14 +27,14 @@
   transition: all 0.15s;
   font-family: Arial;
 }
-.filter-btn.active { background: #E91E8C; color: white; }
+.filter-btn.active { background: #C2754C; color: white; }
 
 .series-row {
   display: flex;
   align-items: center;
   gap: 12px;
-  background: #151515;
-  border: 1px solid #292929;
+  background: #FAF6EF;
+  border: 1px solid #E5DCC9;
   border-radius: 14px;
   padding: 14px;
   margin-bottom: 8px;
@@ -42,7 +42,7 @@
   color: white;
   transition: all 0.15s;
 }
-.series-row:hover { border-color: rgba(233,30,140,0.4); transform: translateY(-1px); }
+.series-row:hover { border-color: rgba(194,117,76,0.4); transform: translateY(-1px); }
 
 .series-icon {
   width: 48px; height: 48px;
@@ -53,11 +53,11 @@
   font-size: 24px;
   flex-shrink: 0;
 }
-.series-icon.vote { background: linear-gradient(135deg,#E91E8C,#C4186F); }
-.series-icon.quiz { background: linear-gradient(135deg,#6B46C1,#4C1D95); }
+.series-icon.vote { background: linear-gradient(135deg,#C2754C,#A35C36); }
+.series-icon.quiz { background: linear-gradient(135deg,#6B7F5C,#566649); }
 
 .series-name { font-weight: 800; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.series-meta { font-size: 12px; color: #888; display: flex; gap: 10px; flex-wrap: wrap; }
+.series-meta { font-size: 12px; color: #8A6F4A; display: flex; gap: 10px; flex-wrap: wrap; }
 
 .empty-state {
   text-align: center;
@@ -65,7 +65,7 @@
 }
 .empty-state .icon { font-size: 64px; opacity: 0.3; margin-bottom: 12px; }
 .empty-state .title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
-.empty-state .desc { color: #888; font-size: 13px; margin-bottom: 18px; }
+.empty-state .desc { color: #8A6F4A; font-size: 13px; margin-bottom: 18px; }
 </style>
 </head>
 <body>
@@ -86,7 +86,7 @@
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px;">
       <div>
         <h1 style="font-size:24px;font-weight:900;">📋 Mes séries</h1>
-        <p style="color:#666;font-size:13px;margin-top:4px;">Toutes les séries où je participe</p>
+        <p style="color:#6B5234;font-size:13px;margin-top:4px;">Toutes les séries où je participe</p>
       </div>
       <a href="create-context.html" class="btn btn-primary btn-sm" style="text-decoration:none;">➕ Nouvelle série</a>
     </div>
@@ -207,7 +207,7 @@ function render() {
     } else if (s.status === 'active') {
       statusBadge = '<span class="badge badge-green">🔥 EN COURS</span>';
     } else if (s.status === 'finished') {
-      statusBadge = '<span style="color:#888;font-size:11px;">✅ Terminée</span>';
+      statusBadge = '<span style="color:#8A6F4A;font-size:11px;">✅ Terminée</span>';
     }
 
     var meta = [];
@@ -218,7 +218,7 @@ function render() {
       meta.push('🎯 Sans groupe');
     }
     if (s.access_code) {
-      meta.push('Code: <b style="color:#E91E8C;">' + escapeHtml(s.access_code) + '</b>');
+      meta.push('Code: <b style="color:#C2754C;">' + escapeHtml(s.access_code) + '</b>');
     }
 
     var amCreator = s.creator_id === currentUser.id;
@@ -229,7 +229,7 @@ function render() {
         '<div style="flex:1;min-width:0;">' +
           '<div class="series-name">' +
             escapeHtml(s.title || 'Sans titre') +
-            (amCreator ? ' <span style="font-size:10px;color:#E91E8C;">👑</span>' : '') +
+            (amCreator ? ' <span style="font-size:10px;color:#C2754C;">👑</span>' : '') +
           '</div>' +
           '<div class="series-meta">' + meta.join(' · ') + '</div>' +
         '</div>' +

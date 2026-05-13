@@ -8,18 +8,18 @@
 <style>
 .chat-layout { display:flex; gap:16px; height:calc(100vh - 140px); }
 .chat-list { width:280px; flex-shrink:0; display:flex; flex-direction:column; gap:8px; overflow-y:auto; }
-.chat-item { display:flex; align-items:center; gap:12px; padding:14px; cursor:pointer; border-radius:14px; background:#151515; border:1px solid #292929; transition:border-color 0.15s; }
-.chat-item:hover, .chat-item.active { border-color:#E91E8C; background:rgba(233,30,140,0.05); }
-.chat-window { flex:1; display:flex; flex-direction:column; background:#151515; border:1px solid #292929; border-radius:22px; overflow:hidden; min-height:0; }
+.chat-item { display:flex; align-items:center; gap:12px; padding:14px; cursor:pointer; border-radius:14px; background:#FAF6EF; border:1px solid #E5DCC9; transition:border-color 0.15s; }
+.chat-item:hover, .chat-item.active { border-color:#C2754C; background:rgba(194,117,76,0.05); }
+.chat-window { flex:1; display:flex; flex-direction:column; background:#FAF6EF; border:1px solid #E5DCC9; border-radius:22px; overflow:hidden; min-height:0; }
 .messages { flex:1; overflow-y:auto; padding:16px 20px; display:flex; flex-direction:column; gap:10px; }
 .msg { display:flex; }
 .msg.mine { justify-content:flex-end; }
 .bubble { max-width:70%; padding:10px 14px; border-radius:14px; font-size:14px; line-height:1.5; word-break:break-word; }
-.bubble.mine { background:#E91E8C; color:white; border-radius:14px 14px 4px 14px; }
-.bubble.other { background:#222; color:#EEE; border-radius:14px 14px 14px 4px; }
-.msg-time { font-size:10px; color:#555; margin-top:4px; text-align:right; }
-.chat-input { padding:14px 16px; border-top:1px solid #1A1A1A; display:flex; gap:10px; flex-shrink:0; }
-.chat-empty { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#444; }
+.bubble.mine { background:#C2754C; color:white; border-radius:14px 14px 4px 14px; }
+.bubble.other { background:#E5DCC9; color:#EEE; border-radius:14px 14px 14px 4px; }
+.msg-time { font-size:10px; color:#6B5234; margin-top:4px; text-align:right; }
+.chat-input { padding:14px 16px; border-top:1px solid #E5DCC9; display:flex; gap:10px; flex-shrink:0; }
+.chat-empty { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#8A6F4A; }
 @media (max-width:768px) {
   .chat-layout { flex-direction:column; height:auto; }
   .chat-list { width:100%; max-height:220px; }
@@ -103,7 +103,7 @@ async function loadChats() {
       document.getElementById('chat-list').innerHTML =
         '<div class="card" style="text-align:center;padding:30px;">' +
         '<div style="font-size:36px;margin-bottom:8px;">💬</div>' +
-        '<p style="color:#666;font-size:14px;">Aucune conversation.<br>Va sur le profil d\'un ami pour lui écrire !</p>' +
+        '<p style="color:#6B5234;font-size:14px;">Aucune conversation.<br>Va sur le profil d\'un ami pour lui écrire !</p>' +
         '</div>';
       return;
     }
@@ -148,7 +148,7 @@ async function loadChats() {
   } catch(e) {
     console.error('loadChats error:', e);
     document.getElementById('chat-list').innerHTML =
-      '<div style="padding:20px;color:#ef5350;font-size:13px;">Erreur : ' + (e.message || e) + '</div>';
+      '<div style="padding:20px;color:#B5482F;font-size:13px;">Erreur : ' + (e.message || e) + '</div>';
   }
 }
 
@@ -157,7 +157,7 @@ function renderChatList() {
     document.getElementById('chat-list').innerHTML =
       '<div class="card" style="text-align:center;padding:30px;">' +
       '<div style="font-size:36px;margin-bottom:8px;">💬</div>' +
-      '<p style="color:#666;font-size:14px;">Aucune conversation.</p>' +
+      '<p style="color:#6B5234;font-size:14px;">Aucune conversation.</p>' +
       '</div>';
     return;
   }
@@ -168,16 +168,16 @@ function renderChatList() {
       ? '<img src="' + c.avatar_url + '" style="width:100%;height:100%;object-fit:cover;" alt="">'
       : '<span style="font-size:15px;font-weight:900;">' + (c.username[0] || '?').toUpperCase() + '</span>';
     var timeLabel = c.last_message_at ? new Date(c.last_message_at).toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }) : '';
-    var blockedBadge = c.is_blocked ? '<span style="font-size:10px;color:#ef5350;">🚫</span>' : '';
+    var blockedBadge = c.is_blocked ? '<span style="font-size:10px;color:#B5482F;">🚫</span>' : '';
 
     return '<div class="chat-item' + (isActive ? ' active' : '') + '" onclick="openChatById(\'' + c.id + '\')">' +
       '<div class="avatar" style="width:42px;height:42px;">' + avatarHtml + '</div>' +
       '<div style="flex:1;overflow:hidden;min-width:0;">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;">' +
           '<div style="font-weight:800;font-size:14px;">@' + escHtml(c.username) + '</div>' +
-          '<div style="font-size:11px;color:#555;">' + timeLabel + blockedBadge + '</div>' +
+          '<div style="font-size:11px;color:#6B5234;">' + timeLabel + blockedBadge + '</div>' +
         '</div>' +
-        '<div style="font-size:12px;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;">' + escHtml(c.last_message) + '</div>' +
+        '<div style="font-size:12px;color:#6B5234;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px;">' + escHtml(c.last_message) + '</div>' +
       '</div>' +
       '</div>';
   }).join('');
@@ -226,11 +226,11 @@ function openChat(chat) {
     : '<span style="font-size:15px;font-weight:900;">' + (chat.username[0] || '?').toUpperCase() + '</span>';
 
   var blockedBanner = chat.is_blocked
-    ? '<div style="padding:10px 16px;background:rgba(244,67,54,0.1);border-bottom:1px solid rgba(244,67,54,0.2);text-align:center;font-size:13px;color:#ef5350;">🚫 Cette conversation est bloquée</div>'
+    ? '<div style="padding:10px 16px;background:rgba(181,72,47,0.1);border-bottom:1px solid rgba(181,72,47,0.2);text-align:center;font-size:13px;color:#B5482F;">🚫 Cette conversation est bloquée</div>'
     : '';
 
   document.getElementById('chat-window').innerHTML =
-    '<div style="padding:14px 20px;border-bottom:1px solid #1A1A1A;display:flex;align-items:center;gap:12px;flex-shrink:0;">' +
+    '<div style="padding:14px 20px;border-bottom:1px solid #E5DCC9;display:flex;align-items:center;gap:12px;flex-shrink:0;">' +
       '<div class="avatar" style="width:38px;height:38px;">' + avatarHtml + '</div>' +
       '<div style="flex:1;">' +
         '<div style="font-weight:800;font-size:15px;">@' + escHtml(chat.username) + '</div>' +
@@ -282,7 +282,7 @@ async function loadMessages() {
 
     var msgs = result.data || [];
     if (msgs.length === 0) {
-      container.innerHTML = '<div style="text-align:center;color:#444;padding:40px;font-size:14px;">Aucun message.<br>Soyez le premier à écrire !</div>';
+      container.innerHTML = '<div style="text-align:center;color:#8A6F4A;padding:40px;font-size:14px;">Aucun message.<br>Soyez le premier à écrire !</div>';
       return;
     }
 

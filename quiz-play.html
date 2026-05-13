@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="style.css">
 <style>
 .quiz-arena {
-  background: linear-gradient(135deg, #6B46C1 0%, #5B21B6 50%, #4C1D95 100%);
+  background: linear-gradient(135deg, #6B7F5C 0%, #5B21B6 50%, #566649 100%);
   border-radius: 24px;
   padding: 28px 22px;
   text-align: center;
@@ -55,7 +55,7 @@
 .q-option {
   padding: 18px 14px;
   background: white;
-  color: #333;
+  color: #D4C7B5;
   border: 3px solid white;
   border-radius: 16px;
   cursor: pointer;
@@ -83,19 +83,19 @@
 }
 .q-option:nth-child(1) .letter { background: #EF4444; }
 .q-option:nth-child(2) .letter { background: #3B82F6; }
-.q-option:nth-child(3) .letter { background: #F59E0B; }
+.q-option:nth-child(3) .letter { background: #C9943E; }
 .q-option:nth-child(4) .letter { background: #10B981; }
 
 .q-option.selected {
-  border-color: #E91E8C;
-  box-shadow: 0 0 0 3px rgba(233,30,140,0.3);
+  border-color: #C2754C;
+  box-shadow: 0 0 0 3px rgba(194,117,76,0.3);
 }
 .q-option.locked-correct {
-  border-color: #4CAF50;
+  border-color: #4A7A52;
   background: #E8F5E9;
 }
 .q-option.locked-wrong {
-  border-color: #ef5350;
+  border-color: #B5482F;
   background: #FFEBEE;
 }
 
@@ -108,7 +108,7 @@
 }
 .timer-fill {
   height: 100%;
-  background: linear-gradient(90deg, #4CAF50, #FFC107, #ef5350);
+  background: linear-gradient(90deg, #4A7A52, #FFC107, #B5482F);
   width: 100%;
   transition: width 0.3s linear;
 }
@@ -116,7 +116,7 @@
 .waiting {
   text-align: center;
   padding: 60px 20px;
-  color: #888;
+  color: #8A6F4A;
 }
 .waiting .icon { font-size: 64px; margin-bottom: 14px; }
 .waiting .title { font-size: 18px; font-weight: 800; color: white; margin-bottom: 6px; }
@@ -124,19 +124,19 @@
 
 .score-pill {
   display: inline-block;
-  background: rgba(76,175,80,0.15);
-  color: #4CAF50;
+  background: rgba(74,122,82,0.15);
+  color: #4A7A52;
   padding: 6px 14px;
   border-radius: 999px;
   font-size: 13px;
   font-weight: 800;
-  border: 1px solid rgba(76,175,80,0.4);
+  border: 1px solid rgba(74,122,82,0.4);
   margin-top: 14px;
 }
 .score-pill.wrong {
-  background: rgba(244,67,54,0.15);
-  color: #ef5350;
-  border-color: rgba(244,67,54,0.4);
+  background: rgba(181,72,47,0.15);
+  color: #B5482F;
+  border-color: rgba(181,72,47,0.4);
 }
 </style>
 </head>
@@ -156,7 +156,7 @@
   <div style="max-width:600px;margin:0 auto;">
 
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
-      <a href="javascript:history.back()" style="color:#888;text-decoration:none;font-size:24px;">←</a>
+      <a href="javascript:history.back()" style="color:#8A6F4A;text-decoration:none;font-size:24px;">←</a>
       <h1 id="series-title" style="font-size:20px;font-weight:900;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Chargement…</h1>
     </div>
 
@@ -168,7 +168,7 @@
   </div>
 </main>
 
-<div id="toast" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#151515;border:1px solid #292929;color:white;padding:14px 22px;border-radius:14px;font-weight:700;z-index:200;"></div>
+<div id="toast" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#FAF6EF;border:1px solid #E5DCC9;color:white;padding:14px 22px;border-radius:14px;font-weight:700;z-index:200;"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
@@ -396,7 +396,7 @@ function renderFinished() {
         '<div class="icon">🏆</div>' +
         '<div class="title">Quiz terminé !</div>' +
         '<div class="desc">Va voir les résultats finaux.</div>' +
-        '<a href="series-results.html?id=' + encodeURIComponent(seriesId) + '" class="btn btn-primary" style="margin-top:18px;text-decoration:none;background:white;color:#6B46C1;">' +
+        '<a href="series-results.html?id=' + encodeURIComponent(seriesId) + '" class="btn btn-primary" style="margin-top:18px;text-decoration:none;background:white;color:#6B7F5C;">' +
           'Voir le classement →' +
         '</a>' +
       '</div>' +
@@ -427,7 +427,7 @@ function renderQuestion() {
   var submitBtn = '';
   if (!locked) {
     var isReady = selectedOptionIds.size > 0;
-    submitBtn = '<button class="btn btn-primary btn-full" style="margin-top:14px;background:white;color:#6B46C1;" ' +
+    submitBtn = '<button class="btn btn-primary btn-full" style="margin-top:14px;background:white;color:#6B7F5C;" ' +
                   (isReady ? '' : 'disabled') +
                   ' onclick="submitAnswer()">Valider ma réponse</button>';
   } else {

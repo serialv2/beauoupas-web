@@ -170,40 +170,40 @@ window.TVQuizApp = (function() {
     return [
       '<svg viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg">',
         '<g class="chef-hat-pompom">',
-          '<ellipse cx="100" cy="22" rx="42" ry="18" fill="#FFFFFF"/>',
-          '<ellipse cx="80" cy="14" rx="22" ry="14" fill="#FFFFFF"/>',
-          '<ellipse cx="115" cy="10" rx="24" ry="16" fill="#FFFFFF"/>',
+          '<ellipse cx="100" cy="22" rx="42" ry="18" fill="#3D2817"/>',
+          '<ellipse cx="80" cy="14" rx="22" ry="14" fill="#3D2817"/>',
+          '<ellipse cx="115" cy="10" rx="24" ry="16" fill="#3D2817"/>',
           '<ellipse cx="100" cy="32" rx="42" ry="10" fill="#F0F0F0"/>',
         '</g>',
-        '<rect x="58" y="48" width="84" height="14" rx="3" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.5"/>',
-        '<ellipse cx="100" cy="92" rx="38" ry="36" fill="#FBD0A8" stroke="#1A1A1A" stroke-width="2"/>',
+        '<rect x="58" y="48" width="84" height="14" rx="3" fill="#3D2817" stroke="#E5DCC9" stroke-width="1.5"/>',
+        '<ellipse cx="100" cy="92" rx="38" ry="36" fill="#FBD0A8" stroke="#E5DCC9" stroke-width="2"/>',
         '<g class="chef-eyes">',
-          '<circle cx="86" cy="86" r="4" fill="#1A1A1A"/>',
-          '<circle cx="114" cy="86" r="4" fill="#1A1A1A"/>',
-          '<circle cx="87" cy="84" r="1.2" fill="#FFFFFF"/>',
-          '<circle cx="115" cy="84" r="1.2" fill="#FFFFFF"/>',
+          '<circle cx="86" cy="86" r="4" fill="#E5DCC9"/>',
+          '<circle cx="114" cy="86" r="4" fill="#E5DCC9"/>',
+          '<circle cx="87" cy="84" r="1.2" fill="#3D2817"/>',
+          '<circle cx="115" cy="84" r="1.2" fill="#3D2817"/>',
         '</g>',
         '<circle cx="76" cy="100" r="4" fill="#F8A8A0" opacity="0.6"/>',
         '<circle cx="124" cy="100" r="4" fill="#F8A8A0" opacity="0.6"/>',
         '<g class="chef-mouth">',
-          '<path d="M 84 105 Q 100 118 116 105" stroke="#1A1A1A" stroke-width="2.5" fill="none" stroke-linecap="round"/>',
+          '<path d="M 84 105 Q 100 118 116 105" stroke="#E5DCC9" stroke-width="2.5" fill="none" stroke-linecap="round"/>',
         '</g>',
         '<path d="M 86 102 Q 92 100 100 102 Q 108 100 114 102" stroke="#6B4423" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.7"/>',
-        '<rect x="88" y="124" width="24" height="14" fill="#FBD0A8" stroke="#1A1A1A" stroke-width="2"/>',
-        '<path d="M 80 138 Q 100 148 120 138 L 124 156 L 76 156 Z" fill="#C0392B" stroke="#1A1A1A" stroke-width="2"/>',
-        '<circle cx="100" cy="146" r="2.5" fill="#FFD93D" stroke="#1A1A1A" stroke-width="0.8"/>',
-        '<path d="M 60 156 L 50 270 L 150 270 L 140 156 Z" fill="#F39C12" stroke="#1A1A1A" stroke-width="2.5"/>',
-        '<rect x="82" y="200" width="36" height="22" rx="2" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="1.5" opacity="0.7"/>',
+        '<rect x="88" y="124" width="24" height="14" fill="#FBD0A8" stroke="#E5DCC9" stroke-width="2"/>',
+        '<path d="M 80 138 Q 100 148 120 138 L 124 156 L 76 156 Z" fill="#C0392B" stroke="#E5DCC9" stroke-width="2"/>',
+        '<circle cx="100" cy="146" r="2.5" fill="#FFD93D" stroke="#E5DCC9" stroke-width="0.8"/>',
+        '<path d="M 60 156 L 50 270 L 150 270 L 140 156 Z" fill="#F39C12" stroke="#E5DCC9" stroke-width="2.5"/>',
+        '<rect x="82" y="200" width="36" height="22" rx="2" fill="#3D2817" stroke="#E5DCC9" stroke-width="1.5" opacity="0.7"/>',
         '<text x="100" y="216" font-family="Bangers, Comic Sans MS, cursive" font-size="14" fill="#C0392B" text-anchor="middle" font-weight="bold">BQ</text>',
         '<g class="chef-arm-left">',
-          '<rect x="36" y="156" width="22" height="68" rx="11" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2"/>',
-          '<circle cx="47" cy="226" r="13" fill="#FBD0A8" stroke="#1A1A1A" stroke-width="2"/>',
+          '<rect x="36" y="156" width="22" height="68" rx="11" fill="#3D2817" stroke="#E5DCC9" stroke-width="2"/>',
+          '<circle cx="47" cy="226" r="13" fill="#FBD0A8" stroke="#E5DCC9" stroke-width="2"/>',
         '</g>',
         '<g class="chef-arm-right">',
-          '<rect x="142" y="156" width="22" height="68" rx="11" fill="#FFFFFF" stroke="#1A1A1A" stroke-width="2"/>',
-          '<circle cx="153" cy="226" r="13" fill="#FBD0A8" stroke="#1A1A1A" stroke-width="2"/>',
-          '<rect x="148" y="200" width="3" height="32" fill="#8B4513" stroke="#1A1A1A" stroke-width="0.8"/>',
-          '<rect x="142" y="194" width="15" height="10" rx="2" fill="#C0C0C0" stroke="#1A1A1A" stroke-width="1"/>',
+          '<rect x="142" y="156" width="22" height="68" rx="11" fill="#3D2817" stroke="#E5DCC9" stroke-width="2"/>',
+          '<circle cx="153" cy="226" r="13" fill="#FBD0A8" stroke="#E5DCC9" stroke-width="2"/>',
+          '<rect x="148" y="200" width="3" height="32" fill="#8B4513" stroke="#E5DCC9" stroke-width="0.8"/>',
+          '<rect x="142" y="194" width="15" height="10" rx="2" fill="#C0C0C0" stroke="#E5DCC9" stroke-width="1"/>',
         '</g>',
       '</svg>'
     ].join('');
@@ -381,15 +381,15 @@ window.TVQuizApp = (function() {
           width: 256,
           height: 256,
           colorDark: '#000000',
-          colorLight: '#ffffff',
+          colorLight: '#3D2817',
           correctLevel: QRCode.CorrectLevel.M
         });
       } catch (err) {
         console.warn('QR code generation failed:', err);
-        qrEl.innerHTML = '<div style="font-size: 11px; color: #888; padding: 8px; text-align: center;">QR Code<br>indisponible</div>';
+        qrEl.innerHTML = '<div style="font-size: 11px; color: #8A6F4A; padding: 8px; text-align: center;">QR Code<br>indisponible</div>';
       }
     } else if (qrEl) {
-      qrEl.innerHTML = '<div style="font-size: 11px; color: #888; padding: 8px; text-align: center;">QR Code<br>indisponible</div>';
+      qrEl.innerHTML = '<div style="font-size: 11px; color: #8A6F4A; padding: 8px; text-align: center;">QR Code<br>indisponible</div>';
     }
   }
 
@@ -851,9 +851,9 @@ window.TVQuizApp = (function() {
         // Bandeau du bas
         '<rect x="20" y="68" width="160" height="14" fill="url(#crownGradient)" stroke="#8B6914" stroke-width="2"/>' +
         // Pierres précieuses (3 cercles)
-        '<circle cx="60" cy="75" r="4" fill="#E91E63" stroke="#fff" stroke-width="0.8"/>' +
-        '<circle cx="100" cy="75" r="5" fill="#1976D2" stroke="#fff" stroke-width="0.8"/>' +
-        '<circle cx="140" cy="75" r="4" fill="#388E3C" stroke="#fff" stroke-width="0.8"/>' +
+        '<circle cx="60" cy="75" r="4" fill="#E91E63" stroke="#3D2817" stroke-width="0.8"/>' +
+        '<circle cx="100" cy="75" r="5" fill="#1976D2" stroke="#3D2817" stroke-width="0.8"/>' +
+        '<circle cx="140" cy="75" r="4" fill="#388E3C" stroke="#3D2817" stroke-width="0.8"/>' +
         // Points sur les pointes
         '<circle cx="30" cy="30" r="3" fill="#FFE082" stroke="#8B6914" stroke-width="1"/>' +
         '<circle cx="100" cy="15" r="4" fill="#FFE082" stroke="#8B6914" stroke-width="1"/>' +

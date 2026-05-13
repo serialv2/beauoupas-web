@@ -10,15 +10,15 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  background: #151515;
-  border: 1px solid #292929;
+  background: #FAF6EF;
+  border: 1px solid #E5DCC9;
   border-radius: 14px;
   padding: 14px;
   margin-bottom: 8px;
   transition: border-color 0.15s;
   flex-wrap: wrap;
 }
-.invite-card:hover { border-color: rgba(233,30,140,0.4); }
+.invite-card:hover { border-color: rgba(194,117,76,0.4); }
 
 .invite-icon {
   width: 44px; height: 44px;
@@ -29,8 +29,8 @@
   font-size: 22px;
   flex-shrink: 0;
 }
-.invite-icon.vote { background: linear-gradient(135deg,#E91E8C,#C4186F); }
-.invite-icon.quiz { background: linear-gradient(135deg,#6B46C1,#4C1D95); }
+.invite-icon.vote { background: linear-gradient(135deg,#C2754C,#A35C36); }
+.invite-icon.quiz { background: linear-gradient(135deg,#6B7F5C,#566649); }
 
 .invite-actions {
   display: flex;
@@ -61,11 +61,11 @@
   <div style="max-width:700px;margin:0 auto;">
 
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
-      <a href="home.html" style="color:#888;text-decoration:none;font-size:24px;">←</a>
+      <a href="home.html" style="color:#8A6F4A;text-decoration:none;font-size:24px;">←</a>
       <h1 style="font-size:24px;font-weight:900;">📬 Invitations</h1>
     </div>
 
-    <p style="color:#666;font-size:13px;margin-bottom:18px;">
+    <p style="color:#6B5234;font-size:13px;margin-bottom:18px;">
       Tes invitations en attente à des séries et quiz.
     </p>
 
@@ -74,7 +74,7 @@
   </div>
 </main>
 
-<div id="toast" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#151515;border:1px solid #292929;color:white;padding:14px 22px;border-radius:14px;font-weight:700;z-index:200;"></div>
+<div id="toast" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#FAF6EF;border:1px solid #E5DCC9;color:white;padding:14px 22px;border-radius:14px;font-weight:700;z-index:200;"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
@@ -108,7 +108,7 @@ async function loadInvitations() {
         '<div class="empty-state">' +
           '<div class="icon">📭</div>' +
           '<div style="font-size:16px;font-weight:700;margin-bottom:6px;">Aucune invitation en attente</div>' +
-          '<div style="color:#888;font-size:13px;">Quand quelqu\'un t\'invitera à une série, ça apparaîtra ici.</div>' +
+          '<div style="color:#8A6F4A;font-size:13px;">Quand quelqu\'un t\'invitera à une série, ça apparaîtra ici.</div>' +
         '</div>';
       return;
     }
@@ -159,7 +159,7 @@ function render() {
           '<div style="font-weight:800;font-size:15px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' +
             escapeHtml(s.title || 'Série sans titre') +
           '</div>' +
-          '<div style="font-size:12px;color:#888;">' +
+          '<div style="font-size:12px;color:#8A6F4A;">' +
             'Invité par <b style="color:white;">' + escapeHtml(inviterName) + '</b>' +
           '</div>' +
         '</div>' +
