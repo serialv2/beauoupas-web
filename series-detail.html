@@ -69,6 +69,177 @@
 .status-preparing { background: rgba(201,148,62,0.15); color: #C9943E; border: 1px solid rgba(201,148,62,0.4); }
 .status-active { background: rgba(74,122,82,0.15); color: #4A7A52; border: 1px solid rgba(74,122,82,0.4); }
 .status-finished { background: rgba(102,102,102,0.15); color: #8A6F4A; border: 1px solid rgba(102,102,102,0.4); }
+
+/* ─── Modale d'invitation ─────────────────────────────── */
+.modal-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 22, 18, 0.55);
+  z-index: 500;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.15s ease-out;
+}
+.modal-backdrop.open { display: flex; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.modal-card {
+  background: #F4EFE6;
+  border-radius: 18px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(61, 40, 23, 0.35);
+}
+.modal-header {
+  padding: 18px 20px;
+  border-bottom: 1px solid #E5DCC9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.modal-header h3 {
+  font-size: 18px;
+  font-weight: 900;
+  color: #3D2817;
+  margin: 0;
+}
+.modal-header .subtitle {
+  font-size: 12px;
+  color: #C2754C;
+  font-weight: 700;
+  margin-top: 2px;
+}
+.modal-close {
+  background: transparent;
+  border: none;
+  color: #8A6F4A;
+  font-size: 24px;
+  cursor: pointer;
+  font-weight: 700;
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+.modal-close:hover { background: rgba(194,117,76,0.1); color: #3D2817; }
+.modal-body {
+  padding: 16px 20px;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 200px;
+}
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #FAF6EF;
+  border: 1px solid #E5DCC9;
+  border-radius: 12px;
+  padding: 8px 14px;
+  margin-bottom: 12px;
+}
+.search-box .search-icon { font-size: 16px; opacity: 0.6; }
+.search-box input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: #3D2817;
+  font-size: 15px;
+  font-family: Arial;
+  outline: none;
+  min-width: 0;
+}
+.search-box input::placeholder { color: #B8A589; }
+.search-box .search-spinner {
+  width: 16px; height: 16px;
+  border: 2px solid #E5DCC9;
+  border-top-color: #C2754C;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: none;
+}
+.search-box .search-spinner.visible { display: block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.search-status {
+  font-size: 12px;
+  color: #8A6F4A;
+  padding: 4px 6px;
+  margin-bottom: 8px;
+}
+
+.invite-user-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #FAF6EF;
+  border: 1px solid #E5DCC9;
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+.invite-user-row .avatar-circle {
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  background: #C2754C;
+  color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 900; font-size: 16px;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.invite-user-row .avatar-circle img {
+  width: 100%; height: 100%; object-fit: cover;
+}
+.invite-user-row .user-info {
+  flex: 1;
+  min-width: 0;
+}
+.invite-user-row .username {
+  font-weight: 800;
+  color: #3D2817;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.invite-user-row .friend-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(107,127,92,0.15);
+  color: #6B7F5C;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-top: 2px;
+}
+.invite-user-row .btn-invite {
+  background: #C2754C;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 800;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: Arial;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.invite-user-row .btn-invite:hover:not(:disabled) { background: #A35C36; }
+.invite-user-row .btn-invite:disabled {
+  background: #4A7A52;
+  cursor: default;
+}
+.invite-user-row .btn-invite.loading {
+  background: #B8A589;
+  cursor: wait;
+}
 </style>
 </head>
 <body>
@@ -94,37 +265,31 @@
     <div id="series-loading"><div class="spinner"></div></div>
     <div id="series-content" style="display:none;">
 
-      <!-- Header avec status -->
       <div id="series-header"></div>
-
-      <!-- Code à partager -->
       <div id="series-code"></div>
 
-      <!-- Tabs -->
       <div class="tab-row">
         <button class="tab-btn active" data-tab="info" onclick="switchTab('info')">ℹ️ Infos</button>
         <button class="tab-btn" data-tab="participants" onclick="switchTab('participants')">👥 Participants</button>
         <button class="tab-btn" data-tab="projects" onclick="switchTab('projects')">📸 Projets</button>
       </div>
 
-      <!-- Tab Infos -->
       <div class="tab-content active" id="tab-info">
         <div class="card" style="padding:18px;">
           <div id="series-info-list"></div>
         </div>
       </div>
 
-      <!-- Tab Participants -->
       <div class="tab-content" id="tab-participants">
+        <!-- ⚡ Bouton inviter (visible si série préparation/active) -->
+        <div id="invite-btn-wrap" style="margin-bottom:12px;"></div>
         <div id="participants-list"></div>
       </div>
 
-      <!-- Tab Projets -->
       <div class="tab-content" id="tab-projects">
         <div id="projects-list"></div>
       </div>
 
-      <!-- Actions -->
       <div id="series-actions" style="margin-top:24px;"></div>
 
     </div>
@@ -132,7 +297,29 @@
   </div>
 </main>
 
-<div id="toast" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#FAF6EF;border:1px solid #E5DCC9;color:#3D2817;padding:14px 22px;border-radius:14px;font-weight:700;z-index:200;"></div>
+<!-- ─── Modale d'invitation ─────────────────────────────── -->
+<div class="modal-backdrop" id="invite-modal" onclick="closeInviteModalIfBackdrop(event)">
+  <div class="modal-card" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <h3>👥 Inviter à la série</h3>
+        <div class="subtitle" id="invite-modal-subtitle"></div>
+      </div>
+      <button class="modal-close" type="button" onclick="closeInviteModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="invite-search-input" placeholder="Rechercher par nom d'utilisateur..." autocomplete="off">
+        <div class="search-spinner" id="invite-search-spinner"></div>
+      </div>
+      <div class="search-status" id="invite-status"></div>
+      <div id="invite-results"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" style="display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#FAF6EF;border:1px solid #E5DCC9;color:#3D2817;padding:14px 22px;border-radius:14px;font-weight:700;z-index:600;"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
@@ -140,9 +327,9 @@
 <script>
 var currentUser = null;
 var seriesId = null;
-var seriesData = null;       // { ...series fields }
-var participants = [];        // [{ user_id, username, avatar_url, project_count }]
-var projects = [];            // [{ ...series_project, project: {...} }]
+var seriesData = null;
+var participants = [];
+var projects = [];
 var isCreator = false;
 
 async function init() {
@@ -163,7 +350,6 @@ async function init() {
 
 async function loadAll() {
   try {
-    // Tenter la RPC get_series_detail_full
     var rpcOk = false;
     try {
       var { data, error } = await db.rpc('get_series_detail_full', {
@@ -198,15 +384,12 @@ async function loadAll() {
 function applyDetail(d) {
   seriesData = d.series;
 
-  // ⚡ FIX 13/05/2026 : la RPC renvoie `all_projects` et `participants`.
-  // Le créateur n'est pas inclus dans `participants` → on l'ajoute.
   participants = d.participants || [];
   projects = d.all_projects || d.projects || [];
 
   isCreator = d.is_creator === true || seriesData.creator_id === currentUser.id;
 
-  // Si le créateur n'est pas dans la liste participants (cas habituel),
-  // l'ajouter manuellement pour qu'il apparaisse aussi dans l'onglet Participants
+  // Injecter le créateur s'il n'est pas dans participants
   if (isCreator && !participants.some(function(p) { return p.user_id === currentUser.id; })) {
     participants.unshift({
       user_id: currentUser.id,
@@ -218,7 +401,6 @@ function applyDetail(d) {
     });
   }
 
-  // Compteur de projets par membre (toujours utile)
   var byMember = {};
   projects.forEach(function(p) {
     if (!byMember[p.added_by]) byMember[p.added_by] = 0;
@@ -232,7 +414,6 @@ function applyDetail(d) {
 }
 
 async function loadFallback() {
-  // 1. série
   var { data: s } = await db.from('series').select('*').eq('id', seriesId).maybeSingle();
   if (!s) {
     throw new Error("Série introuvable");
@@ -240,7 +421,6 @@ async function loadFallback() {
   seriesData = s;
   isCreator = s.creator_id === currentUser.id;
 
-  // 2. participants
   var { data: rawParts } = await db
     .from('series_participants')
     .select('user_id, joined_at, profiles!inner(id, username, avatar_url)')
@@ -254,7 +434,6 @@ async function loadFallback() {
     };
   });
 
-  // 3. projets de la série + jointure projet réel
   var { data: rawProjects } = await db
     .from('series_projects')
     .select('id, project_id, added_by, position, is_revealed, projects(id, title, photo_url)')
@@ -262,7 +441,6 @@ async function loadFallback() {
     .order('position', { ascending: true });
   projects = rawProjects || [];
 
-  // Compteur de projets par membre
   var byMember = {};
   projects.forEach(function(p) {
     if (!byMember[p.added_by]) byMember[p.added_by] = 0;
@@ -281,6 +459,7 @@ function renderAll() {
   renderCode();
   renderInfo();
   renderParticipants();
+  renderInviteButton();
   renderProjects();
   renderActions();
 }
@@ -372,9 +551,23 @@ function renderParticipants() {
   }).join('');
 }
 
+// ⚡ NOUVEAU : bouton "Inviter des amis" en haut de l'onglet Participants
+function renderInviteButton() {
+  var wrap = document.getElementById("invite-btn-wrap");
+  // Affiché si la série n'est pas terminée — cohérent avec MAUI
+  var canInvite = seriesData.status === 'preparing' || seriesData.status === 'active';
+  if (!canInvite) {
+    wrap.innerHTML = '';
+    return;
+  }
+  wrap.innerHTML =
+    '<button class="btn btn-primary btn-full" onclick="openInviteModal()">' +
+      '👥 Inviter des amis' +
+    '</button>';
+}
+
 function renderProjects() {
   var listEl = document.getElementById("projects-list");
-  // Si projets cachés et pas créateur et série pas active → on cache
   var canSeeProjects = isCreator
     || seriesData.status === 'active'
     || seriesData.status === 'finished'
@@ -399,14 +592,9 @@ function renderProjects() {
   }
 
   listEl.innerHTML = projects.map(function(sp, i) {
-    // ⚡ FIX : la RPC renvoie les champs à plat (title, type, description),
-    //   pas dans un sous-objet sp.projects comme le fallback.
-    //   On supporte les 2 formes pour rester compatible.
     var p = sp.project || sp.projects || null;
     var title = (p && p.title) || sp.title || 'Projet sans titre';
     var photo = (p && p.photo_url) ? p.photo_url : null;
-
-    // Icône selon le type
     var typeFallback = '📸';
     var t = (p && p.type) || sp.type;
     if (t === 'duel') typeFallback = '⚔️';
@@ -433,16 +621,13 @@ function renderActions() {
 
   if (isCreator) {
     if (seriesData.status === 'preparing') {
-      // Bouton spécifique aux quiz : éditer les questions avant de démarrer
       if (seriesData.is_quiz) {
         html += '<a href="edit-quiz-questions.html?id=' + encodeURIComponent(seriesId) + '" class="btn btn-secondary btn-full" style="text-decoration:none;margin-bottom:8px;">📝 Éditer les questions</a>';
       } else {
-        // ⚡ Lot 4 : bouton ajouter un projet (créateur ET membres) si non-quiz
         html += '<a href="add-project-to-series.html?series_id=' + encodeURIComponent(seriesId) + '" class="btn btn-secondary btn-full" style="text-decoration:none;margin-bottom:8px;">➕ Ajouter un projet</a>';
       }
       html += '<button class="btn btn-primary btn-full" style="margin-bottom:8px;" onclick="startSeries()">▶️ Démarrer la série</button>';
     } else if (seriesData.status === 'active') {
-      // Pour les quiz, le créateur peut aussi aller jouer (voir l'écran joueur en parallèle de la TV)
       if (seriesData.is_quiz) {
         html += '<a href="quiz-play.html?id=' + encodeURIComponent(seriesId) + '" class="btn btn-primary btn-full" style="text-decoration:none;margin-bottom:8px;">🧠 Voir l\'écran joueur</a>';
       }
@@ -453,9 +638,7 @@ function renderActions() {
     }
     html += '<button class="btn btn-ghost btn-full" style="border-color:rgba(181,72,47,0.4);color:#B5482F;" onclick="deleteSeries()">🗑️ Supprimer la série</button>';
   } else {
-    // Non créateur
     if (seriesData.status === 'preparing' && !seriesData.is_quiz) {
-      // ⚡ Lot 4 : les membres peuvent aussi ajouter des projets en preparing (sauf pour les quiz)
       html += '<a href="add-project-to-series.html?series_id=' + encodeURIComponent(seriesId) + '" class="btn btn-primary btn-full" style="text-decoration:none;margin-bottom:8px;">➕ Ajouter un projet</a>';
     } else if (seriesData.status === 'active') {
       var voteUrl = seriesData.is_quiz
@@ -481,18 +664,260 @@ function switchTab(tab) {
   });
 }
 
-// ─── Actions admin ───────────────────────────────────────
-async function startSeries() {
-  if (!confirm("Démarrer la série maintenant ?\nLes projets ne pourront plus être ajoutés/modifiés.")) return;
+// ═══════════════════════════════════════════════════════════
+// ⚡ MODALE D'INVITATION — miroir du flux MAUI InviteToSeriesViewModel
+// ═══════════════════════════════════════════════════════════
+var inviteSearchTimer = null;
+var inviteCurrentResults = []; // [{user_id, username, avatar_url, is_friend, is_inviting, is_invited}]
+
+function openInviteModal() {
+  document.getElementById("invite-modal-subtitle").textContent = seriesData.title || '';
+  document.getElementById("invite-search-input").value = '';
+  document.getElementById("invite-status").textContent = '';
+  document.getElementById("invite-results").innerHTML = '';
+  inviteCurrentResults = [];
+  document.getElementById("invite-modal").classList.add('open');
+  setTimeout(function() {
+    document.getElementById("invite-search-input").focus();
+  }, 100);
+}
+
+function closeInviteModal() {
+  document.getElementById("invite-modal").classList.remove('open');
+  if (inviteSearchTimer) { clearTimeout(inviteSearchTimer); inviteSearchTimer = null; }
+}
+
+function closeInviteModalIfBackdrop(event) {
+  if (event.target.id === 'invite-modal') closeInviteModal();
+}
+
+document.getElementById("invite-search-input").addEventListener('input', function(e) {
+  var q = e.target.value;
+  if (inviteSearchTimer) clearTimeout(inviteSearchTimer);
+  // Debounce 350ms exactement comme MAUI (ligne 43 du ViewModel)
+  inviteSearchTimer = setTimeout(function() { runInviteSearch(q); }, 350);
+});
+
+async function runInviteSearch(query) {
+  var q = (query || '').trim();
+  var statusEl = document.getElementById("invite-status");
+  var resultsEl = document.getElementById("invite-results");
+  var spinnerEl = document.getElementById("invite-search-spinner");
+
+  // Min 2 caractères (cohérent avec MAUI ligne 53)
+  if (q.length < 2) {
+    statusEl.textContent = '';
+    resultsEl.innerHTML = '';
+    inviteCurrentResults = [];
+    return;
+  }
+
+  spinnerEl.classList.add('visible');
+  try {
+    var users = await searchUsersToInvite(q);
+
+    inviteCurrentResults = users.map(function(u) {
+      return {
+        user_id: u.user_id,
+        username: u.username,
+        avatar_url: u.avatar_url,
+        is_friend: u.is_friend,
+        is_inviting: false,
+        is_invited: false
+      };
+    });
+
+    if (inviteCurrentResults.length === 0) {
+      statusEl.textContent = "Aucun utilisateur trouvé (ou tous déjà invités)";
+      resultsEl.innerHTML = '';
+    } else {
+      statusEl.textContent = '';
+      renderInviteResults();
+    }
+  } catch (e) {
+    console.error("Recherche invitation:", e);
+    statusEl.textContent = "Erreur de recherche";
+    resultsEl.innerHTML = '';
+  } finally {
+    spinnerEl.classList.remove('visible');
+  }
+}
+
+// Miroir de SeriesInvitationService.SearchUsersToInviteAsync (MAUI)
+async function searchUsersToInvite(query) {
+  // 1. Profils dont le username matche (ILIKE)
+  var { data: profiles, error: profErr } = await db
+    .from('profiles')
+    .select('id, username, avatar_url')
+    .ilike('username', '%' + query + '%')
+    .limit(20);
+  if (profErr) throw profErr;
+  if (!profiles || !profiles.length) return [];
+
+  // Retirer soi-même
+  profiles = profiles.filter(function(p) { return p.id !== currentUser.id; });
+  if (!profiles.length) return [];
+
+  // 2. Participants existants à la série
+  var { data: parts } = await db
+    .from('series_participants')
+    .select('user_id')
+    .eq('series_id', seriesId);
+  var participantIds = new Set((parts || []).map(function(p) { return p.user_id; }));
+
+  // 3. Invitations pending ou accepted
+  var { data: invs } = await db
+    .from('series_invitations')
+    .select('invited_user_id, status')
+    .eq('series_id', seriesId)
+    .in('status', ['pending', 'accepted']);
+  var invitedIds = new Set((invs || []).map(function(i) { return i.invited_user_id; }));
+
+  // 4. Amitiés (pour le badge "Ami")
+  var { data: sent } = await db
+    .from('friendships')
+    .select('receiver_id, status')
+    .eq('requester_id', currentUser.id)
+    .eq('status', 'accepted');
+  var { data: received } = await db
+    .from('friendships')
+    .select('requester_id, status')
+    .eq('receiver_id', currentUser.id)
+    .eq('status', 'accepted');
+  var friendIds = new Set();
+  (sent || []).forEach(function(f) { friendIds.add(f.receiver_id); });
+  (received || []).forEach(function(f) { friendIds.add(f.requester_id); });
+
+  // Filtre + enrichissement
+  return profiles
+    .filter(function(p) { return !participantIds.has(p.id) && !invitedIds.has(p.id); })
+    .map(function(p) {
+      return {
+        user_id: p.id,
+        username: p.username,
+        avatar_url: p.avatar_url,
+        is_friend: friendIds.has(p.id)
+      };
+    });
+}
+
+function renderInviteResults() {
+  var resultsEl = document.getElementById("invite-results");
+  resultsEl.innerHTML = inviteCurrentResults.map(function(u, i) {
+    var firstLetter = (u.username || '?')[0].toUpperCase();
+    var avatarHtml = u.avatar_url
+      ? '<img src="' + escapeHtml(u.avatar_url) + '" alt="">'
+      : firstLetter;
+
+    var btnText, btnDisabled, btnClass;
+    if (u.is_invited) {
+      btnText = '✅ Invité';
+      btnDisabled = 'disabled';
+      btnClass = '';
+    } else if (u.is_inviting) {
+      btnText = '…';
+      btnDisabled = 'disabled';
+      btnClass = 'loading';
+    } else {
+      btnText = 'Inviter';
+      btnDisabled = '';
+      btnClass = '';
+    }
+
+    return (
+      '<div class="invite-user-row">' +
+        '<div class="avatar-circle">' + avatarHtml + '</div>' +
+        '<div class="user-info">' +
+          '<div class="username">@' + escapeHtml(u.username) + '</div>' +
+          (u.is_friend ? '<span class="friend-badge">🤝 Ami</span>' : '') +
+        '</div>' +
+        '<button class="btn-invite ' + btnClass + '" ' + btnDisabled + ' ' +
+          'onclick="inviteUser(' + i + ')">' + btnText +
+        '</button>' +
+      '</div>'
+    );
+  }).join('');
+}
+
+// Miroir de SeriesInvitationService.InviteUserAsync (MAUI)
+async function inviteUser(idx) {
+  var u = inviteCurrentResults[idx];
+  if (!u || u.is_inviting || u.is_invited) return;
+
+  u.is_inviting = true;
+  renderInviteResults();
 
   try {
-    // Reproduire ce que fait StartSeriesAsync : reveal + status active + index=0
+    // Vérifie si déjà participant
+    var { data: existingPart } = await db
+      .from('series_participants')
+      .select('id')
+      .eq('series_id', seriesId)
+      .eq('user_id', u.user_id)
+      .limit(1);
+    if (existingPart && existingPart.length > 0) {
+      throw new Error("Cette personne participe déjà à la série");
+    }
+
+    // Cherche une invitation existante
+    var { data: existingInvs } = await db
+      .from('series_invitations')
+      .select('id, status')
+      .eq('series_id', seriesId)
+      .eq('invited_user_id', u.user_id)
+      .limit(1);
+    var existingInv = existingInvs && existingInvs.length > 0 ? existingInvs[0] : null;
+
+    if (existingInv) {
+      if (existingInv.status === 'pending') {
+        throw new Error("Cette personne a déjà une invitation en attente");
+      }
+      if (existingInv.status === 'accepted') {
+        throw new Error("Cette personne participe déjà");
+      }
+      // declined → réinviter (UPDATE)
+      var { error: upErr } = await db.from('series_invitations')
+        .update({
+          status: 'pending',
+          invited_by: currentUser.id,
+          created_at: new Date().toISOString(),
+          responded_at: null
+        })
+        .eq('id', existingInv.id);
+      if (upErr) throw upErr;
+    } else {
+      // INSERT nouvelle invitation
+      var { error: insErr } = await db.from('series_invitations').insert({
+        series_id: seriesId,
+        invited_user_id: u.user_id,
+        invited_by: currentUser.id,
+        status: 'pending'
+      });
+      if (insErr) throw insErr;
+    }
+
+    u.is_inviting = false;
+    u.is_invited = true;
+    renderInviteResults();
+    showToast("✅ @" + u.username + " a été invité");
+
+  } catch (e) {
+    console.error("inviteUser:", e);
+    u.is_inviting = false;
+    renderInviteResults();
+    showToast("❌ " + (e.message || "Impossible d'inviter"));
+  }
+}
+
+// ─── Actions admin (inchangées) ──────────────────────────
+async function startSeries() {
+  if (!confirm("Démarrer la série maintenant ?\nLes projets ne pourront plus être ajoutés/modifiés.")) return;
+  try {
     await db.from('series_projects').update({ is_revealed: true }).eq('series_id', seriesId);
     var { error } = await db.from('series')
       .update({ status: 'active', current_project_index: 0 })
       .eq('id', seriesId);
     if (error) throw error;
-
     showToast("✅ Série démarrée !");
     await loadAll();
   } catch (e) {
@@ -503,13 +928,11 @@ async function startSeries() {
 
 async function stopSeries() {
   if (!confirm("Arrêter la série ?\nElle passera en \"Terminée\".")) return;
-
   try {
     var { error } = await db.from('series')
       .update({ status: 'finished' })
       .eq('id', seriesId);
     if (error) throw error;
-
     showToast("✅ Série arrêtée");
     await loadAll();
   } catch (e) {
@@ -520,16 +943,13 @@ async function stopSeries() {
 
 async function resetSeries() {
   if (!confirm("Repréparer la série ?\nLes votes et résultats actuels seront effacés mais les projets et participants seront conservés.")) return;
-
   try {
-    // RPC reset_series_for_replay
     var { error } = await db.rpc('reset_series_for_replay', {
       p_series_id: seriesId,
       p_user_id: currentUser.id
     });
     if (error) {
       console.warn("RPC reset:", error);
-      // Fallback minimaliste si la RPC est absente
       await db.from('series').update({
         status: 'preparing',
         current_project_index: 0,
@@ -537,7 +957,6 @@ async function resetSeries() {
         tv_paused: false
       }).eq('id', seriesId);
     }
-
     showToast("✅ Série repréparée");
     await loadAll();
   } catch (e) {
@@ -548,29 +967,23 @@ async function resetSeries() {
 
 async function deleteSeries() {
   if (!confirm("⚠️ Supprimer DÉFINITIVEMENT cette série ?\n\nTous les projets, votes et participants seront perdus.")) return;
-
   try {
-    // RPC delete_series_safe (déjà utilisée par le mobile)
     var { data, error } = await db.rpc('delete_series_safe', {
       p_series_id: seriesId,
       p_user_id: currentUser.id
     });
-
     if (error) {
       console.error("delete_series_safe:", error);
       showToast("❌ " + error.message);
       return;
     }
-
     var d = Array.isArray(data) ? data[0] : data;
     if (d && d.success === false) {
       showToast("❌ " + (d.message || "Échec"));
       return;
     }
-
     showToast("✅ Série supprimée");
     setTimeout(function() {
-      // Retour vers le groupe ou vers groups.html
       if (seriesData.group_id) {
         window.location.href = 'group-detail.html?id=' + encodeURIComponent(seriesData.group_id);
       } else {
@@ -585,7 +998,6 @@ async function deleteSeries() {
 
 async function leaveSeries() {
   if (!confirm("Quitter cette série ?")) return;
-
   try {
     var { error } = await db
       .from('series_participants')
@@ -593,7 +1005,6 @@ async function leaveSeries() {
       .eq('series_id', seriesId)
       .eq('user_id', currentUser.id);
     if (error) throw error;
-
     showToast("✅ Tu as quitté la série");
     setTimeout(function() {
       if (seriesData.group_id) {
