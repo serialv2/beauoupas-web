@@ -2,7 +2,7 @@
 
 body {
   font-family: Arial, sans-serif;
-  background: #F4EFE6;
+  background: #FFFFFF;
   color: #3D2817;
   min-height: 100vh;
 }
@@ -21,7 +21,7 @@ body {
   position: fixed;
   top: 0; left: 0; bottom: 0;
   width: 220px;
-  background: #FAF6EF;
+  background: #FFFFFF;
   border-right: 1px solid #E5DCC9;
   display: flex;
   flex-direction: column;
@@ -80,7 +80,7 @@ body {
   display: none;
   position: fixed;
   bottom: 0; left: 0; right: 0;
-  background: #FAF6EF;
+  background: #FFFFFF;
   border-top: 1px solid #E5DCC9;
   z-index: 50;
 }
@@ -196,7 +196,7 @@ body {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: radial-gradient(circle at top, rgba(194,117,76,0.2), transparent 50%), #F4EFE6;
+  background: radial-gradient(circle at top, rgba(194,117,76,0.2), transparent 50%), #FFFFFF;
 }
 .auth-box { width: 100%; max-width: 400px; }
 .auth-logo { font-size: 40px; font-weight: 900; color: #C2754C; text-align: center; margin-bottom: 8px; }

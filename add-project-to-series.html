@@ -39,7 +39,7 @@
 }
 .type-badge.photo { background: rgba(194,117,76,0.15); color: #C2754C; }
 .type-badge.duel { background: rgba(201,148,62,0.15); color: #C9943E; }
-.type-badge.poll { background: rgba(107,127,92,0.15); color: #6B7F5C; }
+.type-badge.poll { background: rgba(107,127,92,0.15); color: #A78BFA; }
 
 /* Type selector pour nouveau projet */
 .type-selector {
@@ -214,7 +214,7 @@
 
     <div id="series-banner" style="display:none;margin-bottom:18px;padding:12px 16px;background:rgba(194,117,76,0.08);border:1px solid rgba(194,117,76,0.2);border-radius:12px;font-size:13px;">
       <span style="color:#C2754C;font-weight:800;">Série :</span>
-      <span id="series-name" style="color:#3D2817;font-weight:700;"></span>
+      <span id="series-name" style="color:white;font-weight:700;"></span>
       <span id="series-quota" style="color:#8A6F4A;float:right;"></span>
     </div>
 
@@ -743,9 +743,6 @@ async function createPollProject(title, description) {
 }
 
 // ─── insert_project (avec fallback) ──────────────────────
-// ⚡ FIX 13/05/2026 : gender_filter doit valoir 'both' (valeurs enum Postgres :
-// 'male','female','both'). Avant: 'all' → erreur "invalid input value for enum"
-// ⚡ min_age aligné sur MAUI (=13) pour cohérence multi-plateforme (protection mineurs)
 async function insertProject(type, title, description) {
   // Tenter la RPC insert_project
   try {
@@ -754,8 +751,8 @@ async function insertProject(type, title, description) {
       p_type: type,
       p_title: title,
       p_description: description || '',
-      p_gender_filter: 'both',
-      p_min_age: 13,
+      p_gender_filter: 'all',
+      p_min_age: 0,
       p_max_age: 99,
       p_closes_at: '',
       p_ip_address: '',
@@ -777,8 +774,8 @@ async function insertProject(type, title, description) {
     type: type,
     title: title,
     description: description || null,
-    gender_filter: 'both',
-    min_age: 13,
+    gender_filter: 'all',
+    min_age: 0,
     max_age: 99
   }).select().single();
   if (fbErr) throw new Error("Création projet échouée : " + fbErr.message);
