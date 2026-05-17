@@ -91,7 +91,8 @@ window.TVPartyApp = (function() {
     partyAnswersSubscribed: false,   // true dès qu'on a reçu SUBSCRIBED
     partyAnswersRetryTimer: null,    // timer de re-souscription
     partyAnswersAttempts: 0,         // nb de tentatives d'abonnement
-    votesPollTimer: null             // filet de sécurité (polling votes)
+    votesPollTimer: null,            // filet de sécurité (polling votes)
+    screenPollTimer: null            // 🛠️ filet de sécurité (polling écran)
   };
 
   var _isAdvancing = false;     // anti double-call sur tv_advance_to_next
@@ -173,6 +174,12 @@ window.TVPartyApp = (function() {
       // 🛠️ CORRECTIF : filet de sécurité — polling léger des votes
       // tant que le realtime n'a pas confirmé son abonnement.
       startVotesSafetyPolling();
+
+      // 🛠️ CORRECTIF : filet de sécurité ÉCRAN — resynchronise l'écran
+      // affiché si un event series a été manqué (équivaut à un F5
+      // automatique et invisible). Empêche la TV de rester figée sur
+      // le lobby après "Démarrer".
+      startScreenSafetyPolling();
 
       renderCurrentScreen();
 
@@ -325,6 +332,59 @@ window.TVPartyApp = (function() {
     }, 2000);
   }
 
+  // 🛠️ CORRECTIF : filet de sécurité ÉCRAN. Toutes les 3 s, on relit
+  // la série en base ; si son état implique un autre écran que celui
+  // affiché, on resynchronise (re-render). C'est un "F5 invisible"
+  // qui garantit que la TV ne reste jamais bloquée sur le lobby même
+  // si l'event realtime series a été manqué.
+  function startScreenSafetyPolling() {
+    if (state.screenPollTimer) return;
+    state.screenPollTimer = setInterval(async function() {
+      try {
+        if (!state.series) return;
+        if (state.series.tv_paused) return;
+        var sb = window.TVRealtime.getClient();
+        var res = await sb
+          .from('series')
+          .select('*')
+          .eq('id', state.series.id)
+          .maybeSingle();
+        if (res.error || !res.data) return;
+
+        var fresh = res.data;
+        var prevStatus = state.series.status;
+        var prevIdx = state.series.current_project_index;
+        state.series = fresh;
+
+        if (!fresh.tv_active) {
+          stopAllTimers();
+          showError('Mode TV désactivé', 'L\'animateur a quitté le mode TV.');
+          return;
+        }
+
+        var changed =
+          (prevStatus !== fresh.status ||
+           prevIdx !== fresh.current_project_index);
+        var mismatch =
+          (expectedScreenFor(fresh) !== state.currentScreen);
+
+        if (changed || mismatch) {
+          console.log('[TVPartyApp] Resync écran (filet sécurité) → ' +
+            expectedScreenFor(fresh));
+          _isAdvancing = false;
+          _isStartingFirst = false;
+          // si une question vient de démarrer, recharge son started_at
+          if (fresh.status === 'active') {
+            try { await loadQuestions(); } catch (e) {}
+          }
+          renderCurrentScreen();
+        }
+      } catch (e) {
+        // silencieux : c'est un filet de sécurité
+      }
+    }, 3000);
+  }
+
   // Un vote party arrive : on enregistre le voter_id pour la question.
   // (La contrainte UNIQUE(series_id, question_id, voter_id) garantit
   //  qu'un même voter ne compte qu'une fois ; le map côté JS sécurise
@@ -433,6 +493,23 @@ window.TVPartyApp = (function() {
   // ─────────────────────────────────────────────────────────────────
   // Routeur principal
   // ─────────────────────────────────────────────────────────────────
+
+  // 🛠️ CORRECTIF : quel écran DEVRAIT être affiché pour cet état série ?
+  // Sert à détecter une incohérence (TV figée) et à forcer le re-render.
+  function expectedScreenFor(s) {
+    if (!s) return 'loading';
+    if (s.status === 'preparing') return 'lobby';
+    if (s.status === 'finished')  return 'finish';
+    if (s.status === 'active') {
+      var fq = state.questions[0];
+      if (fq && !fq.started_at) return 'intro';
+      var idx = s.current_project_index || 0;
+      var q = state.questions[idx];
+      if (q && q.started_at) return 'question';
+      return 'intro'; // active mais 1re question pas encore démarrée
+    }
+    return state.currentScreen; // statut inconnu : on ne force rien
+  }
 
   function renderCurrentScreen() {
     var s = state.series;
@@ -1236,8 +1313,20 @@ window.TVPartyApp = (function() {
         return;
       }
 
-      if (prev.status !== payload.status ||
-          prev.current_project_index !== payload.current_project_index) {
+      // 🛠️ CORRECTIF (TV bloquée sur le lobby après "Démarrer") :
+      // on redessine si le statut/index a changé, MAIS AUSSI si
+      // l'écran actuellement affiché ne correspond pas à l'état
+      // réel de la série (cas : l'event de transition preparing→
+      // active a été manqué pendant l'établissement du canal, ou
+      // le payload semble identique au state déjà en mémoire).
+      // Sans ça, la TV restait figée sur le QR code jusqu'à un F5.
+      var statusChanged =
+        (prev.status !== payload.status ||
+         prev.current_project_index !== payload.current_project_index);
+      var screenMismatch =
+        (expectedScreenFor(payload) !== state.currentScreen);
+
+      if (statusChanged || screenMismatch) {
         _isAdvancing = false;
         _isStartingFirst = false;
         renderCurrentScreen();
