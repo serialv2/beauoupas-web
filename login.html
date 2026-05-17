@@ -17,6 +17,7 @@
       <p style="color:#6B5234;font-size:14px;margin-bottom:24px;">Bon retour parmi nous 👋</p>
 
       <div id="error" class="alert alert-error"></div>
+      <div id="success" class="alert alert-success"></div>
 
       <div style="display:flex;flex-direction:column;gap:14px;">
         <div>
@@ -27,6 +28,14 @@
           <label class="input-label">Mot de passe</label>
           <input class="input" type="password" id="password" placeholder="••••••••">
         </div>
+
+        <div style="text-align:right;margin-top:-6px;">
+          <a href="#" onclick="handleForgotPassword();return false;"
+             style="color:#C2754C;font-size:13px;font-weight:600;text-decoration:none;">
+            Mot de passe oublié ?
+          </a>
+        </div>
+
         <button class="btn btn-primary btn-full" id="loginBtn" onclick="handleLogin()">
           🚀 Se connecter
         </button>
@@ -76,6 +85,41 @@ async function handleGoogle() {
       redirectTo: 'https://serialv2.github.io/beauoupas-web/feed.html'
     }
   })
+}
+
+// 🔑 Mot de passe oublié
+async function handleForgotPassword() {
+  const email = document.getElementById('email').value
+
+  if (!email) {
+    showError('error', 'Saisis ton email ci-dessus, puis clique à nouveau sur « Mot de passe oublié ? ».')
+    return
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showError('error', 'Saisis une adresse email valide.')
+    return
+  }
+
+  const { error } = await db.auth.resetPasswordForEmail(email, {
+    redirectTo: 'https://serialv2.github.io/beauoupas-web/reset-password.html'
+  })
+
+  if (error) {
+    showError('error', "Impossible d'envoyer l'email. Réessaie dans quelques instants.")
+  } else {
+    const errEl = document.getElementById('error')
+    if (errEl) errEl.style.display = 'none'
+    showSuccess('success',
+      '📧 Si un compte existe pour ' + email + ", un email de réinitialisation vient d'être envoyé. Pense à vérifier tes spams.")
+  }
+}
+
+// Helper : afficher un message de succès
+function showSuccess(id, msg) {
+  const el = document.getElementById(id)
+  if (!el) return
+  el.textContent = msg
+  el.style.display = 'block'
 }
 
 // Enter pour valider
