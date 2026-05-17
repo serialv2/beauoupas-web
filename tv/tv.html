@@ -54,10 +54,16 @@
         window.TV_CONFIG.SUPABASE_URL,
         window.TV_CONFIG.SUPABASE_ANON_KEY
       );
-      // ⚡ NOUVEAU : on récupère aussi is_quiz pour router vers la bonne page
+      // ⚡ CORRECTIF : on récupère aussi quiz_style pour router
+      // correctement les PARTIES RAPIDES (is_quiz = true ET
+      // quiz_style = 'party'). Sans quiz_style dans le SELECT, la
+      // partie rapide était routée comme un quiz Kahoot classique
+      // → tv-quiz.html chargeait tv-quiz-app.js (style-kahoot) au
+      // lieu de tv-party.html / tv-party-app.js → compteur de votes
+      // jamais mis à jour ("0 réponse").
       var result = await sb
         .from('series')
-        .select('id, title, tv_active, status, is_quiz')
+        .select('id, title, tv_active, status, is_quiz, quiz_style')
         .eq('access_code', code)
         .maybeSingle();
       if (result.error) throw result.error;
@@ -73,8 +79,21 @@
         btn.textContent = 'Démarrer la TV';
         return false;
       }
-      // ⚡ Routage selon le type de série
-      var targetPage = result.data.is_quiz ? 'tv-quiz.html' : 'tv-display.html';
+      // ⚡ CORRECTIF — Routage selon le type de série :
+      //   1) Partie rapide : is_quiz = true ET quiz_style = 'party'
+      //      → tv-party.html  (moteur PARTY, table party_answers)
+      //   2) Quiz classique : is_quiz = true (sans quiz_style party)
+      //      → tv-quiz.html   (moteur Kahoot, table quiz_answers)
+      //   3) Mode vote/affichage : is_quiz = false
+      //      → tv-display.html
+      var targetPage;
+      if (result.data.is_quiz && result.data.quiz_style === 'party') {
+        targetPage = 'tv-party.html';
+      } else if (result.data.is_quiz) {
+        targetPage = 'tv-quiz.html';
+      } else {
+        targetPage = 'tv-display.html';
+      }
       window.location.href = targetPage + '?code=' + encodeURIComponent(code);
     } catch (error) {
       console.error('joinSeries error:', error);
