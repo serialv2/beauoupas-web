@@ -37,6 +37,28 @@
 // (Option 1 : aucune modification de tv-realtime.js).
 //
 // ═══════════════════════════════════════════════════════════════════
+//
+// 🛠️ CORRECTIF (compteur TV bloqué à "0 réponse")
+// -------------------------------------------------------------------
+// Cause : startPartyAnswersSubscription() était appelé juste après
+// window.TVRealtime.start(...), AVANT que le WebSocket realtime soit
+// connecté. Le canal party_answers s'abonnait donc sur un client pas
+// prêt → l'abonnement échouait silencieusement (CHANNEL_ERROR /
+// TIMED_OUT) → onPartyVote() n'était JAMAIS appelé → votersByQuestion
+// restait vide → "0 réponse" alors que les votes étaient bien en base.
+//
+// Correctif (sans toucher au reste du fichier) :
+//  1) on attend que le client realtime soit prêt avant de créer le
+//     canal (retry court) ;
+//  2) on logge clairement le statut d'abonnement ;
+//  3) re-souscription automatique si le canal tombe (CHANNEL_ERROR /
+//     TIMED_OUT / CLOSED) ;
+//  4) à CHAQUE (re)connexion réussie, on RECHARGE les votes déjà en
+//     base (loadVoterCounts) et on redessine le compteur → resync même
+//     si un INSERT realtime a été raté ;
+//  5) filet de sécurité : un polling léger des votes pendant les
+//     questions, qui se neutralise dès que le realtime fonctionne.
+// ═══════════════════════════════════════════════════════════════════
 
 window.TVPartyApp = (function() {
 
@@ -65,7 +87,11 @@ window.TVPartyApp = (function() {
     finishStepTimeout: null,
 
     // Sous-abonnement realtime dédié party_answers (Option 1)
-    partyAnswersChannel: null
+    partyAnswersChannel: null,
+    partyAnswersSubscribed: false,   // true dès qu'on a reçu SUBSCRIBED
+    partyAnswersRetryTimer: null,    // timer de re-souscription
+    partyAnswersAttempts: 0,         // nb de tentatives d'abonnement
+    votesPollTimer: null             // filet de sécurité (polling votes)
   };
 
   var _isAdvancing = false;     // anti double-call sur tv_advance_to_next
@@ -138,7 +164,15 @@ window.TVPartyApp = (function() {
       // (le mode 'quiz' de tv-realtime.js écoute quiz_answers, PAS
       // party_answers — on ajoute donc notre propre canal sans toucher
       // tv-realtime.js).
-      startPartyAnswersSubscription();
+      //
+      // 🛠️ CORRECTIF : on n'appelle plus directement la souscription
+      // (le client realtime n'est pas encore connecté à cet instant).
+      // On passe par un lanceur qui attend que le client soit prêt.
+      ensurePartyAnswersSubscription();
+
+      // 🛠️ CORRECTIF : filet de sécurité — polling léger des votes
+      // tant que le realtime n'a pas confirmé son abonnement.
+      startVotesSafetyPolling();
 
       renderCurrentScreen();
 
@@ -150,13 +184,57 @@ window.TVPartyApp = (function() {
 
   // ─────────────────────────────────────────────────────────────────
   // Sous-abonnement realtime dédié party_answers (Option 1)
+  // 🛠️ CORRECTIF : robuste (attente client prêt + retry + resync)
   // ─────────────────────────────────────────────────────────────────
 
-  function startPartyAnswersSubscription() {
+  // Le client realtime de tv-realtime.js est-il prêt à ouvrir un canal ?
+  function realtimeClientReady() {
     try {
+      if (!window.TVRealtime || typeof window.TVRealtime.getClient !== 'function') {
+        return null;
+      }
       var sb = window.TVRealtime.getClient();
+      // sb doit exister ET exposer .channel()
+      if (sb && typeof sb.channel === 'function') return sb;
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // Lanceur tolérant : réessaie tant que le client realtime n'est pas
+  // disponible (TVRealtime.start() est asynchrone).
+  function ensurePartyAnswersSubscription() {
+    if (state.partyAnswersSubscribed) return;
+
+    var sb = realtimeClientReady();
+    if (!sb) {
+      state.partyAnswersAttempts++;
+      if (state.partyAnswersAttempts <= 40) { // ~40 * 250ms = 10s max
+        if (state.partyAnswersRetryTimer) clearTimeout(state.partyAnswersRetryTimer);
+        state.partyAnswersRetryTimer = setTimeout(
+          ensurePartyAnswersSubscription, 250);
+      } else {
+        console.warn('[TVPartyApp] Client realtime indisponible après ' +
+          state.partyAnswersAttempts + ' tentatives — le polling de ' +
+          'secours prend le relais.');
+      }
+      return;
+    }
+
+    subscribePartyAnswers(sb);
+  }
+
+  function subscribePartyAnswers(sb) {
+    // Nettoie un éventuel canal précédent (re-souscription)
+    if (state.partyAnswersChannel) {
+      try { sb.removeChannel(state.partyAnswersChannel); } catch (e) {}
+      state.partyAnswersChannel = null;
+    }
+
+    try {
       state.partyAnswersChannel = sb
-        .channel('tv-party-answers-' + state.series.id)
+        .channel('tv-party-answers-' + state.series.id + '-' + Date.now())
         .on('postgres_changes', {
           event: 'INSERT',
           schema: 'public',
@@ -180,10 +258,71 @@ window.TVPartyApp = (function() {
         })
         .subscribe(function(status) {
           console.log('[TVPartyApp] party_answers channel:', status);
+
+          if (status === 'SUBSCRIBED') {
+            state.partyAnswersSubscribed = true;
+            if (state.partyAnswersRetryTimer) {
+              clearTimeout(state.partyAnswersRetryTimer);
+              state.partyAnswersRetryTimer = null;
+            }
+            // 🛠️ Resync : on recharge les votes déjà en base au cas où
+            // des INSERT seraient passés AVANT que le canal soit prêt.
+            resyncVoterCounts();
+          } else if (status === 'CHANNEL_ERROR' ||
+                     status === 'TIMED_OUT' ||
+                     status === 'CLOSED') {
+            // Le canal est tombé → on relance une souscription propre.
+            state.partyAnswersSubscribed = false;
+            scheduleResubscribe();
+          }
         });
     } catch (err) {
-      console.warn('[TVPartyApp] startPartyAnswersSubscription error:', err);
+      console.warn('[TVPartyApp] subscribePartyAnswers error:', err);
+      state.partyAnswersSubscribed = false;
+      scheduleResubscribe();
     }
+  }
+
+  function scheduleResubscribe() {
+    if (state.partyAnswersRetryTimer) clearTimeout(state.partyAnswersRetryTimer);
+    state.partyAnswersRetryTimer = setTimeout(function() {
+      console.log('[TVPartyApp] Re-souscription party_answers…');
+      var sb = realtimeClientReady();
+      if (sb) subscribePartyAnswers(sb);
+      else ensurePartyAnswersSubscription();
+    }, 1500);
+  }
+
+  // Recharge les votes déjà présents en base puis redessine le compteur.
+  async function resyncVoterCounts() {
+    try {
+      await loadVoterCounts();
+      updateVotersCounter();
+      console.log('[TVPartyApp] Resync votes OK');
+    } catch (e) {
+      console.warn('[TVPartyApp] resyncVoterCounts error:', e);
+    }
+  }
+
+  // Filet de sécurité : si le realtime n'a jamais confirmé son
+  // abonnement, on interroge périodiquement la base pendant les
+  // questions pour que le compteur ne reste pas figé. Dès que le
+  // realtime fonctionne (partyAnswersSubscribed = true), ce polling
+  // ne fait plus rien d'utile et se contente de resynchroniser
+  // rarement (inoffensif).
+  function startVotesSafetyPolling() {
+    if (state.votesPollTimer) return;
+    state.votesPollTimer = setInterval(function() {
+      if (!state.series) return;
+      if (state.currentScreen !== 'question') return;
+      if (state.series.tv_paused) return;
+      // Si le realtime marche, on espace : resync seulement 1x/8s.
+      if (state.partyAnswersSubscribed) {
+        state._pollTick = (state._pollTick || 0) + 1;
+        if (state._pollTick % 4 !== 0) return; // 4 * 2s = 8s
+      }
+      resyncVoterCounts();
+    }, 2000);
   }
 
   // Un vote party arrive : on enregistre le voter_id pour la question.
@@ -531,6 +670,12 @@ window.TVPartyApp = (function() {
       '</div>';
 
     document.getElementById('screen-question').innerHTML = html;
+
+    // 🛠️ CORRECTIF : à l'affichage de la question, on s'assure que le
+    // canal realtime est bien actif (re-relance si besoin) ET on
+    // resynchronise immédiatement le compteur depuis la base.
+    ensurePartyAnswersSubscription();
+    resyncVoterCounts();
 
     startQuestionCountdown(question);
   }
