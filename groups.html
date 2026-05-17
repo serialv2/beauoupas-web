@@ -6,6 +6,31 @@
 <title>BeauOuPas — Groupes</title>
 <link rel="stylesheet" href="style.css">
 <style>
+/* ─── Onglets (identique à l'app MAUI) ─── */
+.tabs-row {
+  display: flex;
+  gap: 8px;
+  background: #FAF6EF;
+  padding: 5px;
+  border-radius: 14px;
+  margin-bottom: 22px;
+}
+.tab-btn {
+  flex: 1;
+  padding: 12px 14px;
+  background: #E5DCC9;
+  border: none;
+  color: #8A6F4A;
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: all 0.15s;
+  font-family: Arial, sans-serif;
+}
+.tab-btn.active { background: #C2754C; color: #FFFFFF; }
+
+/* ─── Cartes groupe ─── */
 .group-card {
   display: flex;
   align-items: center;
@@ -34,7 +59,7 @@
   justify-content: center;
   font-size: 26px;
   font-weight: 900;
-  color:#3D2817;
+  color:#FFFFFF;
   flex-shrink: 0;
 }
 .group-name {
@@ -52,6 +77,37 @@
   gap: 12px;
   flex-wrap: wrap;
 }
+
+/* ─── Lignes série (onglet Mes Séries) ─── */
+.series-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #FAF6EF;
+  border: 1px solid #E5DCC9;
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 8px;
+  text-decoration: none;
+  color: #3D2817;
+  transition: all 0.15s;
+}
+.series-row:hover { border-color: rgba(194,117,76,0.4); transform: translateY(-1px); }
+.series-icon {
+  width: 48px; height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+.series-icon.vote { background: linear-gradient(135deg,#C2754C,#A35C36); }
+.series-icon.quiz { background: linear-gradient(135deg,#6B7F5C,#566649); }
+.series-name { font-weight: 800; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.series-meta { font-size: 12px; color: #8A6F4A; display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* ─── État vide ─── */
 .empty-state {
   text-align: center;
   padding: 60px 20px;
@@ -76,15 +132,31 @@
 <main class="main-content">
   <div style="max-width:700px;margin:0 auto;">
 
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+    <!-- En-tête + bouton contextuel -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
       <div>
-        <h1 style="font-size:28px;font-weight:900;">👥 Mes groupes</h1>
-        <p style="color:#6B5234;margin-top:6px;font-size:14px;">Crée des groupes pour partager votes et quiz avec tes amis</p>
+        <h1 id="page-title" style="font-size:28px;font-weight:900;">👥 Mes groupes</h1>
+        <p id="page-sub" style="color:#6B5234;margin-top:6px;font-size:14px;">Crée des groupes pour partager votes et quiz avec tes amis</p>
       </div>
-      <a href="create-group.html" class="btn btn-primary" style="text-decoration:none;">➕ Créer</a>
+      <a id="header-action" href="create-group.html" class="btn btn-primary" style="text-decoration:none;">➕ Créer</a>
     </div>
 
-    <div id="groups-container"><div class="spinner"></div></div>
+    <!-- Onglets -->
+    <div class="tabs-row">
+      <button class="tab-btn active" id="tab-groups" onclick="showTab(0)">👥 Groupes</button>
+      <button class="tab-btn" id="tab-series" onclick="showTab(1)">📋 Mes Séries</button>
+    </div>
+
+    <!-- Onglet 0 : Groupes -->
+    <div id="content-groups">
+      <div id="groups-container"><div class="spinner"></div></div>
+    </div>
+
+    <!-- Onglet 1 : Mes Séries -->
+    <div id="content-series" style="display:none;">
+      <div id="series-container"><div class="spinner"></div></div>
+    </div>
+
   </div>
 </main>
 
@@ -93,6 +165,7 @@
 <script src="navbar.js"></script>
 <script>
 var currentUser = null;
+var seriesLoaded = false;   // chargement paresseux de l'onglet Mes Séries
 
 async function init() {
   try {
@@ -110,10 +183,44 @@ async function init() {
   }
 }
 
+// ─── Gestion des onglets (logique identique à l'app MAUI) ───
+function showTab(index) {
+  var isGroups = index === 0;
+
+  document.getElementById("content-groups").style.display = isGroups ? "block" : "none";
+  document.getElementById("content-series").style.display = isGroups ? "none" : "block";
+
+  document.getElementById("tab-groups").classList.toggle("active", isGroups);
+  document.getElementById("tab-series").classList.toggle("active", !isGroups);
+
+  // En-tête + bouton contextuels
+  var title = document.getElementById("page-title");
+  var sub = document.getElementById("page-sub");
+  var action = document.getElementById("header-action");
+
+  if (isGroups) {
+    title.textContent = "👥 Mes groupes";
+    sub.textContent = "Crée des groupes pour partager votes et quiz avec tes amis";
+    action.textContent = "➕ Créer";
+    action.setAttribute("href", "create-group.html");
+  } else {
+    title.textContent = "📋 Mes séries";
+    sub.textContent = "Tes séries sans groupe (créées ou rejointes via un code)";
+    action.textContent = "➕ Créer";
+    action.setAttribute("href", "create-series-type.html");
+
+    // Chargement paresseux : on ne charge qu'au premier affichage
+    if (!seriesLoaded) {
+      seriesLoaded = true;
+      loadStandaloneSeries();
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ONGLET 0 — GROUPES
+   ═══════════════════════════════════════════════════════════ */
 async function loadGroups() {
-  // ⚡ Utilise la RPC get_my_groups_with_stats qui retourne directement
-  // les groupes avec leurs stats (nb membres, nb séries actives) en
-  // 1 SEULE requête (sinon il faudrait N+1 requêtes par groupe)
   var container = document.getElementById("groups-container");
   container.innerHTML = '<div class="spinner"></div>';
 
@@ -124,13 +231,12 @@ async function loadGroups() {
 
     if (error) {
       console.error("get_my_groups_with_stats:", error);
-      // Fallback : si la RPC n'existe pas ou échoue, on charge "à la main"
       return await loadGroupsFallback();
     }
 
     var groups = data || [];
     if (!groups.length) {
-      renderEmpty();
+      renderGroupsEmpty();
       return;
     }
     renderGroups(groups);
@@ -141,14 +247,13 @@ async function loadGroups() {
 }
 
 async function loadGroupsFallback() {
-  // Plan B si la RPC plante : SELECT direct sur group_members puis groups
   var { data: memberships } = await db
     .from('group_members')
     .select('group_id')
     .eq('user_id', currentUser.id);
 
   if (!memberships || !memberships.length) {
-    renderEmpty();
+    renderGroupsEmpty();
     return;
   }
 
@@ -200,14 +305,97 @@ function renderGroups(groups) {
   }).join('');
 }
 
-function renderEmpty() {
-  var container = document.getElementById("groups-container");
-  container.innerHTML =
+function renderGroupsEmpty() {
+  document.getElementById("groups-container").innerHTML =
     '<div class="empty-state card">' +
       '<div class="icon">👥</div>' +
       '<div class="title">Aucun groupe pour l\'instant</div>' +
       '<div class="desc">Crée ton premier groupe pour partager des votes et quiz avec tes amis</div>' +
       '<a href="create-group.html" class="btn btn-primary" style="text-decoration:none;">➕ Créer mon premier groupe</a>' +
+    '</div>';
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ONGLET 1 — MES SÉRIES (standalone)
+   Utilise la RPC get_my_standalone_series — MÊME logique que l'app MAUI.
+   Retourne les séries standalone où je suis créateur OU participant.
+   ═══════════════════════════════════════════════════════════ */
+async function loadStandaloneSeries() {
+  var container = document.getElementById("series-container");
+  container.innerHTML = '<div class="spinner"></div>';
+
+  try {
+    var { data, error } = await db.rpc('get_my_standalone_series');
+
+    if (error) {
+      console.error("get_my_standalone_series:", error);
+      container.innerHTML =
+        '<div class="alert alert-error" style="display:block;">Erreur de chargement des séries</div>';
+      return;
+    }
+
+    var series = data || [];
+    if (!series.length) {
+      renderSeriesEmpty();
+      return;
+    }
+    renderSeries(series);
+  } catch (e) {
+    console.error("loadStandaloneSeries:", e);
+    container.innerHTML =
+      '<div class="alert alert-error" style="display:block;">Erreur de chargement des séries</div>';
+  }
+}
+
+function renderSeries(series) {
+  var container = document.getElementById("series-container");
+  container.innerHTML = series.map(function(s) {
+    var isQuiz = !!s.is_quiz;
+    var icon = isQuiz ? '🧠' : '🗳️';
+    var iconClass = isQuiz ? 'quiz' : 'vote';
+
+    var statusBadge = '';
+    if (s.status === 'preparing') {
+      statusBadge = '<span class="badge badge-orange">⏳ En préparation</span>';
+    } else if (s.status === 'active') {
+      statusBadge = '<span class="badge badge-green">🔥 EN COURS</span>';
+    } else if (s.status === 'finished') {
+      statusBadge = '<span style="color:#8A6F4A;font-size:11px;">✅ Terminée</span>';
+    }
+
+    var meta = [];
+    meta.push(isQuiz ? 'Quiz' : 'Vote');
+    if (s.access_code) {
+      meta.push('Code: <b style="color:#C2754C;">' + escapeHtml(s.access_code) + '</b>');
+    }
+
+    var amCreator = s.creator_id === currentUser.id;
+
+    return (
+      '<a href="series-detail.html?id=' + encodeURIComponent(s.id) + '" class="series-row fade-in">' +
+        '<div class="series-icon ' + iconClass + '">' + icon + '</div>' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div class="series-name">' +
+            escapeHtml(s.title || 'Sans titre') +
+            (amCreator ? ' <span style="font-size:10px;color:#C2754C;">👑</span>' : '') +
+          '</div>' +
+          '<div class="series-meta">' + meta.join(' · ') + '</div>' +
+        '</div>' +
+        '<div style="display:flex;flex-direction:column;align-items:end;gap:6px;">' +
+          statusBadge +
+        '</div>' +
+      '</a>'
+    );
+  }).join('');
+}
+
+function renderSeriesEmpty() {
+  document.getElementById("series-container").innerHTML =
+    '<div class="empty-state card">' +
+      '<div class="icon">📋</div>' +
+      '<div class="title">Aucune série sans groupe</div>' +
+      '<div class="desc">Crée une série autonome ou rejoins-en une avec un code d\'accès</div>' +
+      '<a href="create-series-type.html" class="btn btn-primary" style="text-decoration:none;">➕ Créer une série</a>' +
     '</div>';
 }
 
