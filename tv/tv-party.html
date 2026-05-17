@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeauOuPas TV — Partie Rapide</title>
+<link rel="stylesheet" href="css/tv.css?v=20260517">
+<link rel="stylesheet" href="css/tv-quiz-common.css?v=20260517">
+<link rel="stylesheet" href="css/tv-party.css?v=20260517">
+</head>
+<body class="style-party">
+<div class="tv-container">
+  <div id="screen-lobby" class="tv-screen tv-lobby"></div>
+  <div id="screen-intro" class="tv-screen quiz-intro"></div>
+  <div id="screen-question" class="tv-screen quiz-question-screen"></div>
+  <div id="screen-reveal" class="tv-screen quiz-reveal-screen"></div>
+  <div id="screen-finish" class="tv-screen quiz-finish-screen"></div>
+  <div id="screen-error" class="tv-screen tv-error"></div>
+  <div id="screen-loading" class="tv-screen tv-loading active">
+    <div class="tv-loading-spinner"></div>
+  </div>
+  <div class="tv-pause-overlay" id="pause-overlay">
+    <div class="tv-pause-icon">⏸️</div>
+    <div class="tv-pause-title">En pause</div>
+    <div class="tv-pause-subtitle">L'animateur a mis la partie en pause</div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="js/tv-config.js?v=20260517"></script>
+<script src="js/tv-realtime.js?v=20260517"></script>
+<script src="js/tv-party-app.js?v=20260517"></script>
+<script>
+  window.addEventListener('DOMContentLoaded', function() {
+    window.TVPartyApp.start();
+  });
+</script>
+</body>
+</html>
