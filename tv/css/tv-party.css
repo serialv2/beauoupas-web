@@ -1,0 +1,736 @@
+/* ═════════════════════════════════════════════════════════════════
+   BeauOuPas TV — Style PARTIE RAPIDE (show TV, charte Sézane)
+
+   Namespace : .style-party sur <body>.
+   S'appuie sur la STRUCTURE de tv-quiz-common.css (déjà chargé avant
+   ce fichier). Ici : couleurs, typo, effets visuels show TV +
+   les classes propres au party (.party-option, .party-recap-*).
+   Palette Sézane sur fond TV sombre #1A1612.
+   ═════════════════════════════════════════════════════════════════ */
+
+.style-party {
+  --party-primary:      #C2754C;  /* terracotta */
+  --party-primary-dark: #A35C36;
+  --party-primary-light:#D88A66;
+  --party-gold:         #FFB627;  /* doré chaud (accents show TV) */
+  --party-accent:       #6B7F5C;  /* sauge */
+  --party-bg:           #1A1612;  /* fond TV sombre */
+  --party-bg-soft:      #241F19;  /* panneaux */
+  --party-card:         #2E2820;  /* cartes */
+  --party-border:       #B8A589;
+  --party-text:         #F4EFE6;  /* crème (texte principal sur sombre) */
+  --party-text-soft:    #C7B8A0;
+  --party-success:      #6B7F5C;
+  --party-error:        #B5482F;
+}
+
+.style-party {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(194, 117, 76, 0.18) 0%, transparent 55%),
+    radial-gradient(ellipse at 50% 100%, rgba(107, 127, 92, 0.12) 0%, transparent 55%),
+    var(--party-bg);
+  color: var(--party-text);
+  font-family: 'Poppins', 'Segoe UI', system-ui, sans-serif;
+}
+
+/* ─── LOBBY ──────────────────────────────────────────────────────── */
+
+.style-party .tv-lobby {
+  align-items: center;
+  justify-content: center;
+  padding: 4vh 4vw;
+  gap: 3vh;
+}
+
+.style-party .tv-lobby-title {
+  font-size: 6vw;
+  font-weight: 800;
+  line-height: 1.05;
+  background: linear-gradient(90deg, var(--party-gold), var(--party-primary-light));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-align: center;
+  letter-spacing: -1px;
+}
+
+.style-party .tv-lobby-subtitle {
+  font-size: 1.8vw;
+  color: var(--party-text-soft);
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  text-align: center;
+}
+
+.style-party .tv-lobby-card {
+  display: flex;
+  align-items: center;
+  gap: 4vw;
+  padding: 4vh 5vw;
+  background: var(--party-card);
+  border: 0.25vh solid rgba(194, 117, 76, 0.4);
+  border-radius: 28px;
+  box-shadow:
+    0 1vh 5vh rgba(0, 0, 0, 0.5),
+    0 0 6vh rgba(194, 117, 76, 0.25);
+}
+
+.style-party .tv-lobby-qr {
+  width: 22vh;
+  height: 22vh;
+  background: #FFFFFF;
+  border-radius: 18px;
+  padding: 1.2vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.style-party .tv-lobby-qr img,
+.style-party .tv-lobby-qr canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+.style-party .tv-lobby-code-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.8vh;
+}
+
+.style-party .tv-lobby-code-label {
+  font-size: 1.3vw;
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  color: var(--party-text-soft);
+}
+
+.style-party .tv-lobby-code {
+  font-size: 7vw;
+  font-weight: 800;
+  letter-spacing: 0.6vw;
+  color: var(--party-gold);
+  text-shadow: 0 0 4vh rgba(255, 182, 39, 0.5);
+  font-variant-numeric: tabular-nums;
+}
+
+.style-party .tv-lobby-code-hint {
+  font-size: 1.2vw;
+  color: var(--party-text-soft);
+}
+
+.style-party .tv-lobby-participants {
+  font-size: 2.4vw;
+  font-weight: 700;
+  color: var(--party-primary-light);
+  padding: 1.2vh 3vw;
+  background: rgba(194, 117, 76, 0.15);
+  border: 0.2vh solid rgba(194, 117, 76, 0.4);
+  border-radius: 100px;
+}
+
+.style-party .tv-lobby-waiting {
+  font-size: 1.6vw;
+  color: var(--party-text-soft);
+  animation: partyBlink 2s ease-in-out infinite;
+}
+
+@keyframes partyBlink {
+  0%, 100% { opacity: 0.5; }
+  50%      { opacity: 1; }
+}
+
+/* ─── INTRO ──────────────────────────────────────────────────────── */
+
+.style-party .quiz-intro-tag {
+  background: linear-gradient(90deg, var(--party-primary), var(--party-gold));
+  color: var(--party-bg);
+  font-weight: 800;
+}
+
+.style-party .quiz-intro-title {
+  color: var(--party-text);
+  text-shadow: 0 0 5vh rgba(194, 117, 76, 0.5);
+}
+
+.style-party .quiz-intro-description {
+  color: var(--party-text-soft);
+}
+
+.style-party .quiz-intro-meta-item {
+  background: var(--party-card);
+  border: 0.2vh solid rgba(194, 117, 76, 0.35);
+}
+
+.style-party .quiz-intro-meta-value {
+  color: var(--party-gold);
+}
+
+.style-party .quiz-intro-meta-label {
+  color: var(--party-text-soft);
+}
+
+.style-party .quiz-intro-countdown-label {
+  color: var(--party-text-soft);
+}
+
+.style-party .quiz-intro-countdown-value {
+  color: var(--party-gold);
+  text-shadow: 0 0 6vh rgba(255, 182, 39, 0.6);
+}
+
+/* ─── QUESTION ───────────────────────────────────────────────────── */
+
+.style-party .quiz-question-progress {
+  color: var(--party-text-soft);
+}
+
+.style-party .quiz-question-countdown {
+  background: linear-gradient(135deg, var(--party-primary), var(--party-primary-dark));
+  color: var(--party-text);
+  box-shadow: 0 0.5vh 2vh rgba(194, 117, 76, 0.4);
+}
+
+.style-party .quiz-question-countdown.urgent {
+  background: linear-gradient(135deg, var(--party-error), #8A2F1E);
+  color: #FFFFFF;
+}
+
+.style-party .quiz-question-category {
+  background: rgba(107, 127, 92, 0.25);
+  color: var(--party-accent);
+  border: 0.15vh solid rgba(107, 127, 92, 0.5);
+}
+
+.style-party .quiz-question-text {
+  color: var(--party-text);
+  text-shadow: 0 0.3vh 1vh rgba(0, 0, 0, 0.4);
+}
+
+.style-party .quiz-question-photo img {
+  border: 0.3vh solid rgba(194, 117, 76, 0.4);
+}
+
+/* Options = joueurs (avatar + pseudo), grille auto-fit */
+.style-party .party-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16vw, 1fr));
+  gap: 2vh 2vw;
+  width: 92%;
+  max-width: 1600px;
+  justify-items: stretch;
+}
+
+.style-party .party-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1vh;
+  padding: 2vh 1.5vw;
+  background: var(--party-card);
+  border: 0.25vh solid rgba(194, 117, 76, 0.35);
+  border-radius: 18px;
+  box-shadow: 0 0.5vh 2vh rgba(0, 0, 0, 0.35);
+  transition: transform 0.2s ease;
+}
+
+.style-party .party-option-avatar {
+  width: 9vh;
+  height: 9vh;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0.3vh solid var(--party-primary-light);
+  flex-shrink: 0;
+}
+
+.style-party .party-option-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.style-party .party-option-avatar-ph {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 4vh;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--party-primary), var(--party-gold));
+  color: var(--party-bg);
+}
+
+.style-party .party-option-name {
+  font-size: 1.7vw;
+  font-weight: 700;
+  color: var(--party-text);
+  text-align: center;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+/* Compteur "X / Y ont voté" */
+.style-party .quiz-answers-counter {
+  background: var(--party-card);
+  border: 0.15vh solid rgba(194, 117, 76, 0.3);
+}
+
+.style-party .quiz-answers-counter-text {
+  color: var(--party-text-soft);
+}
+
+.style-party .quiz-answers-counter-bar {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.style-party .quiz-answers-counter-fill {
+  background: linear-gradient(90deg, var(--party-primary), var(--party-gold));
+  box-shadow: 0 0 1.5vh rgba(255, 182, 39, 0.5);
+}
+
+/* ═════════════════════════════════════════════════════════════════
+   RÉCAP FINAL — question par question, mise en scène du gagnant
+   ═════════════════════════════════════════════════════════════════ */
+
+.style-party .party-recap-screen {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  padding: 2vh 3vw;
+  gap: 1.5vh;
+}
+
+.style-party .party-recap-tag {
+  font-size: 1.8vw;
+  font-weight: 800;
+  padding: 1vh 2.5vw;
+  border-radius: 100px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  background: linear-gradient(135deg, var(--party-gold), var(--party-primary));
+  color: var(--party-bg);
+}
+
+.style-party .party-recap-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2.5vh;
+  min-height: 0;
+  animation: partyRecapIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes partyRecapIn {
+  from { transform: translateY(30px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+/* Mise en scène du / des gagnant(s) de la question */
+.style-party .party-recap-winners {
+  display: flex;
+  gap: 3vw;
+  align-items: flex-end;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.style-party .party-recap-winner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1vh;
+  position: relative;
+  animation: partyWinnerPop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes partyWinnerPop {
+  0%   { transform: scale(0) rotate(-8deg); opacity: 0; }
+  60%  { transform: scale(1.12) rotate(2deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+.style-party .party-recap-winner-crown {
+  font-size: 5vh;
+  line-height: 1;
+  filter: drop-shadow(0 0.4vh 0.8vh rgba(0, 0, 0, 0.5));
+  animation: partyCrownBob 2s ease-in-out infinite;
+}
+
+@keyframes partyCrownBob {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-0.8vh) rotate(4deg); }
+}
+
+.style-party .party-recap-winner-avatar {
+  width: 22vh;
+  height: 22vh;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0.6vh solid var(--party-gold);
+  box-shadow:
+    0 0 5vh rgba(255, 182, 39, 0.55),
+    0 0 10vh rgba(194, 117, 76, 0.35);
+}
+
+.style-party .party-recap-winner-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.style-party .party-recap-winner-ph {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9vh;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--party-primary), var(--party-gold));
+  color: var(--party-bg);
+}
+
+.style-party .party-recap-winner-name {
+  font-size: 3.4vw;
+  font-weight: 800;
+  color: var(--party-text);
+  text-shadow: 0 0 3vh rgba(255, 182, 39, 0.5);
+  text-align: center;
+}
+
+.style-party .party-recap-winner-votes {
+  font-size: 1.8vw;
+  font-weight: 700;
+  color: var(--party-gold);
+  padding: 0.6vh 2vw;
+  background: rgba(255, 182, 39, 0.15);
+  border: 0.15vh solid rgba(255, 182, 39, 0.4);
+  border-radius: 100px;
+}
+
+/* Les autres joueurs désignés (petit, avec barre) */
+.style-party .party-recap-others {
+  display: flex;
+  flex-direction: column;
+  gap: 1vh;
+  width: 60vw;
+  max-width: 1100px;
+}
+
+.style-party .party-recap-other {
+  display: flex;
+  align-items: center;
+  gap: 1.5vw;
+  padding: 1vh 1.5vw;
+  background: var(--party-bg-soft);
+  border-radius: 12px;
+}
+
+.style-party .party-recap-other-avatar {
+  width: 5vh;
+  height: 5vh;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 0.2vh solid rgba(194, 117, 76, 0.4);
+}
+
+.style-party .party-recap-other-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.style-party .party-recap-other-ph {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.4vh;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--party-primary-dark), var(--party-primary));
+  color: var(--party-text);
+}
+
+.style-party .party-recap-other-name {
+  font-size: 1.5vw;
+  font-weight: 600;
+  color: var(--party-text);
+  width: 14vw;
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.style-party .party-recap-other-bar {
+  flex: 1;
+  height: 1.4vh;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.style-party .party-recap-other-fill {
+  height: 100%;
+  border-radius: 100px;
+  background: linear-gradient(90deg, var(--party-primary), var(--party-primary-light));
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.style-party .party-recap-other-count {
+  font-size: 1.4vw;
+  font-weight: 700;
+  color: var(--party-text);
+  min-width: 3vw;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Cas "personne n'a voté" sur une question */
+.style-party .party-recap-novote {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5vh;
+  padding: 4vh 0;
+}
+
+.style-party .party-recap-novote-icon {
+  font-size: 8vh;
+  line-height: 1;
+}
+
+.style-party .party-recap-novote-text {
+  font-size: 2vw;
+  font-weight: 600;
+  color: var(--party-text-soft);
+}
+
+/* Barre de progression de la durée d'affichage du récap */
+.style-party .party-recap-progressbar {
+  flex-shrink: 0;
+  height: 0.8vh;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.style-party .party-recap-progressbar-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 100px;
+  background: linear-gradient(90deg, var(--party-primary), var(--party-gold));
+  box-shadow: 0 0 1.5vh rgba(255, 182, 39, 0.5);
+}
+
+/* ═════════════════════════════════════════════════════════════════
+   ÉCRAN FIN — vainqueur (wow effect re-colorié Sézane)
+   On surcharge uniquement les couleurs : la structure/les keyframes
+   viennent de tv-quiz-common.css.
+   ═════════════════════════════════════════════════════════════════ */
+
+.style-party .quiz-finish-winner-tag {
+  background: linear-gradient(135deg, var(--party-gold), var(--party-primary));
+  color: var(--party-bg);
+}
+
+.style-party .quiz-finish-winner-avatar {
+  border-color: var(--party-gold);
+  box-shadow:
+    0 0 6vh rgba(255, 182, 39, 0.6),
+    0 0 12vh rgba(194, 117, 76, 0.3),
+    inset 0 0 4vh rgba(0, 0, 0, 0.25);
+}
+
+.style-party .quiz-finish-avatar-placeholder {
+  background: linear-gradient(135deg, var(--party-gold), var(--party-primary));
+  color: var(--party-bg);
+}
+
+.style-party .quiz-finish-winner-name {
+  color: var(--party-text);
+  text-shadow: 0 0 4vh rgba(255, 182, 39, 0.5);
+}
+
+.style-party .quiz-finish-winner-score {
+  color: var(--party-text-soft);
+}
+
+.style-party .party-winner-tie {
+  font-size: 1.6vw;
+  font-weight: 700;
+  color: var(--party-bg);
+  background: linear-gradient(135deg, var(--party-accent), #566649);
+  padding: 0.6vh 2.5vw;
+  border-radius: 100px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+/* Halo doré → terracotta/doré Sézane */
+.style-party .winner-halo {
+  background: radial-gradient(circle,
+    rgba(255, 182, 39, 0.55) 0%,
+    rgba(194, 117, 76, 0.35) 35%,
+    transparent 70%);
+}
+
+/* Rayons → terracotta translucide */
+.style-party .winner-ray {
+  border-top-color: rgba(255, 182, 39, 0.18);
+}
+
+/* Spotlight → teinte chaude */
+.style-party .winner-spotlight {
+  background: linear-gradient(180deg,
+    rgba(255, 182, 39, 0.18) 0%,
+    rgba(194, 117, 76, 0.05) 60%,
+    transparent 100%);
+}
+
+/* ─── PODIUM ─────────────────────────────────────────────────────── */
+
+.style-party .quiz-finish-podium-title {
+  color: var(--party-text);
+  text-shadow: 0 0 4vh rgba(255, 182, 39, 0.4);
+}
+
+.style-party .quiz-podium-spot {
+  background: var(--party-card);
+  border: 0.2vh solid rgba(194, 117, 76, 0.35);
+  border-bottom: none;
+}
+
+.style-party .quiz-podium-first {
+  background: linear-gradient(180deg, rgba(255, 182, 39, 0.25), var(--party-card));
+  border-color: rgba(255, 182, 39, 0.5);
+}
+
+.style-party .quiz-podium-rank {
+  color: var(--party-gold);
+}
+
+.style-party .quiz-podium-avatar {
+  border: 0.3vh solid var(--party-primary-light);
+}
+
+.style-party .quiz-podium-name {
+  color: var(--party-text);
+}
+
+.style-party .quiz-podium-score {
+  color: var(--party-text-soft);
+}
+
+/* ─── LEADERBOARD ────────────────────────────────────────────────── */
+
+.style-party .quiz-finish-leaderboard-title {
+  color: var(--party-text);
+  text-shadow: 0 0 4vh rgba(255, 182, 39, 0.4);
+}
+
+.style-party .quiz-leaderboard-row {
+  background: var(--party-bg-soft);
+  color: var(--party-text);
+}
+
+.style-party .quiz-leaderboard-row.top3 {
+  background: linear-gradient(90deg, rgba(194, 117, 76, 0.22), var(--party-bg-soft));
+  border: 0.15vh solid rgba(194, 117, 76, 0.4);
+}
+
+.style-party .quiz-leaderboard-rank {
+  color: var(--party-gold);
+}
+
+.style-party .quiz-leaderboard-avatar {
+  border: 0.2vh solid rgba(194, 117, 76, 0.4);
+}
+
+.style-party .quiz-leaderboard-name {
+  color: var(--party-text);
+}
+
+.style-party .quiz-leaderboard-score {
+  color: var(--party-gold);
+}
+
+/* ─── BOUTON ARRÊTER ─────────────────────────────────────────────── */
+
+.style-party .tv-reveal-stop-btn {
+  position: absolute;
+  top: 3vh;
+  right: 3vw;
+  z-index: 20;
+  font-size: 1.3vw;
+  font-weight: 700;
+  color: var(--party-text);
+  background: rgba(181, 72, 47, 0.85);
+  border: 0.15vh solid rgba(244, 239, 230, 0.3);
+  border-radius: 100px;
+  padding: 1vh 2vw;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.style-party .tv-reveal-stop-btn:hover {
+  background: var(--party-error);
+  transform: scale(1.05);
+}
+
+/* ─── ERREUR ─────────────────────────────────────────────────────── */
+
+.style-party .tv-error {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 2vh;
+}
+
+.style-party .tv-error-icon {
+  font-size: 8vh;
+}
+
+.style-party .tv-error-title {
+  font-size: 3vw;
+  font-weight: 800;
+  color: var(--party-error);
+}
+
+.style-party .tv-error-message {
+  font-size: 1.6vw;
+  color: var(--party-text-soft);
+  max-width: 60vw;
+}
+
+/* ─── PAUSE OVERLAY ──────────────────────────────────────────────── */
+
+.style-party .tv-pause-overlay {
+  background: rgba(26, 22, 18, 0.92);
+  color: var(--party-text);
+}
+
+.style-party .tv-pause-title {
+  color: var(--party-gold);
+}
+
+.style-party .tv-pause-subtitle {
+  color: var(--party-text-soft);
+}
