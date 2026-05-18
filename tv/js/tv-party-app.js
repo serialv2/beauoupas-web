@@ -1339,11 +1339,20 @@ window.TVPartyApp = (function() {
         found.started_at = payload.started_at;
       }
 
-      var idx = state.series.current_project_index || 0;
-      var currentQ = state.questions[idx];
+      // 🛠️ CORRECTIF (TV figée sur l'intro après tv_start_first_element) :
+      // on ne conditionne PLUS le re-render sur l'identité exacte de la
+      // question courante (current_project_index n'est pas forcément
+      // synchrone avec la pose du started_at). Dès qu'UNE question
+      // passe de "pas démarrée" à "démarrée", on relit l'écran. La RPC
+      // get_party_question_for_tv (appelée par renderQuestion) lit la
+      // base et renvoie la bonne question fraîche — comme le quiz.
       var newlyStarted = (!prevStartedAt && payload.started_at);
-      if (currentQ && currentQ.id === payload.id && newlyStarted) {
-        console.log('[TVPartyApp] Question courante a un nouveau started_at, on render');
+      if (newlyStarted &&
+          state.series &&
+          state.series.status === 'active' &&
+          !state.series.tv_paused) {
+        console.log('[TVPartyApp] quiz_question started_at posé → re-render écran');
+        _isStartingFirst = false;
         renderCurrentScreen();
       }
     }
