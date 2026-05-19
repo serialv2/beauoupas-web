@@ -74,7 +74,7 @@ window.TVQuizApp = (function() {
     var code = params.get('code');
 
     if (!code) {
-      showError('Code manquant', 'L\'URL doit contenir ?code=XXXXXX');
+      showError(window.TVI18n.t('TvDisp_Err_CodeMissing_Title'), window.TVI18n.t('TvDisp_Err_CodeMissing_Msg'));
       return;
     }
 
@@ -107,7 +107,7 @@ window.TVQuizApp = (function() {
       }
 
       if (!state.series.is_quiz) {
-        showError('Mauvaise page', 'Cette série n\'est pas un quizz. Retournez à la page d\'accueil.');
+        showError(window.TVI18n.t('TvQuiz_Err_WrongPage_Title'), window.TVI18n.t('TvQuiz_Err_WrongPage_Msg'));
         return;
       }
 
@@ -126,7 +126,7 @@ window.TVQuizApp = (function() {
 
     } catch (err) {
       console.error('[TVQuizApp] start error:', err);
-      showError('Erreur de chargement', err.message || String(err));
+      showError(window.TVI18n.t('TvDisp_Err_Load_Title'), err.message || String(err));
     }
   }
 
@@ -415,7 +415,7 @@ window.TVQuizApp = (function() {
         '<div class="quiz-intro-meta">' +
           '<div class="quiz-intro-meta-item">' +
             '<span class="quiz-intro-meta-value">' + nbQuestions + '</span>' +
-            '<span class="quiz-intro-meta-label">question' + (nbQuestions > 1 ? 's' : '') + '</span>' +
+            '<span class="quiz-intro-meta-label">' + window.TVI18n.t(nbQuestions > 1 ? 'TvQuiz_Intro_Question_Many' : 'TvQuiz_Intro_Question_One') + '</span>' +
           '</div>' +
           '<div class="quiz-intro-meta-item">' +
             '<span class="quiz-intro-meta-value" id="intro-participants-count">' + state.participantsCount + '</span>' +
@@ -479,7 +479,7 @@ window.TVQuizApp = (function() {
 
     if (optsRes.error) {
       console.error('[TVQuizApp] get_quiz_question_for_tv error:', optsRes.error);
-      showError('Erreur', optsRes.error.message || 'Impossible de charger la question');
+      showError(window.TVI18n.t('TvCommon_Err_Generic'), optsRes.error.message || window.TVI18n.t('TvCommon_Err_LoadQuestion'));
       return;
     }
 
@@ -873,7 +873,7 @@ window.TVQuizApp = (function() {
         // Couronne au-dessus de l'avatar (animation chute + rebond)
         '<div class="winner-crown">' + crownSvg + '</div>' +
         // Tag "Vainqueur"
-        '<div class="quiz-finish-winner-tag">🏆 Vainqueur</div>' +
+        '<div class="quiz-finish-winner-tag">🏆 ' + window.TVI18n.t('TvQuiz_Winner_Single') + '</div>' +
         // Avatar avec halo + rayons rotatifs derrière
         '<div class="winner-avatar-wrap">' +
           '<div class="winner-rays">' + rays + '</div>' +
@@ -908,7 +908,7 @@ window.TVQuizApp = (function() {
       return '<div class="quiz-podium-spot quiz-podium-' + p.cls + '">' +
         '<div class="quiz-podium-rank">' + p.rank + '</div>' +
         '<div class="quiz-podium-avatar">' + avatar + '</div>' +
-        '<div class="quiz-podium-name">' + escapeHtml(player.username || 'Joueur') + '</div>' +
+        '<div class="quiz-podium-name">' + escapeHtml(player.username || window.TVI18n.t('TvCommon_DefaultPlayer')) + '</div>' +
         '<div class="quiz-podium-score">' + player.score + ' pt' + (player.score > 1 ? 's' : '') + '</div>' +
       '</div>';
     }).join('');
@@ -935,7 +935,7 @@ window.TVQuizApp = (function() {
       return '<div class="quiz-leaderboard-row' + (rank <= 3 ? ' top3' : '') + '">' +
         '<div class="quiz-leaderboard-rank">' + medal + '</div>' +
         '<div class="quiz-leaderboard-avatar">' + avatar + '</div>' +
-        '<div class="quiz-leaderboard-name">' + escapeHtml(player.username || 'Joueur') + '</div>' +
+        '<div class="quiz-leaderboard-name">' + escapeHtml(player.username || window.TVI18n.t('TvCommon_DefaultPlayer')) + '</div>' +
         '<div class="quiz-leaderboard-score">' + player.score + ' pt' + (player.score > 1 ? 's' : '') + '</div>' +
       '</div>';
     }).join('');
@@ -976,11 +976,11 @@ window.TVQuizApp = (function() {
       '<div class="quiz-stats-totals">' +
         '<div class="quiz-stats-card">' +
           '<div class="quiz-stats-card-value">' + (totals.players || 0) + '</div>' +
-          '<div class="quiz-stats-card-label">Joueurs</div>' +
+          '<div class="quiz-stats-card-label">' + window.TVI18n.t('TvQuiz_Stats_Players') + '</div>' +
         '</div>' +
         '<div class="quiz-stats-card">' +
           '<div class="quiz-stats-card-value">' + (totals.questions || 0) + '</div>' +
-          '<div class="quiz-stats-card-label">Questions</div>' +
+          '<div class="quiz-stats-card-label">' + window.TVI18n.t('TvQuiz_Stats_Questions') + '</div>' +
         '</div>' +
         '<div class="quiz-stats-card">' +
           '<div class="quiz-stats-card-value">' + (totals.answers || 0) + '</div>' +
@@ -1103,7 +1103,7 @@ window.TVQuizApp = (function() {
       console.log('[TVQuizApp] Mode TV désactivé');
     } catch (err) {
       console.error('[TVQuizApp] onStopClicked error:', err);
-      alert('Erreur : ' + (err.message || err));
+      alert(window.TVI18n.t('TvCommon_Err_AlertPrefix') + (err.message || err));
     }
   }
 

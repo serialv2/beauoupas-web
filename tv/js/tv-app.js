@@ -788,7 +788,7 @@ window.TVApp = (function() {
     var total = project.total_votes || 0;
 
     if (options.length === 0) {
-      return '<div class="tv-reveal-empty">Aucune option pour ce sondage</div>';
+      return '<div class="tv-reveal-empty">' + window.TVI18n.t('TvDisp_PollNoOption') + '</div>';
     }
 
     // Trouve l'option gagnante (UUID avec le plus de votes)
@@ -1028,7 +1028,7 @@ window.TVApp = (function() {
       // Le realtime va recevoir l'UPDATE et basculer sur l'écran d'erreur
     } catch (err) {
       console.error('[TVApp] onStopRevealClicked error:', err);
-      alert('Erreur : ' + (err.message || err));
+      alert(window.TVI18n.t('TvCommon_Err_AlertPrefix') + (err.message || err));
     }
   }
 

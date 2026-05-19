@@ -125,7 +125,7 @@ window.TVPartyApp = (function() {
     var code = params.get('code');
 
     if (!code) {
-      showError('Code manquant', 'L\'URL doit contenir ?code=XXXXXX');
+      showError(window.TVI18n.t('TvDisp_Err_CodeMissing_Title'), window.TVI18n.t('TvDisp_Err_CodeMissing_Msg'));
       return;
     }
 
@@ -196,7 +196,7 @@ window.TVPartyApp = (function() {
 
     } catch (err) {
       console.error('[TVPartyApp] start error:', err);
-      showError('Erreur de chargement', err.message || String(err));
+      showError(window.TVI18n.t('TvDisp_Err_Load_Title'), err.message || String(err));
     }
   }
 
@@ -734,7 +734,7 @@ window.TVPartyApp = (function() {
 
     if (optsRes.error) {
       console.error('[TVPartyApp] get_party_question_for_tv error:', optsRes.error);
-      showError('Erreur', optsRes.error.message || 'Impossible de charger la question');
+      showError(window.TVI18n.t('TvCommon_Err_Generic'), optsRes.error.message || window.TVI18n.t('TvCommon_Err_LoadQuestion'));
       return;
     }
 
@@ -755,7 +755,7 @@ window.TVPartyApp = (function() {
 
     // Options = joueurs connectés (avatar + pseudo), pas A/B/C/D
     var optionsHtml = (qData.options || []).map(function(opt) {
-      var uname = opt.username || 'Joueur';
+      var uname = opt.username || window.TVI18n.t('TvCommon_DefaultPlayer');
       var avatarHtml = opt.avatar_url
         ? '<img src="' + escapeHtml(opt.avatar_url) + '" alt="">'
         : '<div class="party-option-avatar-ph">' + escapeHtml(uname.charAt(0).toUpperCase()) + '</div>';
@@ -775,7 +775,7 @@ window.TVPartyApp = (function() {
 
     var html =
       '<div class="quiz-question-header">' +
-        '<div class="quiz-question-progress">Question ' + pos + ' / ' + totalQuestions + '</div>' +
+        '<div class="quiz-question-progress">' + window.TVI18n.tf('TvQuiz_Question_Progress', pos, totalQuestions) + '</div>' +
         '<div class="quiz-question-countdown" id="question-countdown">--s</div>' +
       '</div>' +
       '<div class="quiz-question-body">' +
@@ -964,7 +964,7 @@ window.TVPartyApp = (function() {
           '<div class="party-recap-winner">' +
             '<div class="party-recap-winner-crown">👑</div>' +
             '<div class="party-recap-winner-avatar">' + avatarHtml + '</div>' +
-            '<div class="party-recap-winner-name">' + escapeHtml(w.username || 'Joueur') + '</div>' +
+            '<div class="party-recap-winner-name">' + escapeHtml(w.username || window.TVI18n.t('TvCommon_DefaultPlayer')) + '</div>' +
             '<div class="party-recap-winner-votes">' +
               (w.vote_count || 0) + ' vote' + ((w.vote_count || 0) > 1 ? 's' : '') +
             '</div>' +
@@ -985,7 +985,7 @@ window.TVPartyApp = (function() {
           othersHtml +=
             '<div class="party-recap-other">' +
               '<div class="party-recap-other-avatar">' + oAvatar + '</div>' +
-              '<div class="party-recap-other-name">' + escapeHtml(o.username || 'Joueur') + '</div>' +
+              '<div class="party-recap-other-name">' + escapeHtml(o.username || window.TVI18n.t('TvCommon_DefaultPlayer')) + '</div>' +
               '<div class="party-recap-other-bar">' +
                 '<div class="party-recap-other-fill" style="width:' + pct + '%;"></div>' +
               '</div>' +
@@ -1151,7 +1151,7 @@ window.TVPartyApp = (function() {
       '<div class="winner-sparkles-layer">' + sparkles + '</div>' +
       '<div class="quiz-finish-winner winner-with-wow">' +
         '<div class="winner-crown">' + crownSvg + '</div>' +
-        '<div class="quiz-finish-winner-tag">🏆 ' + (isTie ? 'Vainqueurs' : 'Vainqueur') + '</div>' +
+        '<div class="quiz-finish-winner-tag">🏆 ' + (isTie ? window.TVI18n.t('TvParty_Winner_Many') : window.TVI18n.t('TvParty_Winner_One')) + '</div>' +
         '<div class="winner-avatar-wrap">' +
           '<div class="winner-rays">' + rays + '</div>' +
           '<div class="winner-halo"></div>' +
@@ -1185,7 +1185,7 @@ window.TVPartyApp = (function() {
       return '<div class="quiz-podium-spot quiz-podium-' + p.cls + '">' +
         '<div class="quiz-podium-rank">' + p.rank + '</div>' +
         '<div class="quiz-podium-avatar">' + avatar + '</div>' +
-        '<div class="quiz-podium-name">' + escapeHtml(player.username || 'Joueur') + '</div>' +
+        '<div class="quiz-podium-name">' + escapeHtml(player.username || window.TVI18n.t('TvCommon_DefaultPlayer')) + '</div>' +
         '<div class="quiz-podium-score">' + player.score + ' question' + (player.score > 1 ? 's' : '') + '</div>' +
       '</div>';
     }).join('');
@@ -1212,7 +1212,7 @@ window.TVPartyApp = (function() {
       return '<div class="quiz-leaderboard-row' + (rank <= 3 ? ' top3' : '') + '">' +
         '<div class="quiz-leaderboard-rank">' + medal + '</div>' +
         '<div class="quiz-leaderboard-avatar">' + avatar + '</div>' +
-        '<div class="quiz-leaderboard-name">' + escapeHtml(player.username || 'Joueur') + '</div>' +
+        '<div class="quiz-leaderboard-name">' + escapeHtml(player.username || window.TVI18n.t('TvCommon_DefaultPlayer')) + '</div>' +
         '<div class="quiz-leaderboard-score">' + player.score + ' question' + (player.score > 1 ? 's' : '') + '</div>' +
       '</div>';
     }).join('');
@@ -1242,7 +1242,7 @@ window.TVPartyApp = (function() {
       console.log('[TVPartyApp] Mode TV désactivé');
     } catch (err) {
       console.error('[TVPartyApp] onStopClicked error:', err);
-      alert('Erreur : ' + (err.message || err));
+      alert(window.TVI18n.t('TvCommon_Err_AlertPrefix') + (err.message || err));
     }
   }
 

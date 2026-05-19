@@ -607,6 +607,164 @@
     'TvQuiz_DefaultPlayer': {
       fr: 'Joueur', en: 'Player', de: 'Spieler',
       es: 'Jugador', it: 'Giocatore', nl: 'Speler', pt: 'Jogador'
+    },
+
+    // ─── Écran "En pause" (HTML statique) — Lot W5 ────────────────
+    'TvPause_Title': {
+      fr: 'En pause', en: 'Paused', de: 'Pausiert',
+      es: 'En pausa', it: 'In pausa', nl: 'Gepauzeerd', pt: 'Em pausa'
+    },
+    'TvPause_Subtitle_Party': {
+      fr: 'L\'animateur a mis la partie en pause',
+      en: 'The host paused the party',
+      de: 'Der Moderator hat die Partie pausiert',
+      es: 'El anfitrión ha pausado la partida',
+      it: 'L\'animatore ha messo in pausa la partita',
+      nl: 'De gastheer heeft de partij gepauzeerd',
+      pt: 'O anfitrião colocou a partida em pausa'
+    },
+    'TvPause_Subtitle_Session': {
+      fr: 'L\'animateur a mis la session en pause',
+      en: 'The host paused the session',
+      de: 'Der Moderator hat die Sitzung pausiert',
+      es: 'El anfitrión ha pausado la sesión',
+      it: 'L\'animatore ha messo in pausa la sessione',
+      nl: 'De gastheer heeft de sessie gepauzeerd',
+      pt: 'O anfitrião colocou a sessão em pausa'
+    },
+
+    // ─── join.html — page de scan QR (Lot W5) ─────────────────────
+    'Join_PageTitle': {
+      fr: 'BeauOuPas — Rejoindre la session', en: 'BeauOuPas — Join the session',
+      de: 'BeauOuPas — Der Sitzung beitreten', es: 'BeauOuPas — Unirse a la sesión',
+      it: 'BeauOuPas — Partecipa alla sessione', nl: 'BeauOuPas — Deelnemen aan de sessie',
+      pt: 'BeauOuPas — Entrar na sessão'
+    },
+    'Join_Sub': {
+      fr: 'Rejoins la session 🎮', en: 'Join the session 🎮', de: 'Tritt der Sitzung bei 🎮',
+      es: 'Únete a la sesión 🎮', it: 'Partecipa alla sessione 🎮', nl: 'Doe mee aan de sessie 🎮',
+      pt: 'Entra na sessão 🎮'
+    },
+    'Join_NoCode_Title': {
+      fr: 'Code manquant', en: 'Missing code', de: 'Code fehlt',
+      es: 'Falta el código', it: 'Codice mancante', nl: 'Code ontbreekt', pt: 'Código em falta'
+    },
+    'Join_NoCode_Msg': {
+      fr: 'Ce lien n\'a pas de code valide.<br>Scanne à nouveau le QR code affiché sur la TV.',
+      en: 'This link has no valid code.<br>Scan the QR code on the TV again.',
+      de: 'Dieser Link hat keinen gültigen Code.<br>Scanne den QR-Code auf dem TV erneut.',
+      es: 'Este enlace no tiene un código válido.<br>Vuelve a escanear el código QR de la TV.',
+      it: 'Questo link non ha un codice valido.<br>Scansiona di nuovo il QR code sulla TV.',
+      nl: 'Deze link heeft geen geldige code.<br>Scan de QR-code op de tv opnieuw.',
+      pt: 'Este link não tem um código válido.<br>Digitaliza novamente o código QR na TV.'
+    },
+    'Join_Opening_Title': {
+      fr: 'Ouverture de l\'application...', en: 'Opening the app...',
+      de: 'App wird geöffnet...', es: 'Abriendo la aplicación...',
+      it: 'Apertura dell\'app...', nl: 'App wordt geopend...', pt: 'A abrir a aplicação...'
+    },
+    'Join_Opening_Msg': {
+      fr: 'On t\'amène à la session', en: 'Taking you to the session',
+      de: 'Wir bringen dich zur Sitzung', es: 'Te llevamos a la sesión',
+      it: 'Ti portiamo alla sessione', nl: 'We brengen je naar de sessie',
+      pt: 'A levar-te para a sessão'
+    },
+    'Join_Success_Title': {
+      fr: 'Session', en: 'Session', de: 'Sitzung',
+      es: 'Sesión', it: 'Sessione', nl: 'Sessie', pt: 'Sessão'
+    },
+    'Join_Success_Msg': {
+      fr: 'Pour rejoindre, il te faut l\'application<br><strong>BeauOuPas</strong> sur ton téléphone.',
+      en: 'To join, you need the<br><strong>BeauOuPas</strong> app on your phone.',
+      de: 'Zum Beitreten brauchst du die<br><strong>BeauOuPas</strong>-App auf deinem Telefon.',
+      es: 'Para unirte necesitas la app<br><strong>BeauOuPas</strong> en tu teléfono.',
+      it: 'Per partecipare ti serve l\'app<br><strong>BeauOuPas</strong> sul telefono.',
+      nl: 'Om mee te doen heb je de<br><strong>BeauOuPas</strong>-app op je telefoon nodig.',
+      pt: 'Para entrar precisas da app<br><strong>BeauOuPas</strong> no teu telemóvel.'
+    },
+    'Join_Btn_HaveApp': {
+      fr: '🚀 J\'ai l\'application', en: '🚀 I have the app', de: '🚀 Ich habe die App',
+      es: '🚀 Tengo la aplicación', it: '🚀 Ho l\'app', nl: '🚀 Ik heb de app', pt: '🚀 Tenho a aplicação'
+    },
+    'Join_Btn_PlayStore': {
+      fr: '📱 Télécharger sur Google Play', en: '📲 Download on Google Play',
+      de: '📲 Bei Google Play herunterladen', es: '📲 Descargar en Google Play',
+      it: '📲 Scarica su Google Play', nl: '📲 Downloaden in Google Play',
+      pt: '📲 Transferir no Google Play'
+    },
+    'Join_Btn_Web': {
+      fr: '🌐 Continuer sur le site', en: '🌐 Continue on the website',
+      de: '🌐 Auf der Website fortfahren', es: '🌐 Continuar en el sitio',
+      it: '🌐 Continua sul sito', nl: '🌐 Doorgaan op de site', pt: '🌐 Continuar no site'
+    },
+    'Join_Footer': {
+      fr: 'Une fois l\'app installée, scanne à nouveau le QR code',
+      en: 'Once the app is installed, scan the QR code again',
+      de: 'Sobald die App installiert ist, scanne den QR-Code erneut',
+      es: 'Una vez instalada la app, vuelve a escanear el código QR',
+      it: 'Una volta installata l\'app, scansiona di nuovo il QR code',
+      nl: 'Zodra de app is geïnstalleerd, scan de QR-code opnieuw',
+      pt: 'Depois de instalar a app, digitaliza novamente o código QR'
+    },
+
+    // ─── Erreurs communes oubliées (rattrapage Lot W5) ────────────
+    'TvCommon_Err_Generic': {
+      fr: 'Erreur', en: 'Error', de: 'Fehler',
+      es: 'Error', it: 'Errore', nl: 'Fout', pt: 'Erro'
+    },
+    'TvCommon_Err_LoadQuestion': {
+      fr: 'Impossible de charger la question', en: 'Unable to load the question',
+      de: 'Frage kann nicht geladen werden', es: 'No se puede cargar la pregunta',
+      it: 'Impossibile caricare la domanda', nl: 'Kan de vraag niet laden', pt: 'Não foi possível carregar a pergunta'
+    },
+    'TvQuiz_Err_WrongPage_Title': {
+      fr: 'Mauvaise page', en: 'Wrong page', de: 'Falsche Seite',
+      es: 'Página incorrecta', it: 'Pagina sbagliata', nl: 'Verkeerde pagina', pt: 'Página errada'
+    },
+    'TvQuiz_Err_WrongPage_Msg': {
+      fr: 'Cette série n\'est pas un quiz. Retournez à la page d\'accueil.',
+      en: 'This series is not a quiz. Go back to the home page.',
+      de: 'Diese Serie ist kein Quiz. Kehre zur Startseite zurück.',
+      es: 'Esta serie no es un cuestionario. Vuelve a la página de inicio.',
+      it: 'Questa serie non è un quiz. Torna alla pagina iniziale.',
+      nl: 'Deze serie is geen quiz. Ga terug naar de startpagina.',
+      pt: 'Esta série não é um quiz. Volta à página inicial.'
+    },
+    'TvParty_Winner_One': {
+      fr: 'Vainqueur', en: 'Winner', de: 'Sieger',
+      es: 'Ganador', it: 'Vincitore', nl: 'Winnaar', pt: 'Vencedor'
+    },
+    'TvParty_Winner_Many': {
+      fr: 'Vainqueurs', en: 'Winners', de: 'Sieger',
+      es: 'Ganadores', it: 'Vincitori', nl: 'Winnaars', pt: 'Vencedores'
+    },
+    'TvCommon_DefaultPlayer': {
+      fr: 'Joueur', en: 'Player', de: 'Spieler',
+      es: 'Jugador', it: 'Giocatore', nl: 'Speler', pt: 'Jogador'
+    },
+    'TvCommon_Err_AlertPrefix': {
+      fr: 'Erreur : ', en: 'Error: ', de: 'Fehler: ',
+      es: 'Error: ', it: 'Errore: ', nl: 'Fout: ', pt: 'Erro: '
+    },
+    'TvQuiz_Winner_Single': {
+      fr: 'Vainqueur', en: 'Winner', de: 'Sieger',
+      es: 'Ganador', it: 'Vincitore', nl: 'Winnaar', pt: 'Vencedor'
+    },
+    'TvQuiz_Stats_Players': {
+      fr: 'Joueurs', en: 'Players', de: 'Spieler',
+      es: 'Jugadores', it: 'Giocatori', nl: 'Spelers', pt: 'Jogadores'
+    },
+    'TvQuiz_Stats_Questions': {
+      fr: 'Questions', en: 'Questions', de: 'Fragen',
+      es: 'Preguntas', it: 'Domande', nl: 'Vragen', pt: 'Perguntas'
+    },
+    'TvQuiz_Intro_Question_One': {
+      fr: 'question', en: 'question', de: 'Frage',
+      es: 'pregunta', it: 'domanda', nl: 'vraag', pt: 'pergunta'
+    },
+    'TvQuiz_Intro_Question_Many': {
+      fr: 'questions', en: 'questions', de: 'Fragen',
+      es: 'preguntas', it: 'domande', nl: 'vragen', pt: 'perguntas'
     }
   };
 
