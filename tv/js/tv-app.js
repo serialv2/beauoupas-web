@@ -57,21 +57,21 @@ window.TVApp = (function() {
 
   // Labels & ordre des tranches d'âge (correspond à get_series_results.sql)
   var AGE_BUCKETS = [
-    { key: 'under_18', label: '< 18 ans' },
-    { key: '18_25',    label: '18-25 ans' },
-    { key: '26_35',    label: '26-35 ans' },
-    { key: '36_50',    label: '36-50 ans' },
-    { key: 'over_50',  label: '> 50 ans' },
-    { key: 'unknown',  label: 'Non renseigné' }
+    { key: 'under_18', label: window.TVI18n.t('TvDisp_Age_Under18') },
+    { key: '18_25',    label: window.TVI18n.t('TvDisp_Age_18_25') },
+    { key: '26_35',    label: window.TVI18n.t('TvDisp_Age_26_35') },
+    { key: '36_50',    label: window.TVI18n.t('TvDisp_Age_36_50') },
+    { key: 'over_50',  label: window.TVI18n.t('TvDisp_Age_Over50') },
+    { key: 'unknown',  label: window.TVI18n.t('TvDisp_Age_Unknown') }
   ];
 
   // Labels des genres
   var GENDER_LABELS = {
-    male:               'Hommes',
-    female:             'Femmes',
-    other:              'Autre',
-    prefer_not_to_say:  'Non précisé',
-    unknown:            'Non renseigné'
+    male:               window.TVI18n.t('TvDisp_Gender_Male'),
+    female:             window.TVI18n.t('TvDisp_Gender_Female'),
+    other:              window.TVI18n.t('TvDisp_Gender_Other'),
+    prefer_not_to_say:  window.TVI18n.t('TvDisp_Gender_NotSpecified'),
+    unknown:            window.TVI18n.t('TvDisp_Gender_Unknown')
   };
   var GENDER_ORDER = ['male', 'female', 'other', 'prefer_not_to_say', 'unknown'];
 
@@ -84,7 +84,7 @@ window.TVApp = (function() {
     var code = params.get('code');
 
     if (!code) {
-      showError('Code manquant', 'L\'URL doit contenir ?code=XXXXXX');
+      showError(window.TVI18n.t('TvDisp_Err_CodeMissing_Title'), window.TVI18n.t('TvDisp_Err_CodeMissing_Msg'));
       return;
     }
 
@@ -104,14 +104,14 @@ window.TVApp = (function() {
 
       if (seriesRes.error) throw seriesRes.error;
       if (!seriesRes.data) {
-        showError('Code introuvable', 'Vérifie que le code est correct.');
+        showError(window.TVI18n.t('TvDisp_Err_NotFound_Title'), window.TVI18n.t('TvDisp_Err_NotFound_Msg'));
         return;
       }
 
       state.series = seriesRes.data;
 
       if (!state.series.tv_active) {
-        showError('Mode TV non actif', 'L\'animateur doit activer le mode TV depuis l\'app.');
+        showError(window.TVI18n.t('TvDisp_Err_TvInactive_Title'), window.TVI18n.t('TvDisp_Err_TvInactive_Msg'));
         return;
       }
 
@@ -124,7 +124,7 @@ window.TVApp = (function() {
 
     } catch (err) {
       console.error('[TVApp] start error:', err);
-      showError('Erreur de chargement', err.message || String(err));
+      showError(window.TVI18n.t('TvDisp_Err_Load_Title'), err.message || String(err));
     }
   }
 
@@ -287,24 +287,24 @@ window.TVApp = (function() {
   function renderLobby() {
     setActiveScreen('lobby');
 
-    var title = state.series.title || 'Soirée BeauOuPas';
+    var title = state.series.title || window.TVI18n.t('TvDisp_DefaultTitle');
     var code = state.accessCode;
 
     var html =
       '<div class="tv-lobby-title">' + escapeHtml(title) + '</div>' +
-      '<div class="tv-lobby-subtitle">En attente du démarrage...</div>' +
+      '<div class="tv-lobby-subtitle">' + window.TVI18n.t('TvDisp_Lobby_Waiting') + '</div>' +
       '<div class="tv-lobby-card">' +
         '<div class="tv-lobby-qr" id="lobby-qr"></div>' +
         '<div class="tv-lobby-code-block">' +
-          '<div class="tv-lobby-code-label">Code d\'accès</div>' +
+          '<div class="tv-lobby-code-label">' + window.TVI18n.t('TvDisp_Lobby_CodeLabel') + '</div>' +
           '<div class="tv-lobby-code">' + escapeHtml(code) + '</div>' +
-          '<div class="tv-lobby-code-hint">Tape ce code dans l\'app BeauOuPas</div>' +
+          '<div class="tv-lobby-code-hint">' + window.TVI18n.t('TvDisp_Lobby_CodeHint') + '</div>' +
         '</div>' +
       '</div>' +
       '<div class="tv-lobby-participants" id="lobby-participants">' +
-        state.participantsCount + ' participant' + (state.participantsCount > 1 ? 's' : '') + ' connecté' + (state.participantsCount > 1 ? 's' : '') +
+        window.TVI18n.tf(state.participantsCount > 1 ? 'TvDisp_Lobby_Participants_Many' : 'TvDisp_Lobby_Participants_One', state.participantsCount) +
       '</div>' +
-      '<div class="tv-lobby-waiting">L\'animateur clique "Commencer" sur son téléphone</div>';
+      '<div class="tv-lobby-waiting">' + window.TVI18n.t('TvDisp_Lobby_HostStart') + '</div>';
 
     document.getElementById('screen-lobby').innerHTML = html;
 
@@ -337,11 +337,11 @@ window.TVApp = (function() {
         });
       } catch (err) {
         console.warn('QR code generation failed:', err);
-        qrEl.innerHTML = '<div style="font-size: 11px; color: #888; padding: 8px; text-align: center;">QR Code<br>indisponible</div>';
+        qrEl.innerHTML = '<div style="font-size: 11px; color: #888; padding: 8px; text-align: center;">' + window.TVI18n.t('TvDisp_QrUnavailable') + '</div>';
       }
     } else if (qrEl) {
       // Fallback si la lib n'est pas chargée
-      qrEl.innerHTML = '<div style="font-size: 11px; color: #888; padding: 8px; text-align: center;">QR Code<br>indisponible</div>';
+      qrEl.innerHTML = '<div style="font-size: 11px; color: #888; padding: 8px; text-align: center;">' + window.TVI18n.t('TvDisp_QrUnavailable') + '</div>';
     }
   }
 
@@ -356,7 +356,7 @@ window.TVApp = (function() {
     var sp = state.projects[sIdx];
 
     if (!sp || !sp.projects) {
-      showError('Projet introuvable', 'Le projet n°' + (sIdx + 1) + ' n\'a pas pu être chargé.');
+      showError(window.TVI18n.t('TvDisp_Err_ProjectNotFound_Title'), window.TVI18n.tf('TvDisp_Err_ProjectNotFound_Msg', sIdx + 1));
       return;
     }
 
@@ -381,7 +381,7 @@ window.TVApp = (function() {
 
     var html =
       '<div class="tv-vote-header">' +
-        '<div class="tv-vote-progress">Projet ' + (sIdx + 1) + ' / ' + totalProjects + '</div>' +
+        '<div class="tv-vote-progress">' + window.TVI18n.tf('TvDisp_Vote_Progress', sIdx + 1, totalProjects) + '</div>' +
         '<div class="tv-vote-countdown" id="vote-countdown">--s</div>' +
       '</div>' +
       (p.title ? '<div class="tv-vote-title">' + escapeHtml(p.title) + '</div>' : '') +
@@ -389,7 +389,7 @@ window.TVApp = (function() {
       photosHtml +
       '<div class="tv-vote-counter">' +
         '<div class="tv-vote-counter-row">' +
-          '<span class="tv-vote-counter-text" id="vote-count">' + voteCount + ' / ' + totalParticipants + ' ont voté</span>' +
+          '<span class="tv-vote-counter-text" id="vote-count">' + window.TVI18n.tf('TvDisp_Vote_Counter', voteCount, totalParticipants) + '</span>' +
           '<span class="tv-vote-counter-percent" id="vote-percent">' + percent + '%</span>' +
         '</div>' +
         '<div class="tv-vote-counter-bar">' +
@@ -411,7 +411,7 @@ window.TVApp = (function() {
       var photoR = photos.find(function(ph) { return ph.side === 'right' || ph.side === 'B'; }) || photos[1];
 
       if (!photoL || !photoR) {
-        return '<div class="tv-vote-photos"><div style="color: #ef5350;">Photos du duel introuvables</div></div>';
+        return '<div class="tv-vote-photos"><div style="color: #ef5350;">' + window.TVI18n.t('TvDisp_DuelPhotosMissing') + '</div></div>';
       }
 
       return '<div class="tv-vote-photos duel">' +
@@ -432,7 +432,7 @@ window.TVApp = (function() {
       });
 
       if (options.length === 0) {
-        return '<div class="tv-vote-photos"><div style="color: #888;">Aucune option pour ce sondage</div></div>';
+        return '<div class="tv-vote-photos"><div style="color: #888;">' + window.TVI18n.t('TvDisp_PollNoOption') + '</div></div>';
       }
 
       return '<div class="tv-vote-photos poll">' +
@@ -446,7 +446,7 @@ window.TVApp = (function() {
 
     var photo = photos.find(function(ph) { return ph.side === 'single'; }) || photos[0];
     if (!photo) {
-      return '<div class="tv-vote-photos"><div style="color: #ef5350;">Photo introuvable</div></div>';
+      return '<div class="tv-vote-photos"><div style="color: #ef5350;">' + window.TVI18n.t('TvDisp_PhotoMissing') + '</div></div>';
     }
 
     return '<div class="tv-vote-photos">' +
@@ -465,7 +465,7 @@ window.TVApp = (function() {
 
     if (!seriesProject.started_at) {
       var el = document.getElementById('vote-countdown');
-      if (el) el.textContent = 'En attente';
+      if (el) el.textContent = window.TVI18n.t('TvDisp_Vote_Waiting');
       return;
     }
 
@@ -516,8 +516,8 @@ window.TVApp = (function() {
 
     var html =
       '<div class="tv-transition-icon" id="trans-icon">✅</div>' +
-      '<div class="tv-transition-title" id="trans-title">Vote terminé</div>' +
-      '<div class="tv-transition-subtitle" id="trans-subtitle">Projet suivant...</div>';
+      '<div class="tv-transition-title" id="trans-title">' + window.TVI18n.t('TvDisp_Trans_VoteEnded') + '</div>' +
+      '<div class="tv-transition-subtitle" id="trans-subtitle">' + window.TVI18n.t('TvDisp_Trans_NextProject') + '</div>';
 
     document.getElementById('screen-transition').innerHTML = html;
 
@@ -586,7 +586,7 @@ window.TVApp = (function() {
     } catch (err) {
       console.error('[TVApp] loadResultsData error:', err);
       if (!silent) {
-        showError('Erreur de chargement des résultats', err.message || String(err));
+        showError(window.TVI18n.t('TvDisp_Err_LoadResults_Title'), err.message || String(err));
       }
       return false;
     }
@@ -658,7 +658,7 @@ window.TVApp = (function() {
 
   // ─── Phase 1 : photo + votes par option ──────────────────────────
   function renderRevealRaw(project) {
-    var headerHtml = renderRevealHeader(project, 'Résultats');
+    var headerHtml = renderRevealHeader(project, window.TVI18n.t('TvDisp_Reveal_Results'));
 
     var bodyHtml;
     if (project.type === 'photo_vote') {
@@ -668,28 +668,28 @@ window.TVApp = (function() {
     } else if (project.type === 'poll') {
       bodyHtml = renderPollBody(project);
     } else {
-      bodyHtml = '<div class="tv-reveal-empty">Type de projet inconnu</div>';
+      bodyHtml = '<div class="tv-reveal-empty">' + window.TVI18n.t('TvDisp_Reveal_UnknownType') + '</div>';
     }
 
     var totalVotes = project.total_votes || 0;
-    var totalHtml = '<div class="tv-reveal-total"><strong>' + totalVotes + '</strong> vote' +
-      (totalVotes > 1 ? 's' : '') + ' au total</div>';
-
+    var totalHtml = '<div class="tv-reveal-total">' +
+      window.TVI18n.tf(totalVotes > 1 ? 'TvDisp_Reveal_TotalVotes_Many' : 'TvDisp_Reveal_TotalVotes_One', totalVotes) +
+      '</div>';
     return wrapRevealStage(headerHtml, bodyHtml + totalHtml);
   }
 
   // ─── Phase 2 : stats par genre / par âge ─────────────────────────
   function renderRevealStats(project) {
-    var headerHtml = renderRevealHeader(project, 'Statistiques');
+    var headerHtml = renderRevealHeader(project, window.TVI18n.t('TvDisp_Reveal_Stats'));
 
     var bodyHtml;
     if (project.total_votes === 0) {
-      bodyHtml = '<div class="tv-reveal-empty">Pas encore de votes pour ce projet</div>';
+      bodyHtml = '<div class="tv-reveal-empty">' + window.TVI18n.t('TvDisp_Reveal_NoVoteYet') + '</div>';
     } else {
       bodyHtml =
         '<div class="tv-reveal-stats-grid">' +
-          renderStatsBlock('Par genre', project, GENDER_ORDER, GENDER_LABELS, project.by_gender) +
-          renderStatsBlock('Par âge', project,
+          renderStatsBlock(window.TVI18n.t('TvDisp_Stats_ByGender'), project, GENDER_ORDER, GENDER_LABELS, project.by_gender) +
+          renderStatsBlock(window.TVI18n.t('TvDisp_Stats_ByAge'), project,
             AGE_BUCKETS.map(function(b) { return b.key; }),
             AGE_BUCKETS.reduce(function(acc, b) { acc[b.key] = b.label; return acc; }, {}),
             project.by_age) +
@@ -707,7 +707,7 @@ window.TVApp = (function() {
         '<div class="tv-reveal-polaroids" id="reveal-polaroids"></div>' +
         '<div class="tv-reveal-content">' + bodyHtml + '</div>' +
       '</div>' +
-      '<button class="tv-reveal-stop-btn" id="reveal-stop-btn" title="Arrêter le mode TV">✕ Arrêter</button>';
+      '<button class="tv-reveal-stop-btn" id="reveal-stop-btn" title="' + window.TVI18n.t('TvDisp_StopButton_Title') + '">' + window.TVI18n.t('TvDisp_StopButton') + '</button>';
   }
 
   function renderRevealHeader(project, phaseLabel) {
@@ -774,7 +774,7 @@ window.TVApp = (function() {
       (src ? '<img src="' + escapeHtml(src) + '" alt="' + letter + '">' : '') +
       '<div class="tv-reveal-photo-score">' +
         '<span class="tv-reveal-photo-score-letter">' + letter + '</span>' +
-        count + ' vote' + (count > 1 ? 's' : '') +
+        window.TVI18n.tf(count > 1 ? 'TvDisp_VotesCount_Many' : 'TvDisp_VotesCount_One', count) +
       '</div>' +
     '</div>';
   }
@@ -860,7 +860,7 @@ window.TVApp = (function() {
     if (visibleKeys.length === 0) {
       return '<div class="tv-reveal-stats-block">' +
         '<div class="tv-reveal-stats-block-title">' + escapeHtml(title) + '</div>' +
-        '<div class="tv-reveal-empty" style="font-size:1.2vw;">Pas de données</div>' +
+        '<div class="tv-reveal-empty" style="font-size:1.2vw;">' + window.TVI18n.t('TvDisp_NoData') + '</div>' +
       '</div>';
     }
 
@@ -892,7 +892,7 @@ window.TVApp = (function() {
       return '<div class="tv-reveal-stats-row">' +
         '<div class="tv-reveal-stats-row-head">' +
           '<span class="tv-reveal-stats-row-label">' + escapeHtml(labels[k] || k) + '</span>' +
-          '<span class="tv-reveal-stats-row-count">' + rowTotal + ' vote' + (rowTotal > 1 ? 's' : '') + '</span>' +
+          '<span class="tv-reveal-stats-row-count">' + window.TVI18n.tf(rowTotal > 1 ? 'TvDisp_VotesCount_Many' : 'TvDisp_VotesCount_One', rowTotal) + '</span>' +
         '</div>' +
         '<div class="tv-reveal-stats-bar">' + segmentsHtml + '</div>' +
       '</div>';
@@ -1019,7 +1019,7 @@ window.TVApp = (function() {
   // ═════════════════════════════════════════════════════════════════
 
   async function onStopRevealClicked() {
-    if (!confirm('Arrêter la diffusion des résultats sur la TV ?')) return;
+    if (!confirm(window.TVI18n.t('TvDisp_Stop_Confirm'))) return;
     try {
       var sb = window.TVRealtime.getClient();
       var res = await sb.rpc('tv_deactivate', { p_series_id: state.series.id });
@@ -1082,9 +1082,7 @@ window.TVApp = (function() {
   function refreshLobbyParticipantsLabel() {
     var elLobby = document.getElementById('lobby-participants');
     if (elLobby) {
-      elLobby.textContent = state.participantsCount + ' participant' +
-        (state.participantsCount > 1 ? 's' : '') + ' connecté' +
-        (state.participantsCount > 1 ? 's' : '');
+      elLobby.textContent = window.TVI18n.tf(state.participantsCount > 1 ? 'TvDisp_Lobby_Participants_Many' : 'TvDisp_Lobby_Participants_One', state.participantsCount);
     }
   }
 
@@ -1104,7 +1102,7 @@ window.TVApp = (function() {
 
       if (!payload.tv_active) {
         stopRevealLoop();
-        showError('Mode TV désactivé', 'L\'animateur a quitté le mode TV.');
+        showError(window.TVI18n.t('TvDisp_Err_TvDeactivated_Title'), window.TVI18n.t('TvDisp_Err_TvDeactivated_Msg'));
         return;
       }
 
@@ -1171,7 +1169,7 @@ window.TVApp = (function() {
     var elPercent = document.getElementById('vote-percent');
     var elFill = document.getElementById('vote-fill');
 
-    if (elCount) elCount.textContent = voteCount + ' / ' + totalParticipants + ' ont voté';
+    if (elCount) elCount.textContent = window.TVI18n.tf('TvDisp_Vote_Counter', voteCount, totalParticipants);
     if (elPercent) elPercent.textContent = percent + '%';
     if (elFill) {
       elFill.style.width = percent + '%';
