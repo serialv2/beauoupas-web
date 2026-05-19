@@ -522,18 +522,54 @@ window.TVPartyApp = (function() {
       stopAllTimers();
       renderLobby();
     } else if (s.status === 'active') {
+      // ── Détermine si on est LÉGITIMEMENT encore en intro ──
+      // On reste sur l'intro UNIQUEMENT si la 1re question n'a pas
+      // encore de started_at. Dès qu'elle en a un (tv_start_first_
+      // element a tourné), on bascule sur la question — SANS se fier
+      // à current_project_index ni à l'état mémoire de la question
+      // ciblée (qui peuvent être périmés au moment du re-render :
+      // c'est ÇA qui figeait la TV sur l'intro).
       var firstQuestion = state.questions[0];
-      if (firstQuestion && !firstQuestion.started_at) {
+      var stillInIntro = firstQuestion && !firstQuestion.started_at;
+
+      if (stillInIntro) {
         if (state.currentScreen !== 'intro') {
           renderIntro();
         }
       } else {
+        // Au moins une question est démarrée → on rend la question.
+        // On choisit le meilleur index disponible, mais on NE bloque
+        // PAS si l'état mémoire semble incomplet : renderQuestion()
+        // appelle get_party_question_for_tv qui lit la base FRAÎCHE
+        // et renvoie la bonne question (même logique que le quiz).
         var idx = s.current_project_index || 0;
         var q = state.questions[idx];
-        if (q && q.started_at) {
+
+        // Si l'index courant ne pointe pas (encore) sur une question
+        // démarrée connue en mémoire, on se rabat sur la 1re question
+        // démarrée trouvée — la RPC corrigera de toute façon.
+        if (!q || !q.started_at) {
+          var started = state.questions.filter(function(qq) {
+            return qq && qq.started_at;
+          });
+          if (started.length > 0) {
+            q = started[started.length - 1]; // la plus récemment démarrée
+            idx = state.questions.indexOf(q);
+          }
+        }
+
+        if (q) {
           renderQuestion(q, idx);
         } else {
-          console.log('[TVPartyApp] Question sans started_at, on attend le realtime');
+          // Vrai cas limite : aucune question démarrée connue en
+          // mémoire alors que la 1re a un started_at. On recharge
+          // les questions puis on re-render (la RPC tranchera).
+          console.log('[TVPartyApp] Resync questions (aucune question démarrée en mémoire)');
+          loadQuestions().then(function() {
+            renderCurrentScreen();
+          }).catch(function(e) {
+            console.warn('[TVPartyApp] loadQuestions resync error:', e);
+          });
         }
       }
     } else if (s.status === 'finished') {
