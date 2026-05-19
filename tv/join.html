@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BeauOuPas — Rejoindre la session</title>
+<title data-i18n="Join_PageTitle">BeauOuPas — Rejoindre la session</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="auth-page">
   <div class="auth-box fade-in">
     <div class="auth-logo">BeauOuPas</div>
-    <div class="auth-sub">Rejoins la session 🎮</div>
+    <div class="auth-sub" data-i18n="Join_Sub">Rejoins la session 🎮</div>
 
     <div class="card">
 
@@ -18,11 +18,10 @@
       <div id="noCodeBlock" style="display:none;text-align:center;padding:20px 0;">
         <div style="font-size:48px;margin-bottom:16px;">❓</div>
         <h2 style="font-size:22px;font-weight:900;margin-bottom:12px;color:white;">
-          Code manquant
+          <span data-i18n="Join_NoCode_Title">Code manquant</span>
         </h2>
         <p style="color:#8A6F4A;font-size:14px;line-height:22px;margin-bottom:24px;">
-          Ce lien n'a pas de code valide.<br>
-          Scanne à nouveau le QR code affiché sur la TV.
+          <span data-i18n-html="Join_NoCode_Msg">Ce lien n\'a pas de code valide.<br>Scanne à nouveau le QR code affiché sur la TV.</span>
         </p>
       </div>
 
@@ -30,10 +29,10 @@
       <div id="openingAppBlock" style="text-align:center;padding:20px 0;">
         <div style="font-size:48px;margin-bottom:16px;">📱</div>
         <h2 style="font-size:22px;font-weight:900;margin-bottom:12px;color:white;">
-          Ouverture de l'application...
+          <span data-i18n="Join_Opening_Title">Ouverture de l\'application...</span>
         </h2>
         <p style="color:#8A6F4A;font-size:14px;line-height:22px;">
-          On t'amène à la session
+          <span data-i18n="Join_Opening_Msg">On t\'amène à la session</span>
           <span id="codeDisplay" style="color:#C2754C;font-weight:bold;"></span>
         </p>
       </div>
@@ -42,35 +41,34 @@
       <div id="successBlock" style="display:none;text-align:center;padding:20px 0;">
         <div style="font-size:64px;margin-bottom:16px;">🎮</div>
         <h2 style="font-size:24px;font-weight:900;margin-bottom:6px;color:white;">
-          Session
+          <span data-i18n="Join_Success_Title">Session</span>
         </h2>
         <p style="font-size:28px;font-weight:900;color:#C2754C;margin-bottom:20px;letter-spacing:4px;font-family:monospace;" id="codeDisplay2"></p>
 
         <p style="color:#aaa;font-size:14px;line-height:22px;margin-bottom:28px;">
-          Pour rejoindre, il te faut l'application<br>
-          <strong style="color:white;">BeauOuPas</strong> sur ton téléphone.
+          <span data-i18n-html="Join_Success_Msg">Pour rejoindre, il te faut l\'application<br><strong>BeauOuPas</strong> sur ton téléphone.</span>
         </p>
 
         <div style="display:flex;flex-direction:column;gap:12px;">
           <!-- Bouton 1 : Re-tenter ouverture app -->
           <button class="btn btn-primary btn-full" onclick="tryOpenApp(false)">
-            🚀 J'ai l'application
+            <span data-i18n="Join_Btn_HaveApp">🚀 J\'ai l\'application</span>
           </button>
 
           <!-- Bouton 2 : Play Store (visible si play_store_url configurée) -->
           <a href="#" id="playStoreBtn" class="btn btn-full"
              style="display:none;text-decoration:none;background:#E5DCC9;color:white;border:1px solid #D4C7B5;">
-            📱 Télécharger sur Google Play
+            <span data-i18n="Join_Btn_PlayStore">📱 Télécharger sur Google Play</span>
           </a>
 
           <!-- Bouton 3 : Se connecter sur le web -->
           <a href="login.html" class="btn btn-full" style="text-decoration:none;background:transparent;color:#8A6F4A;border:1px solid #D4C7B5;">
-            🌐 Continuer sur le site
+            <span data-i18n="Join_Btn_Web">🌐 Continuer sur le site</span>
           </a>
         </div>
 
         <p style="margin-top:24px;font-size:12px;color:#6B5234;">
-          Une fois l'app installée, scanne à nouveau le QR code
+          <span data-i18n="Join_Footer">Une fois l\'app installée, scanne à nouveau le QR code</span>
         </p>
       </div>
 
@@ -78,6 +76,144 @@
   </div>
 </div>
 
+<script>
+// ── i18n autonome pour join.html (page hors du dossier tv/) ──
+// Même logique de détection que tv/js/i18n.js : override mémorisé
+// (sessionStorage) → langue navigateur → fallback français.
+(function(){
+  var SUP=['fr','en','de','es','it','nl','pt'],DEF='fr',KEY='tv_lang_override';
+  var STR={
+  "Join_PageTitle": {
+    "fr": "BeauOuPas — Rejoindre la session",
+    "en": "BeauOuPas — Join the session",
+    "de": "BeauOuPas — Der Sitzung beitreten",
+    "es": "BeauOuPas — Unirse a la sesión",
+    "it": "BeauOuPas — Partecipa alla sessione",
+    "nl": "BeauOuPas — Deelnemen aan de sessie",
+    "pt": "BeauOuPas — Entrar na sessão"
+  },
+  "Join_Sub": {
+    "fr": "Rejoins la session 🎮",
+    "en": "Join the session 🎮",
+    "de": "Tritt der Sitzung bei 🎮",
+    "es": "Únete a la sesión 🎮",
+    "it": "Partecipa alla sessione 🎮",
+    "nl": "Doe mee aan de sessie 🎮",
+    "pt": "Entra na sessão 🎮"
+  },
+  "Join_NoCode_Title": {
+    "fr": "Code manquant",
+    "en": "Missing code",
+    "de": "Code fehlt",
+    "es": "Falta el código",
+    "it": "Codice mancante",
+    "nl": "Code ontbreekt",
+    "pt": "Código em falta"
+  },
+  "Join_NoCode_Msg": {
+    "fr": "Ce lien n'a pas de code valide.<br>Scanne à nouveau le QR code affiché sur la TV.",
+    "en": "This link has no valid code.<br>Scan the QR code on the TV again.",
+    "de": "Dieser Link hat keinen gültigen Code.<br>Scanne den QR-Code auf dem TV erneut.",
+    "es": "Este enlace no tiene un código válido.<br>Vuelve a escanear el código QR de la TV.",
+    "it": "Questo link non ha un codice valido.<br>Scansiona di nuovo il QR code sulla TV.",
+    "nl": "Deze link heeft geen geldige code.<br>Scan de QR-code op de tv opnieuw.",
+    "pt": "Este link não tem um código válido.<br>Digitaliza novamente o código QR na TV."
+  },
+  "Join_Opening_Title": {
+    "fr": "Ouverture de l'application...",
+    "en": "Opening the app...",
+    "de": "App wird geöffnet...",
+    "es": "Abriendo la aplicación...",
+    "it": "Apertura dell'app...",
+    "nl": "App wordt geopend...",
+    "pt": "A abrir a aplicação..."
+  },
+  "Join_Opening_Msg": {
+    "fr": "On t'amène à la session",
+    "en": "Taking you to the session",
+    "de": "Wir bringen dich zur Sitzung",
+    "es": "Te llevamos a la sesión",
+    "it": "Ti portiamo alla sessione",
+    "nl": "We brengen je naar de sessie",
+    "pt": "A levar-te para a sessão"
+  },
+  "Join_Success_Title": {
+    "fr": "Session",
+    "en": "Session",
+    "de": "Sitzung",
+    "es": "Sesión",
+    "it": "Sessione",
+    "nl": "Sessie",
+    "pt": "Sessão"
+  },
+  "Join_Success_Msg": {
+    "fr": "Pour rejoindre, il te faut l'application<br><strong>BeauOuPas</strong> sur ton téléphone.",
+    "en": "To join, you need the<br><strong>BeauOuPas</strong> app on your phone.",
+    "de": "Zum Beitreten brauchst du die<br><strong>BeauOuPas</strong>-App auf deinem Telefon.",
+    "es": "Para unirte necesitas la app<br><strong>BeauOuPas</strong> en tu teléfono.",
+    "it": "Per partecipare ti serve l'app<br><strong>BeauOuPas</strong> sul telefono.",
+    "nl": "Om mee te doen heb je de<br><strong>BeauOuPas</strong>-app op je telefoon nodig.",
+    "pt": "Para entrar precisas da app<br><strong>BeauOuPas</strong> no teu telemóvel."
+  },
+  "Join_Btn_HaveApp": {
+    "fr": "🚀 J'ai l'application",
+    "en": "🚀 I have the app",
+    "de": "🚀 Ich habe die App",
+    "es": "🚀 Tengo la aplicación",
+    "it": "🚀 Ho l'app",
+    "nl": "🚀 Ik heb de app",
+    "pt": "🚀 Tenho a aplicação"
+  },
+  "Join_Btn_PlayStore": {
+    "fr": "📱 Télécharger sur Google Play",
+    "en": "📲 Download on Google Play",
+    "de": "📲 Bei Google Play herunterladen",
+    "es": "📲 Descargar en Google Play",
+    "it": "📲 Scarica su Google Play",
+    "nl": "📲 Downloaden in Google Play",
+    "pt": "📲 Transferir no Google Play"
+  },
+  "Join_Btn_Web": {
+    "fr": "🌐 Continuer sur le site",
+    "en": "🌐 Continue on the website",
+    "de": "🌐 Auf der Website fortfahren",
+    "es": "🌐 Continuar en el sitio",
+    "it": "🌐 Continua sul sito",
+    "nl": "🌐 Doorgaan op de site",
+    "pt": "🌐 Continuar no site"
+  },
+  "Join_Footer": {
+    "fr": "Une fois l'app installée, scanne à nouveau le QR code",
+    "en": "Once the app is installed, scan the QR code again",
+    "de": "Sobald die App installiert ist, scanne den QR-Code erneut",
+    "es": "Una vez instalada la app, vuelve a escanear el código QR",
+    "it": "Una volta installata l'app, scansiona di nuovo il QR code",
+    "nl": "Zodra de app is geïnstalleerd, scan de QR-code opnieuw",
+    "pt": "Depois de instalar a app, digitaliza novamente o código QR"
+  }
+};
+  function detect(){
+    try{var sv=sessionStorage.getItem(KEY);if(sv&&SUP.indexOf(sv)!==-1)return sv;}catch(e){}
+    var L=[];
+    if(navigator.languages&&navigator.languages.length)L=navigator.languages.slice();
+    else if(navigator.language)L=[navigator.language];
+    for(var i=0;i<L.length;i++){var t=String(L[i]).toLowerCase().slice(0,2);if(SUP.indexOf(t)!==-1)return t;}
+    return DEF;
+  }
+  var lang=detect();
+  function t(k){var e=STR[k];if(!e)return k;return e[lang]!=null?e[lang]:(e[DEF]!=null?e[DEF]:k);}
+  function apply(){
+    document.documentElement.setAttribute('lang',lang);
+    var els=document.querySelectorAll('[data-i18n]');
+    for(var i=0;i<els.length;i++){els[i].textContent=t(els[i].getAttribute('data-i18n'));}
+    var h=document.querySelectorAll('[data-i18n-html]');
+    for(var j=0;j<h.length;j++){h[j].innerHTML=t(h[j].getAttribute('data-i18n-html'));}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply);
+  else apply();
+  window.__JoinI18n={t:t,lang:lang};
+})();
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="app.js"></script>
 <script>
