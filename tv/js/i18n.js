@@ -471,6 +471,142 @@
       it: 'Interrompere la trasmissione della partita sulla TV?',
       nl: 'De partij op de tv stoppen?',
       pt: 'Parar a transmissão da partida na TV?'
+    },
+
+    // ─── tv-quiz-app.js — quiz Kahoot classique (Lot W4) ──────────
+    'TvQuiz_DefaultTitle': {
+      fr: 'Quiz', en: 'Quiz', de: 'Quiz', es: 'Cuestionario', it: 'Quiz', nl: 'Quiz', pt: 'Quiz'
+    },
+    'TvQuiz_Lobby_Subtitle_One': {
+      fr: '{0} question • Quiz interactif', en: '{0} question • Interactive quiz',
+      de: '{0} Frage • Interaktives Quiz', es: '{0} pregunta • Cuestionario interactivo',
+      it: '{0} domanda • Quiz interattivo', nl: '{0} vraag • Interactieve quiz',
+      pt: '{0} pergunta • Quiz interativo'
+    },
+    'TvQuiz_Lobby_Subtitle_Many': {
+      fr: '{0} questions • Quiz interactif', en: '{0} questions • Interactive quiz',
+      de: '{0} Fragen • Interaktives Quiz', es: '{0} preguntas • Cuestionario interactivo',
+      it: '{0} domande • Quiz interattivo', nl: '{0} vragen • Interactieve quiz',
+      pt: '{0} perguntas • Quiz interativo'
+    },
+    'TvQuiz_Answered': {
+      fr: '{0} / {1} ont répondu', en: '{0} / {1} have answered', de: '{0} / {1} haben geantwortet',
+      es: '{0} / {1} han respondido', it: '{0} / {1} hanno risposto', nl: '{0} / {1} hebben geantwoord', pt: '{0} / {1} responderam'
+    },
+    'TvQuiz_Question_Progress': {
+      fr: 'Question {0} / {1}', en: 'Question {0} / {1}', de: 'Frage {0} / {1}',
+      es: 'Pregunta {0} / {1}', it: 'Domanda {0} / {1}', nl: 'Vraag {0} / {1}', pt: 'Pergunta {0} / {1}'
+    },
+    'TvQuiz_Reveal_Tag': {
+      fr: 'Résultats', en: 'Results', de: 'Ergebnisse',
+      es: 'Resultados', it: 'Risultati', nl: 'Resultaten', pt: 'Resultados'
+    },
+    'TvQuiz_Answers_One': {
+      fr: '{0} réponse', en: '{0} answer', de: '{0} Antwort',
+      es: '{0} respuesta', it: '{0} risposta', nl: '{0} antwoord', pt: '{0} resposta'
+    },
+    'TvQuiz_Answers_Many': {
+      fr: '{0} réponses', en: '{0} answers', de: '{0} Antworten',
+      es: '{0} respuestas', it: '{0} risposte', nl: '{0} antwoorden', pt: '{0} respostas'
+    },
+    'TvQuiz_Err_LoadResults': {
+      fr: 'Impossible de charger les résultats', en: 'Unable to load the results',
+      de: 'Ergebnisse können nicht geladen werden', es: 'No se pueden cargar los resultados',
+      it: 'Impossibile caricare i risultati', nl: 'Kan de resultaten niet laden', pt: 'Não foi possível carregar os resultados'
+    },
+    'TvQuiz_NoParticipant': {
+      fr: 'Personne n\'a répondu à ce quiz', en: 'Nobody answered this quiz',
+      de: 'Niemand hat dieses Quiz beantwortet', es: 'Nadie respondió a este cuestionario',
+      it: 'Nessuno ha risposto a questo quiz', nl: 'Niemand heeft deze quiz beantwoord',
+      pt: 'Ninguém respondeu a este quiz'
+    },
+    'TvQuiz_Stats_Title': {
+      fr: '📊 Statistiques du quiz', en: '📊 Quiz statistics', de: '📊 Quiz-Statistiken',
+      es: '📊 Estadísticas del cuestionario', it: '📊 Statistiche del quiz', nl: '📊 Quizstatistieken', pt: '📊 Estatísticas do quiz'
+    },
+    'TvQuiz_Stats_TotalAnswers': {
+      fr: 'Réponses totales', en: 'Total answers', de: 'Antworten insgesamt',
+      es: 'Respuestas totales', it: 'Risposte totali', nl: 'Totaal antwoorden', pt: 'Respostas totais'
+    },
+    'TvQuiz_Stats_SuccessRate': {
+      fr: 'Taux de réussite', en: 'Success rate', de: 'Erfolgsquote',
+      es: 'Tasa de acierto', it: 'Tasso di successo', nl: 'Slaagpercentage', pt: 'Taxa de acerto'
+    },
+    'TvQuiz_Stats_Hardest': {
+      fr: '❄️ Question la plus difficile', en: '❄️ Hardest question',
+      de: '❄️ Schwierigste Frage', es: '❄️ Pregunta más difícil',
+      it: '❄️ Domanda più difficile', nl: '❄️ Moeilijkste vraag', pt: '❄️ Pergunta mais difícil'
+    },
+    'TvQuiz_Stats_Easiest': {
+      fr: '🔥 Question la plus facile', en: '🔥 Easiest question',
+      de: '🔥 Leichteste Frage', es: '🔥 Pregunta más fácil',
+      it: '🔥 Domanda più facile', nl: '🔥 Makkelijkste vraag', pt: '🔥 Pergunta mais fácil'
+    },
+    'TvQuiz_Stats_SuccessSuffix': {
+      fr: '% de réussite', en: '% success', de: '% Erfolg',
+      es: '% de acierto', it: '% di successo', nl: '% succes', pt: '% de acerto'
+    },
+    'TvQuiz_Stats_ByGender': {
+      fr: 'Par genre', en: 'By gender', de: 'Nach Geschlecht',
+      es: 'Por género', it: 'Per genere', nl: 'Per geslacht', pt: 'Por género'
+    },
+    'TvQuiz_Stats_ByAge': {
+      fr: 'Par tranche d\'âge', en: 'By age group', de: 'Nach Altersgruppe',
+      es: 'Por grupo de edad', it: 'Per fascia d\'età', nl: 'Per leeftijdsgroep', pt: 'Por faixa etária'
+    },
+    'TvQuiz_Gender_Male': {
+      fr: 'Hommes', en: 'Men', de: 'Männer', es: 'Hombres', it: 'Uomini', nl: 'Mannen', pt: 'Homens'
+    },
+    'TvQuiz_Gender_Female': {
+      fr: 'Femmes', en: 'Women', de: 'Frauen', es: 'Mujeres', it: 'Donne', nl: 'Vrouwen', pt: 'Mulheres'
+    },
+    'TvQuiz_Gender_Other': {
+      fr: 'Autre', en: 'Other', de: 'Andere', es: 'Otro', it: 'Altro', nl: 'Anders', pt: 'Outro'
+    },
+    'TvQuiz_NotSpecified': {
+      fr: 'Non précisé', en: 'Not specified', de: 'Keine Angabe',
+      es: 'No especificado', it: 'Non specificato', nl: 'Niet opgegeven', pt: 'Não especificado'
+    },
+    'TvQuiz_Unknown': {
+      fr: 'Inconnu', en: 'Unknown', de: 'Unbekannt',
+      es: 'Desconocido', it: 'Sconosciuto', nl: 'Onbekend', pt: 'Desconhecido'
+    },
+    'TvQuiz_Age_Under18': {
+      fr: 'Moins de 18 ans', en: 'Under 18', de: 'Unter 18',
+      es: 'Menos de 18 años', it: 'Meno di 18 anni', nl: 'Jonger dan 18', pt: 'Menos de 18 anos'
+    },
+    'TvQuiz_Age_18_29': {
+      fr: '18 - 29 ans', en: '18 - 29 yrs', de: '18 - 29 J.',
+      es: '18 - 29 años', it: '18 - 29 anni', nl: '18 - 29 jaar', pt: '18 - 29 anos'
+    },
+    'TvQuiz_Age_30_49': {
+      fr: '30 - 49 ans', en: '30 - 49 yrs', de: '30 - 49 J.',
+      es: '30 - 49 años', it: '30 - 49 anni', nl: '30 - 49 jaar', pt: '30 - 49 anos'
+    },
+    'TvQuiz_Age_50plus': {
+      fr: '50 ans et plus', en: '50 and over', de: '50 und älter',
+      es: '50 años o más', it: '50 anni e oltre', nl: '50 jaar en ouder', pt: '50 anos ou mais'
+    },
+    'TvQuiz_Stop_Confirm': {
+      fr: 'Arrêter la diffusion du quiz sur la TV ?',
+      en: 'Stop broadcasting the quiz on the TV?',
+      de: 'Die Übertragung des Quiz auf dem TV beenden?',
+      es: '¿Detener la difusión del cuestionario en la TV?',
+      it: 'Interrompere la trasmissione del quiz sulla TV?',
+      nl: 'De quiz op de tv stoppen?',
+      pt: 'Parar a transmissão do quiz na TV?'
+    },
+    'TvQuiz_Winner_Score_One': {
+      fr: '{0} bonne réponse', en: '{0} correct answer', de: '{0} richtige Antwort',
+      es: '{0} respuesta correcta', it: '{0} risposta corretta', nl: '{0} goed antwoord', pt: '{0} resposta certa'
+    },
+    'TvQuiz_Winner_Score_Many': {
+      fr: '{0} bonnes réponses', en: '{0} correct answers', de: '{0} richtige Antworten',
+      es: '{0} respuestas correctas', it: '{0} risposte corrette', nl: '{0} goede antwoorden', pt: '{0} respostas certas'
+    },
+    'TvQuiz_DefaultPlayer': {
+      fr: 'Joueur', en: 'Player', de: 'Spieler',
+      es: 'Jugador', it: 'Giocatore', nl: 'Speler', pt: 'Jogador'
     }
   };
 
