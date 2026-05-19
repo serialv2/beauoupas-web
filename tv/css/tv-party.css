@@ -199,9 +199,13 @@
 }
 
 .style-party .quiz-question-category {
-  background: rgba(107, 127, 92, 0.25);
-  color: var(--party-accent);
-  border: 0.15vh solid rgba(107, 127, 92, 0.5);
+  background: var(--party-primary);
+  color: #FFFFFF;
+  border: none;
+  font-size: 2vw;
+  font-weight: 700;
+  padding: 1vh 3vw;
+  box-shadow: 0 0.4vh 1.6vh rgba(194, 117, 76, 0.45);
 }
 
 .style-party .quiz-question-text {
