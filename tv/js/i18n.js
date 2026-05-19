@@ -348,6 +348,129 @@
     'TvDisp_NoData': {
       fr: 'Pas de données', en: 'No data', de: 'Keine Daten',
       es: 'Sin datos', it: 'Nessun dato', nl: 'Geen gegevens', pt: 'Sem dados'
+    },
+
+    // ─── tv-party-app.js — partie rapide (Lot W3) ─────────────────
+    'TvParty_DefaultTitle': {
+      fr: 'Partie Rapide', en: 'Quick Party', de: 'Schnellpartie',
+      es: 'Partida rápida', it: 'Partita rapida', nl: 'Snelle partij', pt: 'Partida rápida'
+    },
+    'TvParty_Lobby_Subtitle_One': {
+      fr: '{0} question • Partie rapide entre potes',
+      en: '{0} question • Quick party with friends',
+      de: '{0} Frage • Schnellpartie unter Freunden',
+      es: '{0} pregunta • Partida rápida entre amigos',
+      it: '{0} domanda • Partita rapida tra amici',
+      nl: '{0} vraag • Snelle partij met vrienden',
+      pt: '{0} pergunta • Partida rápida entre amigos'
+    },
+    'TvParty_Lobby_Subtitle_Many': {
+      fr: '{0} questions • Partie rapide entre potes',
+      en: '{0} questions • Quick party with friends',
+      de: '{0} Fragen • Schnellpartie unter Freunden',
+      es: '{0} preguntas • Partida rápida entre amigos',
+      it: '{0} domande • Partita rapida tra amici',
+      nl: '{0} vragen • Snelle partij met vrienden',
+      pt: '{0} perguntas • Partida rápida entre amigos'
+    },
+    'TvParty_Players_One': {
+      fr: '{0} joueur connecté', en: '{0} player connected', de: '{0} Spieler verbunden',
+      es: '{0} jugador conectado', it: '{0} giocatore connesso', nl: '{0} speler verbonden', pt: '{0} jogador ligado'
+    },
+    'TvParty_Players_Many': {
+      fr: '{0} joueurs connectés', en: '{0} players connected', de: '{0} Spieler verbunden',
+      es: '{0} jugadores conectados', it: '{0} giocatori connessi', nl: '{0} spelers verbonden', pt: '{0} jogadores ligados'
+    },
+    'TvParty_Intro_GetReady': {
+      fr: 'Préparez-vous', en: 'Get ready', de: 'Macht euch bereit',
+      es: 'Preparaos', it: 'Preparatevi', nl: 'Maak je klaar', pt: 'Preparem-se'
+    },
+    'TvParty_Intro_Question_One': {
+      fr: 'question', en: 'question', de: 'Frage',
+      es: 'pregunta', it: 'domanda', nl: 'vraag', pt: 'pergunta'
+    },
+    'TvParty_Intro_Question_Many': {
+      fr: 'questions', en: 'questions', de: 'Fragen',
+      es: 'preguntas', it: 'domande', nl: 'vragen', pt: 'perguntas'
+    },
+    'TvParty_Intro_Player_One': {
+      fr: 'joueur', en: 'player', de: 'Spieler',
+      es: 'jugador', it: 'giocatore', nl: 'speler', pt: 'jogador'
+    },
+    'TvParty_Intro_Player_Many': {
+      fr: 'joueurs', en: 'players', de: 'Spieler',
+      es: 'jugadores', it: 'giocatori', nl: 'spelers', pt: 'jogadores'
+    },
+    'TvParty_Intro_StartsIn': {
+      fr: 'Ça commence dans', en: 'Starting in', de: 'Es beginnt in',
+      es: 'Empieza en', it: 'Inizia tra', nl: 'Begint over', pt: 'Começa em'
+    },
+    'TvParty_Voted': {
+      fr: '{0} / {1} ont voté', en: '{0} / {1} have voted', de: '{0} / {1} haben abgestimmt',
+      es: '{0} / {1} han votado', it: '{0} / {1} hanno votato', nl: '{0} / {1} hebben gestemd', pt: '{0} / {1} votaram'
+    },
+    'TvParty_Err_LoadResults': {
+      fr: 'Impossible de charger les résultats', en: 'Unable to load the results',
+      de: 'Ergebnisse können nicht geladen werden', es: 'No se pueden cargar los resultados',
+      it: 'Impossibile caricare i risultati', nl: 'Kan de resultaten niet laden', pt: 'Não foi possível carregar os resultados'
+    },
+    'TvParty_Err_WrongPage_Title': {
+      fr: 'Mauvaise page', en: 'Wrong page', de: 'Falsche Seite',
+      es: 'Página incorrecta', it: 'Pagina sbagliata', nl: 'Verkeerde pagina', pt: 'Página errada'
+    },
+    'TvParty_Err_WrongPage_Msg': {
+      fr: 'Cette série n\'est pas une partie rapide. Retournez à la page d\'accueil.',
+      en: 'This series is not a quick party. Go back to the home page.',
+      de: 'Diese Serie ist keine Schnellpartie. Kehre zur Startseite zurück.',
+      es: 'Esta serie no es una partida rápida. Vuelve a la página de inicio.',
+      it: 'Questa serie non è una partita rapida. Torna alla pagina iniziale.',
+      nl: 'Deze serie is geen snelle partij. Ga terug naar de startpagina.',
+      pt: 'Esta série não é uma partida rápida. Volta à página inicial.'
+    },
+    'TvParty_NoParticipant': {
+      fr: 'Personne n\'a participé à cette partie', en: 'Nobody took part in this party',
+      de: 'Niemand hat an dieser Partie teilgenommen', es: 'Nadie participó en esta partida',
+      it: 'Nessuno ha partecipato a questa partita', nl: 'Niemand heeft aan deze partij meegedaan',
+      pt: 'Ninguém participou nesta partida'
+    },
+    'TvParty_NoVoteQuestion': {
+      fr: 'Personne n\'a voté sur cette question', en: 'Nobody voted on this question',
+      de: 'Niemand hat bei dieser Frage abgestimmt', es: 'Nadie votó en esta pregunta',
+      it: 'Nessuno ha votato a questa domanda', nl: 'Niemand heeft op deze vraag gestemd',
+      pt: 'Ninguém votou nesta pergunta'
+    },
+    'TvParty_Recap_Progress': {
+      fr: 'Récap {0} / {1}', en: 'Recap {0} / {1}', de: 'Rückblick {0} / {1}',
+      es: 'Resumen {0} / {1}', it: 'Riepilogo {0} / {1}', nl: 'Overzicht {0} / {1}', pt: 'Resumo {0} / {1}'
+    },
+    'TvParty_Recap_Tag': {
+      fr: 'Résultats', en: 'Results', de: 'Ergebnisse',
+      es: 'Resultados', it: 'Risultati', nl: 'Resultaten', pt: 'Resultados'
+    },
+    'TvParty_Finished': {
+      fr: 'Partie terminée', en: 'Party finished', de: 'Partie beendet',
+      es: 'Partida terminada', it: 'Partita terminata', nl: 'Partij afgelopen', pt: 'Partida terminada'
+    },
+    'TvParty_DefaultPlayer': {
+      fr: 'Joueur', en: 'Player', de: 'Spieler',
+      es: 'Jugador', it: 'Giocatore', nl: 'Speler', pt: 'Jogador'
+    },
+    'TvParty_Winner_Score_One': {
+      fr: '{0} question gagnée', en: '{0} question won', de: '{0} Frage gewonnen',
+      es: '{0} pregunta ganada', it: '{0} domanda vinta', nl: '{0} vraag gewonnen', pt: '{0} pergunta ganha'
+    },
+    'TvParty_Winner_Score_Many': {
+      fr: '{0} questions gagnées', en: '{0} questions won', de: '{0} Fragen gewonnen',
+      es: '{0} preguntas ganadas', it: '{0} domande vinte', nl: '{0} vragen gewonnen', pt: '{0} perguntas ganhas'
+    },
+    'TvParty_Stop_Confirm': {
+      fr: 'Arrêter la diffusion de la partie sur la TV ?',
+      en: 'Stop broadcasting the party on the TV?',
+      de: 'Die Übertragung der Partie auf dem TV beenden?',
+      es: '¿Detener la difusión de la partida en la TV?',
+      it: 'Interrompere la trasmissione della partita sulla TV?',
+      nl: 'De partij op de tv stoppen?',
+      pt: 'Parar a transmissão da partida na TV?'
     }
   };
 

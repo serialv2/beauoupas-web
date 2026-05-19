@@ -146,19 +146,19 @@ window.TVPartyApp = (function() {
 
       if (seriesRes.error) throw seriesRes.error;
       if (!seriesRes.data) {
-        showError('Code introuvable', 'Vérifie que le code est correct.');
+        showError(window.TVI18n.t('TvDisp_Err_NotFound_Title'), window.TVI18n.t('TvDisp_Err_NotFound_Msg'));
         return;
       }
 
       state.series = seriesRes.data;
 
       if (!state.series.tv_active) {
-        showError('Mode TV non actif', 'L\'animateur doit activer le mode TV depuis l\'app.');
+        showError(window.TVI18n.t('TvDisp_Err_TvInactive_Title'), window.TVI18n.t('TvDisp_Err_TvInactive_Msg'));
         return;
       }
 
       if (!state.series.is_quiz || state.series.quiz_style !== 'party') {
-        showError('Mauvaise page', 'Cette série n\'est pas une partie rapide. Retournez à la page d\'accueil.');
+        showError(window.TVI18n.t('TvParty_Err_WrongPage_Title'), window.TVI18n.t('TvParty_Err_WrongPage_Msg'));
         return;
       }
 
@@ -369,7 +369,7 @@ window.TVPartyApp = (function() {
 
         if (!fresh.tv_active) {
           stopAllTimers();
-          showError('Mode TV désactivé', 'L\'animateur a quitté le mode TV.');
+          showError(window.TVI18n.t('TvDisp_Err_TvDeactivated_Title'), window.TVI18n.t('TvDisp_Err_TvDeactivated_Msg'));
           return;
         }
 
@@ -597,25 +597,25 @@ window.TVPartyApp = (function() {
   function renderLobby() {
     setActiveScreen('lobby');
 
-    var title = state.series.title || 'Partie Rapide';
+    var title = state.series.title || window.TVI18n.t('TvParty_DefaultTitle');
     var code = state.accessCode;
     var nbQuestions = state.questions.length;
 
     var html =
       '<div class="tv-lobby-title">' + escapeHtml(title) + '</div>' +
-      '<div class="tv-lobby-subtitle">' + nbQuestions + ' question' + (nbQuestions > 1 ? 's' : '') + ' • Partie rapide entre potes</div>' +
+      '<div class="tv-lobby-subtitle">' + window.TVI18n.tf(nbQuestions > 1 ? 'TvParty_Lobby_Subtitle_Many' : 'TvParty_Lobby_Subtitle_One', nbQuestions) + '</div>' +
       '<div class="tv-lobby-card">' +
         '<div class="tv-lobby-qr" id="lobby-qr"></div>' +
         '<div class="tv-lobby-code-block">' +
-          '<div class="tv-lobby-code-label">Code d\'accès</div>' +
+          '<div class="tv-lobby-code-label">' + window.TVI18n.t('TvDisp_Lobby_CodeLabel') + '</div>' +
           '<div class="tv-lobby-code">' + escapeHtml(code) + '</div>' +
-          '<div class="tv-lobby-code-hint">Tape ce code dans l\'app BeauOuPas</div>' +
+          '<div class="tv-lobby-code-hint">' + window.TVI18n.t('TvDisp_Lobby_CodeHint') + '</div>' +
         '</div>' +
       '</div>' +
       '<div class="tv-lobby-participants" id="lobby-participants">' +
         formatParticipantsLabel(state.participantsCount) +
       '</div>' +
-      '<div class="tv-lobby-waiting">L\'animateur clique "Commencer" sur son téléphone</div>';
+      '<div class="tv-lobby-waiting">' + window.TVI18n.t('TvDisp_Lobby_HostStart') + '</div>';
 
     document.getElementById('screen-lobby').innerHTML = html;
 
@@ -662,7 +662,7 @@ window.TVPartyApp = (function() {
 
     var html =
       '<div class="quiz-intro-content">' +
-        '<div class="quiz-intro-tag">Préparez-vous</div>' +
+        '<div class="quiz-intro-tag">' + window.TVI18n.t('TvParty_Intro_GetReady') + '</div>' +
         '<div class="quiz-intro-title">' + escapeHtml(title) + '</div>' +
         (description
           ? '<div class="quiz-intro-description">' + escapeHtml(description) + '</div>'
@@ -670,15 +670,15 @@ window.TVPartyApp = (function() {
         '<div class="quiz-intro-meta">' +
           '<div class="quiz-intro-meta-item">' +
             '<span class="quiz-intro-meta-value">' + nbQuestions + '</span>' +
-            '<span class="quiz-intro-meta-label">question' + (nbQuestions > 1 ? 's' : '') + '</span>' +
+            '<span class="quiz-intro-meta-label">' + window.TVI18n.t(nbQuestions > 1 ? 'TvParty_Intro_Question_Many' : 'TvParty_Intro_Question_One') + '</span>' +
           '</div>' +
           '<div class="quiz-intro-meta-item">' +
             '<span class="quiz-intro-meta-value" id="intro-participants-count">' + state.participantsCount + '</span>' +
-            '<span class="quiz-intro-meta-label">joueur' + (state.participantsCount > 1 ? 's' : '') + '</span>' +
+            '<span class="quiz-intro-meta-label">' + window.TVI18n.t(state.participantsCount > 1 ? 'TvParty_Intro_Player_Many' : 'TvParty_Intro_Player_One') + '</span>' +
           '</div>' +
         '</div>' +
         '<div class="quiz-intro-countdown">' +
-          '<span class="quiz-intro-countdown-label">Ça commence dans</span>' +
+          '<span class="quiz-intro-countdown-label">' + window.TVI18n.t('TvParty_Intro_StartsIn') + '</span>' +
           '<span class="quiz-intro-countdown-value" id="intro-countdown">' + introDuration + '</span>' +
         '</div>' +
       '</div>';
@@ -786,7 +786,7 @@ window.TVPartyApp = (function() {
       '</div>' +
       '<div class="quiz-question-footer">' +
         '<div class="quiz-answers-counter">' +
-          '<span class="quiz-answers-counter-text" id="answers-count">' + voted + ' / ' + totalParticipants + ' ont voté</span>' +
+          '<span class="quiz-answers-counter-text" id="answers-count">' + window.TVI18n.tf('TvParty_Voted', voted, totalParticipants) + '</span>' +
           '<div class="quiz-answers-counter-bar">' +
             '<div class="quiz-answers-counter-fill" id="answers-fill" style="width: ' +
               Math.min(100, Math.round((voted / totalParticipants) * 100)) + '%;"></div>' +
@@ -882,7 +882,7 @@ window.TVPartyApp = (function() {
 
     } catch (err) {
       console.error('[TVPartyApp] renderFinish RPC error:', err);
-      showError('Erreur', err.message || 'Impossible de charger les résultats');
+      showError('Erreur', err.message || window.TVI18n.t('TvParty_Err_LoadResults'));
       return;
     }
 
@@ -894,7 +894,7 @@ window.TVPartyApp = (function() {
       document.getElementById('screen-finish').innerHTML =
         '<div style="margin: auto; text-align: center;">' +
           '<div style="font-size: 4vw; margin-bottom: 2vh;">🤔</div>' +
-          '<div style="font-size: 2vw; color: var(--party-text);">Personne n\'a participé à cette partie</div>' +
+          '<div style="font-size: 2vw; color: var(--party-text);">' + window.TVI18n.t('TvParty_NoParticipant') + '</div>' +
         '</div>';
       return;
     }
@@ -941,7 +941,7 @@ window.TVPartyApp = (function() {
       bodyHtml =
         '<div class="party-recap-novote">' +
           '<div class="party-recap-novote-icon">🤷</div>' +
-          '<div class="party-recap-novote-text">Personne n\'a voté sur cette question</div>' +
+          '<div class="party-recap-novote-text">' + window.TVI18n.t('TvParty_NoVoteQuestion') + '</div>' +
         '</div>';
     } else {
       var topVotes = results[0].vote_count || 0;
@@ -1001,8 +1001,8 @@ window.TVPartyApp = (function() {
     var html =
       '<div class="party-recap-screen">' +
         '<div class="quiz-question-header">' +
-          '<div class="quiz-question-progress">Récap ' + pos + ' / ' + total + '</div>' +
-          '<div class="party-recap-tag">Résultats</div>' +
+          '<div class="quiz-question-progress">' + window.TVI18n.tf('TvParty_Recap_Progress', pos, total) + '</div>' +
+          '<div class="party-recap-tag">' + window.TVI18n.t('TvParty_Recap_Tag') + '</div>' +
         '</div>' +
         '<div class="party-recap-body">' +
           titleHtml +
@@ -1041,10 +1041,10 @@ window.TVPartyApp = (function() {
     if (top3.length === 0 && leaderboard.length === 0) {
       // rien à afficher → écran neutre avec bouton stop
       document.getElementById('screen-finish').innerHTML =
-        '<button class="tv-reveal-stop-btn" id="finish-stop-btn" title="Arrêter le mode TV">✕ Arrêter</button>' +
+        '<button class="tv-reveal-stop-btn" id="finish-stop-btn" title="' + window.TVI18n.t('TvDisp_StopButton_Title') + '">' + window.TVI18n.t('TvDisp_StopButton') + '</button>' +
         '<div style="margin:auto;text-align:center;">' +
           '<div style="font-size:4vw;margin-bottom:2vh;">🎉</div>' +
-          '<div style="font-size:2vw;color:var(--party-text);">Partie terminée</div>' +
+          '<div style="font-size:2vw;color:var(--party-text);">' + window.TVI18n.t('TvParty_Finished') + '</div>' +
         '</div>';
       bindStopBtn();
       return;
@@ -1145,7 +1145,7 @@ window.TVPartyApp = (function() {
       : '';
 
     var html =
-      '<button class="tv-reveal-stop-btn" id="finish-stop-btn" title="Arrêter le mode TV">✕ Arrêter</button>' +
+      '<button class="tv-reveal-stop-btn" id="finish-stop-btn" title="' + window.TVI18n.t('TvDisp_StopButton_Title') + '">' + window.TVI18n.t('TvDisp_StopButton') + '</button>' +
       '<div class="winner-vignette"></div>' +
       '<div class="winner-spotlight"></div>' +
       '<div class="winner-sparkles-layer">' + sparkles + '</div>' +
@@ -1157,10 +1157,10 @@ window.TVPartyApp = (function() {
           '<div class="winner-halo"></div>' +
           '<div class="quiz-finish-winner-avatar">' + avatarHtml + '</div>' +
         '</div>' +
-        '<div class="quiz-finish-winner-name">' + escapeHtml(winner.username || 'Joueur') + '</div>' +
+        '<div class="quiz-finish-winner-name">' + escapeHtml(winner.username || window.TVI18n.t('TvParty_DefaultPlayer')) + '</div>' +
         tieBadge +
         '<div class="quiz-finish-winner-score">' +
-          winner.score + ' question' + (winner.score > 1 ? 's' : '') + ' gagnée' + (winner.score > 1 ? 's' : '') +
+          window.TVI18n.tf(winner.score > 1 ? 'TvParty_Winner_Score_Many' : 'TvParty_Winner_Score_One', winner.score) +
         '</div>' +
       '</div>';
 
@@ -1191,7 +1191,7 @@ window.TVPartyApp = (function() {
     }).join('');
 
     var html =
-      '<button class="tv-reveal-stop-btn" id="finish-stop-btn" title="Arrêter le mode TV">✕ Arrêter</button>' +
+      '<button class="tv-reveal-stop-btn" id="finish-stop-btn" title="' + window.TVI18n.t('TvDisp_StopButton_Title') + '">' + window.TVI18n.t('TvDisp_StopButton') + '</button>' +
       '<div class="quiz-finish-podium-wrap">' +
         '<div class="quiz-finish-podium-title">Podium</div>' +
         '<div class="quiz-podium">' + podiumHtml + '</div>' +
@@ -1218,7 +1218,7 @@ window.TVPartyApp = (function() {
     }).join('');
 
     var html =
-      '<button class="tv-reveal-stop-btn" id="finish-stop-btn" title="Arrêter le mode TV">✕ Arrêter</button>' +
+      '<button class="tv-reveal-stop-btn" id="finish-stop-btn" title="' + window.TVI18n.t('TvDisp_StopButton_Title') + '">' + window.TVI18n.t('TvDisp_StopButton') + '</button>' +
       '<div class="quiz-finish-leaderboard-wrap">' +
         '<div class="quiz-finish-leaderboard-title">Classement complet</div>' +
         '<div class="quiz-leaderboard">' + rowsHtml + '</div>' +
@@ -1234,7 +1234,7 @@ window.TVPartyApp = (function() {
   }
 
   async function onStopClicked() {
-    if (!confirm('Arrêter la diffusion de la partie sur la TV ?')) return;
+    if (!confirm(window.TVI18n.t('TvParty_Stop_Confirm'))) return;
     try {
       var sb = window.TVRealtime.getClient();
       var res = await sb.rpc('tv_deactivate', { p_series_id: state.series.id });
@@ -1294,7 +1294,7 @@ window.TVPartyApp = (function() {
   }
 
   function formatParticipantsLabel(n) {
-    return n + ' joueur' + (n > 1 ? 's' : '') + ' connecté' + (n > 1 ? 's' : '');
+    return window.TVI18n.tf(n > 1 ? 'TvParty_Players_Many' : 'TvParty_Players_One', n);
   }
 
   function refreshLobbyParticipantsLabel() {
@@ -1319,7 +1319,7 @@ window.TVPartyApp = (function() {
 
     var elCount = document.getElementById('answers-count');
     var elFill = document.getElementById('answers-fill');
-    if (elCount) elCount.textContent = voted + ' / ' + totalParticipants + ' ont voté';
+    if (elCount) elCount.textContent = window.TVI18n.tf('TvParty_Voted', voted, totalParticipants);
     if (elFill) elFill.style.width = percent + '%';
 
     if (state.series.status === 'active'
@@ -1357,7 +1357,7 @@ window.TVPartyApp = (function() {
 
       if (!payload.tv_active) {
         stopAllTimers();
-        showError('Mode TV désactivé', 'L\'animateur a quitté le mode TV.');
+        showError(window.TVI18n.t('TvDisp_Err_TvDeactivated_Title'), window.TVI18n.t('TvDisp_Err_TvDeactivated_Msg'));
         return;
       }
 
