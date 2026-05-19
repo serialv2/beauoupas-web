@@ -769,8 +769,12 @@ window.TVPartyApp = (function() {
       ? '<div class="quiz-question-photo"><img src="' + escapeHtml(qData.photo_url) + '" alt=""></div>'
       : '';
 
-    var titleHtml = qData.title
-      ? '<div class="quiz-question-category">' + escapeHtml(qData.title) + '</div>'
+    // 🏷️ Barre de titre = CATÉGORIE de la question (party_questions.category,
+    // remontée par la RPC get_party_question_for_tv). Fallback sur title
+    // si la RPC ne renvoie pas encore category (rétro-compat : ne casse rien).
+    var catLabel = qData.category || qData.title;
+    var titleHtml = catLabel
+      ? '<div class="quiz-question-category">' + escapeHtml(catLabel) + '</div>'
       : '';
 
     var html =
@@ -931,8 +935,9 @@ window.TVPartyApp = (function() {
     var results = q.results || [];
     var totalVotes = q.total_votes || 0;
 
-    var titleHtml = q.title
-      ? '<div class="quiz-question-category">' + escapeHtml(q.title) + '</div>'
+    var catLabel = q.category || q.title;
+    var titleHtml = catLabel
+      ? '<div class="quiz-question-category">' + escapeHtml(catLabel) + '</div>'
       : '';
 
     var bodyHtml;
