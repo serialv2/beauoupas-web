@@ -32,9 +32,12 @@
 //
 // Style visuel : classe 'style-party' sur <body> (show TV Sézane).
 //
-// Realtime : window.TVRealtime.start(seriesId, 'quiz') réutilisé tel
-// quel + un sous-abonnement SUPPLÉMENTAIRE dédié sur party_answers
-// (Option 1 : aucune modification de tv-realtime.js).
+// Realtime : window.TVRealtime.start(seriesId, 'quiz') réutilisé.
+// ⚠️ CORRECTIF FINAL : party_answers est désormais abonné NATIVEMENT
+//    dans tv-realtime.js (comme quiz_answers) et remonté ici via
+//    onRealtimeEvent(type='party_answer'). L'ancien sous-abonnement
+//    interne (ensurePartyAnswersSubscription) est CONSERVÉ comme
+//    simple filet de sécurité (onPartyVote est idempotent).
 //
 // ═══════════════════════════════════════════════════════════════════
 //
@@ -58,6 +61,15 @@
 //     si un INSERT realtime a été raté ;
 //  5) filet de sécurité : un polling léger des votes pendant les
 //     questions, qui se neutralise dès que le realtime fonctionne.
+//
+// 🛠️ CORRECTIF FINAL (compteur à 0 malgré votes en base)
+// -------------------------------------------------------------------
+// Le sous-abonnement party_answers greffé de l'extérieur sur le
+// client de tv-realtime.js ne recevait jamais les INSERT (canal
+// SUBSCRIBED mais events non propagés). Solution : party_answers est
+// maintenant abonné NATIVEMENT dans tv-realtime.js, dans le même
+// start()/client que quiz_answers (qui fonctionne), et les votes
+// arrivent ici via onRealtimeEvent('party_answer', ...).
 // ═══════════════════════════════════════════════════════════════════
 
 window.TVPartyApp = (function() {
@@ -86,7 +98,7 @@ window.TVPartyApp = (function() {
     recapIndex: 0,            // index de la question récap en cours
     finishStepTimeout: null,
 
-    // Sous-abonnement realtime dédié party_answers (Option 1)
+    // Sous-abonnement realtime dédié party_answers (filet de sécurité)
     partyAnswersChannel: null,
     partyAnswersSubscribed: false,   // true dès qu'on a reçu SUBSCRIBED
     partyAnswersRetryTimer: null,    // timer de re-souscription
@@ -158,17 +170,16 @@ window.TVPartyApp = (function() {
       await loadParticipantsCount();
       await loadVoterCounts();
 
-      // Subscriptions realtime en mode 'quiz' (réutilisé tel quel)
+      // Subscriptions realtime en mode 'quiz' (réutilisé tel quel).
+      // ⚠️ CORRECTIF FINAL : tv-realtime.js abonne désormais AUSSI
+      // party_answers nativement (comme quiz_answers) ; les votes
+      // arrivent via onRealtimeEvent('party_answer', ...).
       window.TVRealtime.start(state.series.id, 'quiz');
 
-      // ⚠️ OPTION 1 : sous-abonnement SUPPLÉMENTAIRE dédié party_answers
-      // (le mode 'quiz' de tv-realtime.js écoute quiz_answers, PAS
-      // party_answers — on ajoute donc notre propre canal sans toucher
-      // tv-realtime.js).
-      //
-      // 🛠️ CORRECTIF : on n'appelle plus directement la souscription
-      // (le client realtime n'est pas encore connecté à cet instant).
-      // On passe par un lanceur qui attend que le client soit prêt.
+      // Filet de sécurité (conservé) : sous-abonnement interne
+      // party_answers. Désormais redondant avec le canal natif de
+      // tv-realtime.js, mais inoffensif (onPartyVote idempotent) et
+      // utile si le canal natif tombe.
       ensurePartyAnswersSubscription();
 
       // 🛠️ CORRECTIF : filet de sécurité — polling léger des votes
@@ -190,8 +201,8 @@ window.TVPartyApp = (function() {
   }
 
   // ─────────────────────────────────────────────────────────────────
-  // Sous-abonnement realtime dédié party_answers (Option 1)
-  // 🛠️ CORRECTIF : robuste (attente client prêt + retry + resync)
+  // Sous-abonnement realtime dédié party_answers (FILET DE SÉCURITÉ)
+  // 🛠️ robuste (attente client prêt + retry + resync)
   // ─────────────────────────────────────────────────────────────────
 
   // Le client realtime de tv-realtime.js est-il prêt à ouvrir un canal ?
@@ -241,14 +252,14 @@ window.TVPartyApp = (function() {
 
     try {
       state.partyAnswersChannel = sb
-        .channel('tv-party-answers-' + state.series.id + '-' + Date.now())
+        .channel('tv-party-answers-fallback-' + state.series.id + '-' + Date.now())
         .on('postgres_changes', {
           event: 'INSERT',
           schema: 'public',
           table: 'party_answers',
           filter: 'series_id=eq.' + state.series.id
         }, function(payload) {
-          console.log('[TVPartyApp] party_answer INSERT');
+          console.log('[TVPartyApp] party_answer INSERT (filet)');
           onPartyVote(payload.new);
         })
         .on('postgres_changes', {
@@ -260,11 +271,11 @@ window.TVPartyApp = (function() {
           // submit_party_vote fait un upsert (ON CONFLICT DO UPDATE) :
           // un changement de cible ne crée pas de nouveau votant, mais
           // on l'enregistre quand même pour rester cohérent.
-          console.log('[TVPartyApp] party_answer UPDATE');
+          console.log('[TVPartyApp] party_answer UPDATE (filet)');
           onPartyVote(payload.new);
         })
         .subscribe(function(status) {
-          console.log('[TVPartyApp] party_answers channel:', status);
+          console.log('[TVPartyApp] party_answers channel (filet):', status);
 
           if (status === 'SUBSCRIBED') {
             state.partyAnswersSubscribed = true;
@@ -293,7 +304,7 @@ window.TVPartyApp = (function() {
   function scheduleResubscribe() {
     if (state.partyAnswersRetryTimer) clearTimeout(state.partyAnswersRetryTimer);
     state.partyAnswersRetryTimer = setTimeout(function() {
-      console.log('[TVPartyApp] Re-souscription party_answers…');
+      console.log('[TVPartyApp] Re-souscription party_answers (filet)…');
       var sb = realtimeClientReady();
       if (sb) subscribePartyAnswers(sb);
       else ensurePartyAnswersSubscription();
@@ -511,6 +522,11 @@ window.TVPartyApp = (function() {
     return state.currentScreen; // statut inconnu : on ne force rien
   }
 
+  // 🛠️ CORRECTIF FIX 2 (TV figée sur l'intro) :
+  // Dès qu'une question a un started_at, on REND la question et on
+  // laisse la RPC get_party_question_for_tv (base fraîche) être la
+  // source de vérité — sans bloquer sur current_project_index ni sur
+  // l'état mémoire potentiellement périmé (c'est ÇA qui figeait la TV).
   function renderCurrentScreen() {
     var s = state.series;
     if (!s) return;
@@ -522,13 +538,9 @@ window.TVPartyApp = (function() {
       stopAllTimers();
       renderLobby();
     } else if (s.status === 'active') {
-      // ── Détermine si on est LÉGITIMEMENT encore en intro ──
       // On reste sur l'intro UNIQUEMENT si la 1re question n'a pas
       // encore de started_at. Dès qu'elle en a un (tv_start_first_
-      // element a tourné), on bascule sur la question — SANS se fier
-      // à current_project_index ni à l'état mémoire de la question
-      // ciblée (qui peuvent être périmés au moment du re-render :
-      // c'est ÇA qui figeait la TV sur l'intro).
+      // element a tourné), on bascule sur la question.
       var firstQuestion = state.questions[0];
       var stillInIntro = firstQuestion && !firstQuestion.started_at;
 
@@ -546,8 +558,8 @@ window.TVPartyApp = (function() {
         var q = state.questions[idx];
 
         // Si l'index courant ne pointe pas (encore) sur une question
-        // démarrée connue en mémoire, on se rabat sur la 1re question
-        // démarrée trouvée — la RPC corrigera de toute façon.
+        // démarrée connue en mémoire, on se rabat sur la dernière
+        // question démarrée trouvée — la RPC corrigera de toute façon.
         if (!q || !q.started_at) {
           var started = state.questions.filter(function(qq) {
             return qq && qq.started_at;
@@ -785,8 +797,8 @@ window.TVPartyApp = (function() {
     document.getElementById('screen-question').innerHTML = html;
 
     // 🛠️ CORRECTIF : à l'affichage de la question, on s'assure que le
-    // canal realtime est bien actif (re-relance si besoin) ET on
-    // resynchronise immédiatement le compteur depuis la base.
+    // canal realtime (filet) est bien actif ET on resynchronise
+    // immédiatement le compteur depuis la base.
     ensurePartyAnswersSubscription();
     resyncVoterCounts();
 
@@ -1394,8 +1406,14 @@ window.TVPartyApp = (function() {
     }
     else if (type === 'quiz_answer') {
       // ⚠️ Le party n'écrit PAS dans quiz_answers. Cet event ne devrait
-      // pas survenir pour une partie ; on l'ignore volontairement
-      // (les votes party arrivent via le sous-abonnement party_answers).
+      // pas survenir pour une partie ; on l'ignore volontairement.
+    }
+    else if (type === 'party_answer') {
+      // ✅ CORRECTIF FINAL : vote party reçu via le canal NATIF de
+      // tv-realtime.js (même mécanisme que quiz_answer pour le quiz).
+      // C'est désormais le chemin principal d'arrivée des votes.
+      console.log('[TVPartyApp] party_answer reçu via TVRealtime');
+      onPartyVote(payload);
     }
     else if (type === 'participant') {
       state.participantsCount++;
