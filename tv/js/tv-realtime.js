@@ -9,10 +9,13 @@
 //     écoute : series, series_projects, series_votes, series_selfies, series_participants
 //   - 'quiz' : pour les séries de quizz (tv-quiz.html)
 //     écoute : series, quiz_questions, quiz_answers, series_participants
+//     ⚠️ Le mode PARTIE RAPIDE (tv-party.html) réutilise mode='quiz'
+//        et écoute EN PLUS party_answers (ajouté nativement ici).
 //
 // L'objet exporté est window.TVRealtime.
-// Tous les events sont remontés à window.TVApp.onRealtimeEvent()
-// (ou window.TVQuizApp.onRealtimeEvent() en mode quiz).
+// Tous les events sont remontés à l'app courante via emit() :
+//   - window.TVPartyApp si présente (page tv-party.html)
+//   - sinon window.TVQuizApp (mode quiz) ou window.TVApp (mode vote)
 //
 // ═══════════════════════════════════════════════════════════════════
 
@@ -174,13 +177,50 @@ window.TVRealtime = (function() {
           console.log('[TVRealtime] quiz_answers channel:', status);
         });
       subscriptions.push(answersSub);
+
+      // party_answers : INSERT + UPDATE (compteur "X / Y ont voté"
+      // du mode PARTIE RAPIDE). Le mode party réutilise mode='quiz' ;
+      // on abonne donc party_answers ICI, nativement, dans le même
+      // start() et sur le même client que quiz_answers — exactement
+      // comme quiz_answers qui fonctionne. Les events sont remontés
+      // via emit('party_answer', ...) → TVPartyApp.onRealtimeEvent().
+      var partyAnswersSub = supabaseClient
+        .channel('tv-party-answers-' + seriesId)
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'party_answers',
+          filter: 'series_id=eq.' + seriesId
+        }, function(payload) {
+          console.log('[TVRealtime] party_answer INSERT');
+          emit('party_answer', payload.new);
+        })
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'party_answers',
+          filter: 'series_id=eq.' + seriesId
+        }, function(payload) {
+          console.log('[TVRealtime] party_answer UPDATE');
+          emit('party_answer', payload.new);
+        })
+        .subscribe(function(status) {
+          console.log('[TVRealtime] party_answers channel:', status);
+        });
+      subscriptions.push(partyAnswersSub);
     }
   }
 
   // ─── Routage des events vers la bonne app ──────────────────────────
   function emit(type, payload) {
-    if (currentApp && currentApp.onRealtimeEvent) {
-      currentApp.onRealtimeEvent(type, payload);
+    // Le mode PARTIE RAPIDE réutilise mode='quiz' mais son app est
+    // window.TVPartyApp (pas TVQuizApp). window.TVPartyApp n'existe
+    // QUE sur la page tv-party.html ; sur les pages quiz/vote
+    // classiques il est undefined, donc on retombe sur currentApp
+    // (comportement quiz/vote strictement inchangé).
+    var app = window.TVPartyApp || currentApp;
+    if (app && app.onRealtimeEvent) {
+      app.onRealtimeEvent(type, payload);
     }
   }
 
