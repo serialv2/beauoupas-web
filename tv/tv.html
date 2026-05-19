@@ -5,15 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BeauOuPas TV</title>
 <link rel="stylesheet" href="css/tv.css">
+<style>
+  .tv-home-lang{display:flex;align-items:center;justify-content:center;gap:8px;margin:14px 0 4px;opacity:.85}
+  .tv-home-lang-label{font-size:14px;color:inherit}
+  .tv-home-lang-select{font-size:14px;padding:6px 10px;border-radius:8px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.08);color:inherit;cursor:pointer}
+  .tv-home-lang-select option{color:#1A1612}
+</style>
 </head>
 <body>
 <div class="tv-home">
   <div>
     <div class="tv-home-logo">BeauOuPas</div>
-    <div class="tv-home-tagline">Mode TV — Soirée interactive</div>
+    <div class="tv-home-tagline" id="tv-tagline">Mode TV — Soirée interactive</div>
+  </div>
+  <div class="tv-home-lang">
+    <label class="tv-home-lang-label" for="lang-select" id="lang-label">Langue</label>
+    <select id="lang-select" class="tv-home-lang-select"></select>
   </div>
   <form class="tv-home-input-group" onsubmit="return joinSeries(event)">
-    <label class="tv-home-label" for="series-code">Code de la série</label>
+    <label class="tv-home-label" for="series-code" id="lbl-code">Code de la série</label>
     <input
       id="series-code"
       class="tv-home-input"
@@ -30,7 +40,33 @@
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/tv-config.js"></script>
+<script src="js/i18n.js"></script>
 <script>
+  var T = window.TVI18n;
+  // Appliquer les textes traduits de l'écran d'accueil
+  document.getElementById('tv-tagline').textContent = T.t('TvHome_Tagline');
+  document.getElementById('lbl-code').textContent = T.t('TvHome_CodeLabel');
+  document.getElementById('lang-label').textContent = T.t('TvHome_LangLabel');
+  var joinBtn = document.getElementById('join-btn');
+  joinBtn.textContent = T.t('TvHome_StartButton');
+
+  // Construire le sélecteur de langue
+  var LANG_NAMES = {
+    fr: 'Français', en: 'English', de: 'Deutsch',
+    es: 'Español', it: 'Italiano', nl: 'Nederlands', pt: 'Português'
+  };
+  var sel = document.getElementById('lang-select');
+  T.SUPPORTED.forEach(function (lg) {
+    var opt = document.createElement('option');
+    opt.value = lg;
+    opt.textContent = LANG_NAMES[lg] || lg;
+    if (lg === T.getLang()) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener('change', function () {
+    T.setLang(sel.value); // mémorise + recharge la page
+  });
+
   // Forcer le code en majuscules
   var codeInput = document.getElementById('series-code');
   codeInput.addEventListener('input', function(e) {
@@ -43,11 +79,11 @@
     var btn = document.getElementById('join-btn');
     errEl.textContent = '';
     if (code.length !== 6) {
-      errEl.textContent = 'Le code doit contenir 6 caractères.';
+      errEl.textContent = T.t('TvHome_Err_CodeLength');
       return false;
     }
     btn.disabled = true;
-    btn.textContent = 'Vérification...';
+    btn.textContent = T.t('TvHome_Verifying');
     try {
       // Créer un client Supabase léger juste pour vérifier le code
       var sb = window.supabase.createClient(
@@ -68,15 +104,15 @@
         .maybeSingle();
       if (result.error) throw result.error;
       if (!result.data) {
-        errEl.textContent = 'Code introuvable. Vérifie qu\'il est correct.';
+        errEl.textContent = T.t('TvHome_Err_NotFound');
         btn.disabled = false;
-        btn.textContent = 'Démarrer la TV';
+        btn.textContent = T.t('TvHome_StartButton');
         return false;
       }
       if (!result.data.tv_active) {
-        errEl.textContent = 'Le mode TV n\'est pas encore activé pour cette série. L\'animateur doit l\'activer depuis l\'app.';
+        errEl.textContent = T.t('TvHome_Err_TvNotActive');
         btn.disabled = false;
-        btn.textContent = 'Démarrer la TV';
+        btn.textContent = T.t('TvHome_StartButton');
         return false;
       }
       // ⚡ CORRECTIF — Routage selon le type de série :
@@ -97,9 +133,9 @@
       window.location.href = targetPage + '?code=' + encodeURIComponent(code);
     } catch (error) {
       console.error('joinSeries error:', error);
-      errEl.textContent = 'Erreur : ' + (error.message || error);
+      errEl.textContent = T.t('TvHome_Err_Generic') + (error.message || error);
       btn.disabled = false;
-      btn.textContent = 'Démarrer la TV';
+      btn.textContent = T.t('TvHome_StartButton');
     }
     return false;
   }
