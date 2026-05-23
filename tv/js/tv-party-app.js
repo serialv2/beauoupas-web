@@ -1201,7 +1201,10 @@ window.TVPartyApp = (function() {
         '<div class="quiz-finish-podium-title">Podium</div>' +
         '<div class="quiz-podium">' + podiumHtml + '</div>' +
       '</div>';
-
+// ⚡ BUG 5 — Selfies pendant la partie si selfie_enabled
+if (state.series && state.series.selfie_enabled !== false) {
+    loadAndSpawnSelfiePolaroids();
+}
     document.getElementById('screen-finish').innerHTML = html;
     bindStopBtn();
   }
@@ -1453,7 +1456,79 @@ window.TVPartyApp = (function() {
   // ─────────────────────────────────────────────────────────────────
   // Export
   // ─────────────────────────────────────────────────────────────────
+async function loadAndSpawnSelfiePolaroids() {
+    try {
+        var sb = window.TVRealtime.getClient();
+        var res = await sb
+            .from('series_selfies')
+            .select('photo_url, user_id, profiles(username)')
+            .eq('series_id', state.series.id);
 
+        if (res.error || !res.data || res.data.length === 0) return;
+
+        var selfies = res.data.map(function(s) {
+            return {
+                photo_url: s.photo_url,
+                username: s.profiles ? s.profiles.username : null
+            };
+        });
+
+        // Réutilise le même conteneur polaroids que tv-app.js
+        var container = document.getElementById('reveal-polaroids');
+        if (!container) return;
+        container.innerHTML = '';
+
+        var SPAWN_INTERVAL_MS = 2800;
+        var TRAVERSE_DURATION_MS = 14000;
+        var idx = 0;
+
+        function spawnNext() {
+            if (!document.getElementById('reveal-polaroids')) return;
+            var selfie = selfies[idx % selfies.length];
+            idx++;
+            addPolaroid(container, selfie, TRAVERSE_DURATION_MS);
+            setTimeout(spawnNext, SPAWN_INTERVAL_MS);
+        }
+
+        addPolaroid(container, selfies[0], TRAVERSE_DURATION_MS);
+        if (selfies.length > 1) {
+            setTimeout(function() {
+                var c = document.getElementById('reveal-polaroids');
+                if (c) addPolaroid(c, selfies[1 % selfies.length], TRAVERSE_DURATION_MS);
+            }, 1400);
+        }
+        idx = 2;
+        setTimeout(spawnNext, SPAWN_INTERVAL_MS);
+
+    } catch (err) {
+        console.warn('[TVQuizApp] loadAndSpawnSelfiePolaroids error:', err);
+    }
+}
+
+function addPolaroid(container, selfie, durationMs) {
+    var el = document.createElement('div');
+    el.className = 'tv-polaroid';
+    var topPct = 10 + Math.random() * 60;
+    var rot = (Math.random() * 16 - 8).toFixed(1);
+    el.style.top = topPct + '%';
+    el.style.setProperty('--polaroid-rot', rot + 'deg');
+    el.style.animationDuration = durationMs + 'ms';
+
+    var imgHtml = selfie && selfie.photo_url
+        ? '<img src="' + escapeHtml(selfie.photo_url) + '" alt="">'
+        : '<div style="width:100%;aspect-ratio:1;background:#888;"></div>';
+
+    var captionHtml = (selfie && selfie.username)
+        ? '<div class="tv-polaroid-caption">' + escapeHtml(selfie.username) + '</div>'
+        : '';
+
+    el.innerHTML = imgHtml + captionHtml;
+    container.appendChild(el);
+
+    setTimeout(function() {
+        if (el.parentNode) el.parentNode.removeChild(el);
+    }, durationMs + 200);
+}
   return {
     start: start,
     onRealtimeEvent: onRealtimeEvent
