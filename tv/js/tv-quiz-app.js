@@ -718,6 +718,10 @@ window.TVQuizApp = (function() {
       : '';
 
     var html =
+      // Container selfies en arrière-plan (rendu AVANT le contenu pour
+      // rester en background via DOM order). Filtré par series_question_id
+      // côté DB → seuls les selfies pris pendant cette question défilent.
+      '<div class="tv-reveal-polaroids" id="reveal-polaroids"></div>' +
       '<div class="quiz-question-header">' +
         '<div class="quiz-question-progress">' + window.TVI18n.tf('TvQuiz_Question_Progress', pos, totalQuestions) + '</div>' +
         '<div class="quiz-reveal-tag">' + window.TVI18n.t('TvQuiz_Reveal_Tag') + '</div>' +
@@ -734,6 +738,18 @@ window.TVQuizApp = (function() {
       '</div>';
 
     document.getElementById('screen-reveal').innerHTML = html;
+
+    // Selfies de CETTE question pendant le reveal (si selfie_enabled).
+    if (state.series && state.series.selfie_enabled !== false) {
+      loadAndSpawnSelfiePolaroids({
+        questionId: question.id,
+        expectedScreen: 'reveal',
+        // Spawn plus rapide pour avoir le temps d'en voir avant la fin
+        // du reveal (3s par défaut).
+        spawnIntervalMs: 600,
+        traverseDurationMs: 5000
+      });
+    }
 
     var revealMs = window.TV_CONFIG.QUIZ_REVEAL_DURATION_MS || 3000;
     if (state.revealTimeout) clearTimeout(state.revealTimeout);
@@ -787,6 +803,17 @@ window.TVQuizApp = (function() {
           '<div style="font-size: 2vw; color: white;">' + window.TVI18n.t('TvQuiz_NoParticipant') + '</div>' +
         '</div>';
       return;
+    }
+
+    // Selfies (tous, en mode random) défilent en arrière-plan pendant toute
+    // la durée du finish (winner → podium → leaderboard → stats). Le spawn
+    // loop survit aux innerHTML réécritures entre les sous-étapes grâce au
+    // retry court dans loadAndSpawnSelfiePolaroids.
+    if (state.series && state.series.selfie_enabled !== false) {
+      loadAndSpawnSelfiePolaroids({
+        shuffle: true,
+        expectedScreen: 'finish'
+      });
     }
 
     // Étape 1 : vainqueur seul (avec wow effect)
@@ -903,6 +930,8 @@ window.TVQuizApp = (function() {
       '</svg>';
 
     var html =
+      // Container selfies en arrière-plan (cf. note dans renderReveal).
+      '<div class="tv-reveal-polaroids" id="reveal-polaroids"></div>' +
       '<button class="tv-reveal-stop-btn" id="finish-stop-btn" title="' + window.TVI18n.t('TvDisp_StopButton_Title') + '">' + window.TVI18n.t('TvDisp_StopButton') + '</button>' +
       // Overlay vignette : assombrit les bords pour focaliser sur le vainqueur
       '<div class="winner-vignette"></div>' +
@@ -956,6 +985,7 @@ window.TVQuizApp = (function() {
     }).join('');
 
     var html =
+      '<div class="tv-reveal-polaroids" id="reveal-polaroids"></div>' +
       '<button class="tv-reveal-stop-btn" id="finish-stop-btn" title="' + window.TVI18n.t('TvDisp_StopButton_Title') + '">' + window.TVI18n.t('TvDisp_StopButton') + '</button>' +
       '<div class="quiz-finish-podium-wrap">' +
         '<div class="quiz-finish-podium-title">Podium</div>' +
@@ -983,6 +1013,7 @@ window.TVQuizApp = (function() {
     }).join('');
 
     var html =
+      '<div class="tv-reveal-polaroids" id="reveal-polaroids"></div>' +
       '<button class="tv-reveal-stop-btn" id="finish-stop-btn" title="' + window.TVI18n.t('TvDisp_StopButton_Title') + '">' + window.TVI18n.t('TvDisp_StopButton') + '</button>' +
       '<div class="quiz-finish-leaderboard-wrap">' +
         '<div class="quiz-finish-leaderboard-title">Classement complet</div>' +
@@ -1119,6 +1150,7 @@ window.TVQuizApp = (function() {
 
     // ─── Compose le HTML final ─────────────────────────────────────
     var html =
+      '<div class="tv-reveal-polaroids" id="reveal-polaroids"></div>' +
       '<button class="tv-reveal-stop-btn" id="finish-stop-btn" title="' + window.TVI18n.t('TvDisp_StopButton_Title') + '">' + window.TVI18n.t('TvDisp_StopButton') + '</button>' +
       '<div class="quiz-stats-page">' +
         '<div class="quiz-stats-title">' + window.TVI18n.t('TvQuiz_Stats_Title') + '</div>' +
@@ -1126,10 +1158,8 @@ window.TVQuizApp = (function() {
         qBlocksHtml +
         demoHtml +
       '</div>';
-// ⚡ BUG 5 — Charger et afficher les selfies si selfie_enabled
-if (state.series && state.series.selfie_enabled !== false) {
-    loadAndSpawnSelfiePolaroids();
-}
+    // (Spawn loop des selfies déjà lancé une fois dans renderFinish() ; il
+    // continue de spawner dans le nouveau container après cet innerHTML.)
     document.getElementById('screen-finish').innerHTML = html;
     bindStopBtn();
   }
@@ -1353,53 +1383,89 @@ if (state.series && state.series.selfie_enabled !== false) {
   // ─────────────────────────────────────────────────────────────────
   // Export
   // ─────────────────────────────────────────────────────────────────
-async function loadAndSpawnSelfiePolaroids() {
+// ═════════════════════════════════════════════════════════════════════
+// Selfies polaroids défilants
+//
+// Deux usages :
+//  1) REVEAL d'une question : filtré par series_question_id (seulement
+//     les selfies pris pendant cette question), spawn court (le reveal
+//     ne dure que ~3s côté quiz).
+//  2) FINISH : tous les selfies de session (series_id, series_project_id
+//     IS NULL), mélangés aléatoirement, spawn continu pendant toute la
+//     durée du finish (winner → podium → leaderboard → stats).
+//
+// Le spawn loop tourne en background et s'arrête tout seul quand
+// state.currentScreen quitte l'écran attendu (le container peut être
+// momentanément absent entre 2 sous-étapes du finish — on retry).
+// ═════════════════════════════════════════════════════════════════════
+async function loadAndSpawnSelfiePolaroids(opts) {
+    opts = opts || {};
+    var questionId = opts.questionId || null;       // filtre reveal
+    var shuffle = !!opts.shuffle;                    // mélange aléatoire
+    var expectedScreen = opts.expectedScreen || (questionId ? 'reveal' : 'finish');
+    var containerId = opts.containerId || 'reveal-polaroids';
+    var SPAWN_INTERVAL_MS = opts.spawnIntervalMs || 2800;
+    var TRAVERSE_DURATION_MS = opts.traverseDurationMs || 14000;
+
     try {
         var sb = window.TVRealtime.getClient();
-        var res = await sb
+        var q = sb
             .from('series_selfies')
             .select('photo_url, user_id, profiles(username)')
             .eq('series_id', state.series.id);
+        if (questionId) {
+            q = q.eq('series_question_id', questionId);
+        } else {
+            // Finish : on prend les selfies de session uniquement (pas le
+            // mode vote photo où series_project_id est renseigné).
+            q = q.is('series_project_id', null);
+        }
+        var res = await q;
 
         if (res.error || !res.data || res.data.length === 0) return;
 
-        var selfies = res.data.map(function(s) {
+        var pool = res.data.map(function(s) {
             return {
                 photo_url: s.photo_url,
                 username: s.profiles ? s.profiles.username : null
             };
         });
+        if (shuffle) pool = shuffleArray(pool);
 
-        // Réutilise le même conteneur polaroids que tv-app.js
-        var container = document.getElementById('reveal-polaroids');
-        if (!container) return;
-        container.innerHTML = '';
-
-        var SPAWN_INTERVAL_MS = 2800;
-        var TRAVERSE_DURATION_MS = 14000;
         var idx = 0;
-
-        function spawnNext() {
-            if (!document.getElementById('reveal-polaroids')) return;
-            var selfie = selfies[idx % selfies.length];
+        function spawnStep() {
+            // Arrêt définitif si on a quitté l'écran cible
+            if (state.currentScreen !== expectedScreen) return;
+            var c = document.getElementById(containerId);
+            if (!c) {
+                // Container temporairement absent (transition entre sous-
+                // étapes du finish qui réécrit innerHTML). Retry court.
+                setTimeout(spawnStep, 200);
+                return;
+            }
+            // Re-shuffle quand on a fait un tour complet (effet "vraiment
+            // random" même si peu de selfies).
+            if (shuffle && idx > 0 && idx % pool.length === 0) {
+                pool = shuffleArray(pool);
+            }
+            addPolaroid(c, pool[idx % pool.length], TRAVERSE_DURATION_MS);
             idx++;
-            addPolaroid(container, selfie, TRAVERSE_DURATION_MS);
-            setTimeout(spawnNext, SPAWN_INTERVAL_MS);
+            setTimeout(spawnStep, SPAWN_INTERVAL_MS);
         }
 
-        addPolaroid(container, selfies[0], TRAVERSE_DURATION_MS);
-        if (selfies.length > 1) {
-            setTimeout(function() {
-                var c = document.getElementById('reveal-polaroids');
-                if (c) addPolaroid(c, selfies[1 % selfies.length], TRAVERSE_DURATION_MS);
-            }, 1400);
-        }
-        idx = 2;
-        setTimeout(spawnNext, SPAWN_INTERVAL_MS);
-
+        spawnStep();
     } catch (err) {
         console.warn('[TVQuizApp] loadAndSpawnSelfiePolaroids error:', err);
     }
+}
+
+function shuffleArray(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
 }
 
 function addPolaroid(container, selfie, durationMs) {
