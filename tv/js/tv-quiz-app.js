@@ -431,6 +431,48 @@ window.TVQuizApp = (function() {
     document.getElementById('screen-intro').innerHTML = html;
 
     startIntroCountdown(introDuration);
+
+    // Démarrage anticipé possible : si tous les joueurs ont déjà signalé
+    // la fin de leur pub interstitielle (ou n'en ont pas eu), on lance Q1
+    // sans attendre la fin du countdown. Check initial puis check à chaque
+    // event 'participant_updated' (via onRealtimeEvent).
+    checkAllInterstitialsSeenAndMaybeStart();
+  }
+
+  // Vérifie si tous les participants ont signé interstitial_seen_at.
+  // Si oui, démarre Q1 immédiatement (annule le countdown intro).
+  // Appelée : (1) au démarrage de l'intro, (2) à chaque participant_updated.
+  async function checkAllInterstitialsSeenAndMaybeStart() {
+    if (state.currentScreen !== 'intro') return;
+    if (_isStartingFirst) return;
+    if (!state.series || state.series.status !== 'active') return;
+
+    try {
+      var sb = window.TVRealtime.getClient();
+
+      var totalRes = await sb
+        .from('series_participants')
+        .select('user_id', { count: 'exact', head: true })
+        .eq('series_id', state.series.id);
+
+      var signedRes = await sb
+        .from('series_participants')
+        .select('user_id', { count: 'exact', head: true })
+        .eq('series_id', state.series.id)
+        .not('interstitial_seen_at', 'is', null);
+
+      var total = totalRes.count || 0;
+      var signed = signedRes.count || 0;
+      console.log('[TVQuizApp] Interstitial check: ' + signed + '/' + total);
+
+      if (signed > 0 && signed >= total) {
+        console.log('[TVQuizApp] Tous ont signé → démarrage Q1 anticipé');
+        stopIntroCountdown();
+        startFirstElement();
+      }
+    } catch (err) {
+      console.warn('[TVQuizApp] checkAllInterstitialsSeen err:', err);
+    }
   }
 
   function startIntroCountdown(durationSec) {
@@ -1283,6 +1325,14 @@ if (state.series && state.series.selfie_enabled !== false) {
       refreshLobbyParticipantsLabel();
       refreshIntroParticipantsLabel();
       updateAnswersCounter();
+    }
+    else if (type === 'participant_updated') {
+      // Signal probable de fin de pub interstitielle. Si on est sur
+      // l'écran INTRO, on vérifie si tous les joueurs ont signé pour
+      // démarrer Q1 plus tôt que le timeout natural.
+      if (payload && payload.interstitial_seen_at) {
+        checkAllInterstitialsSeenAndMaybeStart();
+      }
     }
   }
 

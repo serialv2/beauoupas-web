@@ -61,8 +61,8 @@ window.TVRealtime = (function() {
       });
     subscriptions.push(seriesSub);
 
-    // ⚡ ─── series_participants : INSERT + DELETE ──────────────────
-    // (commun aux 2 modes : compteur joueurs)
+    // ⚡ ─── series_participants : INSERT + DELETE + UPDATE ──────────
+    // (commun aux 2 modes : compteur joueurs + signal interstitial_seen_at)
     var participantsSub = supabaseClient
       .channel('tv-participants-' + seriesId)
       .on('postgres_changes', {
@@ -82,6 +82,15 @@ window.TVRealtime = (function() {
       }, function(payload) {
         console.log('[TVRealtime] participant DELETE');
         emit('participant_left', payload.old);
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'series_participants',
+        filter: 'series_id=eq.' + seriesId
+      }, function(payload) {
+        console.log('[TVRealtime] participant UPDATE');
+        emit('participant_updated', payload.new);
       })
       .subscribe(function(status) {
         console.log('[TVRealtime] series_participants channel:', status);
